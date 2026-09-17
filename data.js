@@ -46,7 +46,15 @@
     ['Apollo', 15, 19, 'B', 'Grapefruit, resin', 'Columbus', 'Pine and resin'],
     ['Summit', 16, 18, 'B', 'Tangerine, onion at high rates', 'Simcoe', 'Dank and herbal'],
     ['Azacca', 14, 16, 'A', 'Mango, papaya, pine', 'Citra', 'Tropical'],
-    ['Comet', 9, 12, 'D', 'Wild, grapefruit, grassy', 'Cascade', 'Dank and herbal']
+    ['Comet', 9, 12, 'D', 'Wild, grapefruit, grassy', 'Cascade', 'Dank and herbal'],
+    ['Cluster', 6, 8, 'B', 'Black currant, fruity; the old American workhorse', 'Northern Brewer', 'Earthy and floral'],
+    ["Brewer's Gold", 8, 10, 'B', 'Spicy, black currant', 'Northern Brewer', 'Spicy'],
+    ['Liberty', 3, 5, 'A', 'Mild noble character', 'Hallertau Mittelfrüh', 'Noble'],
+    ['Mt. Hood', 4, 7, 'A', 'Mild, herbal, clean', 'Hallertau Mittelfrüh', 'Noble'],
+    ['Sterling', 6, 9, 'D', 'Saaz-like, spicy lemon', 'Saaz', 'Noble'],
+    ['Crystal', 3.5, 5.5, 'A', 'Woody, floral, spicy', 'Hallertau Mittelfrüh', 'Noble'],
+    ['Bramling Cross', 5, 7, 'D', 'Black currant, lemon, spice', 'Progress', 'Earthy and floral'],
+    ['Progress', 5, 7.5, 'A', 'Soft, earthy, honey', 'East Kent Golding', 'Earthy and floral']
   ].map(h => ({ name: h[0], alphaLow: h[1], alphaHigh: h[2], use: h[3], flavour: h[4], subs: h[5], genre: h[6] }));
   D.HOP_GENRES = [...new Set(D.HOPS.map(h => h.genre))].sort();
 
@@ -96,6 +104,15 @@
     ['Honey', 35, 2, 'Sugar', true, 'Ferments dry; add after the boil'],
     ['Lactose', 35, 1, 'Sugar', true, 'Unfermentable: sweetness and body'],
     ['Maple syrup', 30, 35, 'Sugar', true, 'Mostly ferments out; flavour is subtle'],
+    ['Aromatic malt', 36, 20, 'Special', false, 'Intense malt aroma; 5 to 10% in Belgian and amber beers'],
+    ['Torrified wheat', 36, 2, 'Adjunct', false, 'Puffed wheat: head retention in British ales'],
+    ['Unmalted wheat', 34, 2, 'Adjunct', false, 'Raw wheat: witbier and lambic haze and body'],
+    ['Sorghum malt', 36, 3, 'Base', false, 'African traditional beers; gluten-free'],
+    ['Millet malt', 32, 2, 'Base', false, 'Gluten-free base; Himalayan chang'],
+    ['Oak-smoked wheat malt', 37, 2, 'Special', false, 'Grodziskie; gentle, clean smoke'],
+    ['Molasses', 36, 80, 'Sugar', true, 'Rum-like, strong; a little goes far'],
+    ['Brown sugar', 46, 15, 'Sugar', true, 'Light caramel; ferments fully'],
+    ['Dates', 30, 10, 'Sugar', true, 'Ancient and Middle Eastern beers; fruity sweetness'],
     ['Rice hulls', 0, 0, 'Adjunct', false, 'No sugar: prevents a stuck mash']
   ].map(f => ({ name: f[0], ppg: f[1], lovibond: f[2], group: f[3], extract: f[4], note: f[5] }));
 
@@ -142,6 +159,22 @@
     ['WildBrew Sour Pitch', 'Sour', 0, 0, 86, 104, 'n/a', 'Lactobacillus for kettle souring before the boil; not a fermenting yeast.'],
     ['Mangrove Jack M44 US West Coast', 'Ale', 73, 77, 64, 72, 'Medium', 'Clean, hop-forward American ale dry yeast.'],
     ['Escarpment Foggy London', 'Ale', 71, 76, 64, 72, 'Medium-high', 'London III style: soft, hazy, stone fruit.'],
+    ['Wyeast 1084 Irish Ale / WLP004', 'Ale', 71, 75, 62, 72, 'Medium', 'Dry stout and Irish red; slight fruit, clean roast'],
+    ['Wyeast 1728 Scottish Ale / WLP028', 'Ale', 69, 73, 55, 75, 'High', 'Malty, tolerates cool ferments; wee heavy'],
+    ['WLP013 London Ale / Wyeast 1028', 'Ale', 67, 75, 66, 71, 'Medium', 'Porter and brown ale; mineral, dry'],
+    ['WLP023 Burton Ale', 'Ale', 69, 75, 68, 73, 'Medium', 'English IPA and bitter; apple and pear'],
+    ['WLP036 Düsseldorf Alt', 'Ale', 65, 72, 65, 69, 'Medium', 'Altbier; clean, slightly malty'],
+    ['Wyeast 3944 Belgian Witbier / WLP400', 'Ale', 72, 76, 62, 75, 'Low', 'Witbier; tart, spicy, hazy'],
+    ['Wyeast 3522 Belgian Ardennes', 'Ale', 72, 76, 65, 85, 'High', 'Belgian pale and blonde; fruity, phenolic, forgiving'],
+    ['WLP510 Bastogne / Wyeast 1762', 'Ale', 74, 80, 66, 72, 'Medium', 'Belgian dark strong; dry, clean spice'],
+    ['WLP072 French Ale', 'Ale', 68, 75, 63, 73, 'High', 'Bière de garde; clean, malty, lager-like'],
+    ['Wyeast 3763 Roeselare blend', 'Mixed', 80, 90, 65, 80, 'Low', 'Flanders red and oud bruin; a year or more, dedicate the plastic'],
+    ["Baker's yeast (sahti)", 'Ale', 65, 75, 65, 80, 'Low', 'The traditional sahti pitch: banana, clove, cloudy, fast'],
+    ['Wyeast 2035 American Lager', 'Lager', 73, 77, 48, 58, 'Medium', 'Pre-prohibition and American lagers'],
+    ['WLP810 San Francisco Lager', 'Lager', 65, 70, 58, 65, 'High', 'California common: lager yeast at ale temperature'],
+    ['Wyeast 2206 Bavarian Lager', 'Lager', 73, 77, 46, 58, 'Medium', 'Bocks, dunkel, Märzen; rich and malty'],
+    ['Wyeast 2308 Munich Lager', 'Lager', 70, 74, 48, 56, 'Medium', 'Helles and Oktoberfest; smooth, needs a diacetyl rest'],
+    ['WLP940 Mexican Lager', 'Lager', 70, 75, 50, 55, 'Medium', 'Vienna lager and Mexican styles; crisp'],
     ['W-34/70 / WLP830 / Wyeast 2124', 'Lager', 73, 77, 48, 58, 'Medium', 'The default lager strain; clean at 55F'],
     ['WLP833 German Bock', 'Lager', 70, 76, 48, 55, 'Medium', 'Malty, for dark lagers'],
     ['Wyeast 2278 Czech Pils', 'Lager', 70, 74, 48, 58, 'Medium-high', 'Sulfur during fermentation, clears with time'],

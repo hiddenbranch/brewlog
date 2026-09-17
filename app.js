@@ -1,10 +1,10 @@
 /* Brew Log - app UI. Depends on core.js (BrewCore), data.js (BrewData), shop.js (BrewShop). */
 (function () {
   'use strict';
-  const B = window.BrewCore, D = window.BrewData, SH = window.BrewShop;
+  const B = window.BrewCore, D = window.BrewData, SH = window.BrewShop, RC = window.BrewRecipes;
   B.setHopRef(D.HOPS);
   const OCR_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
-  const APP_VERSION = '1.2.0';
+  const APP_VERSION = '1.3.0';
   const BOOK = { title: 'Homebrewer\'s Brew Log Book', url: '', blurb: 'The paper companion: brew day sheets, fermentation charts and recipe pages built to be photographed into this app.' };
   const CDN = { jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js' };
   const STATUSES = ['Planned', 'Brewing', 'Fermenting', 'Conditioning', 'Packaged', 'Drinking', 'Finished'];
@@ -513,6 +513,54 @@
       [q, genre, use].forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', draw));
       view.append(back, h('h2', null, 'Hops'), field('Search', q), h('div', { class: 'row' }, field('Genre', genre), field('Use', use)), out); draw(); return;
     }
+    if (sub === 'recipes' || (sub && sub.startsWith('recipe:'))) {
+      if (sub.startsWith('recipe:')) {
+        const r = RC.RECIPES.find(x => x.name === sub.slice(7)); if (!r) return go('ref', 'recipes');
+        view.append(h('button', { class: 'back', onclick: () => go('ref', 'recipes') }, '\u2039 Recipes'),
+          h('h2', null, h('span', { class: 'swatch', style: 'background:' + B.srmHex(r.srm) }), r.name),
+          h('p', { class: 'muted' }, `${r.region} \u00B7 ${r.group} \u00B7 ${r.gallons} gal, ${r.boilMin} min boil, ${r.efficiency}% efficiency`));
+        const ro = h('div', { class: 'readout' });
+        [['OG / FG', `${r.og.toFixed(3)} / ${r.fg.toFixed(3)}`, `style ${r.ranges.og[0].toFixed(3)} to ${r.ranges.og[1].toFixed(3)}`], ['IBU', String(r.ibu), `style ${r.ranges.ibu[0]} to ${r.ranges.ibu[1]}`], ['Colour', `${r.srm} SRM`, `style ${r.ranges.srm[0]} to ${r.ranges.srm[1]}`], ['ABV', `${r.abv}%`, `style ${r.ranges.abv[0]} to ${r.ranges.abv[1]}`]]
+          .forEach(([l, v, n]) => ro.append(h('div', { class: 'line' }, h('span', { class: 'l' }, l, h('span', { class: 'n' }, n)), h('span', { class: 'v' }, v))));
+        view.append(ro);
+        view.append(h('h3', null, 'Fermentables'), h('div', { class: 'tablewrap' }, h('table', { class: 'ref' }, h('tbody', null, r.fermentables.map(f => h('tr', null, h('td', { class: 'mono', style: 'width:22%' }, `${f.lb} lb`), h('td', null, f.name), h('td', { class: 'mono' }, `${f.pct}%`)))))));
+        if (r.hops.length) view.append(h('h3', null, 'Hops'), h('div', { class: 'tablewrap' }, h('table', { class: 'ref' }, h('tbody', null, r.hops.map(hp => h('tr', null, h('td', { class: 'mono', style: 'width:22%' }, `${hp.oz} oz`), h('td', null, `${hp.name} (${hp.alpha}%)`), h('td', { class: 'mono' }, hp.use === 'Dry hop' ? `dry hop, ${hp.dryDays} days` : hp.use === 'Whirlpool' ? 'whirlpool' : `${hp.minutes} min`)))))));
+        else view.append(h('p', { class: 'muted small' }, 'No hops: see the notes for what bitters it.'));
+        view.append(h('h3', null, 'Yeast and process'),
+          h('p', null, h('b', null, r.yeast), ` \u00B7 pitch and ferment at ${r.fermF}F (strain range ${r.yeastRange[0]} to ${r.yeastRange[1]}F)`),
+          h('p', null, h('b', null, 'Mash '), `${r.mashF}F for 60 minutes. `, h('b', null, 'Water: '), r.water),
+          h('p', null, r.notes),
+          h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => {
+            const b = BLANK(); b.name = r.name; b.style = D.STYLES.find(s => s.name === r.name) ? r.name : (r.group === 'IPA' ? 'American IPA' : ''); b.style = r.name; b.batchGal = r.gallons; b.boilGal = r.boilGallons; b.boilMin = r.boilMin; b.efficiency = r.efficiency; b.mashF = r.mashF;
+            b.fermentables = r.fermentables.map(f => ({ name: f.name, lb: f.lb }));
+            b.hops = r.hops.filter(hp => hp.use !== 'Dry hop').map(hp => ({ name: hp.name, oz: hp.oz, alpha: hp.alpha, minutes: hp.minutes, type: 'pellet', whirlpool: hp.use === 'Whirlpool' }));
+            b.extras = r.hops.filter(hp => hp.use === 'Dry hop').map(hp => `Dry hop: ${hp.oz} oz ${hp.name}, ${hp.dryDays} days`);
+            b.yeast = r.yeast; b.notes = `${r.water}. ${r.notes}`;
+            const id = await DB.put('batches', b); state.batchId = id; await S.set('lastBatch', id); toast('Batch created from the recipe'); go('batches', 'view:' + id); } }, 'Brew this'),
+            h('button', { class: 'btn secondary', onclick: () => go('ref', 'recipes') }, 'Back to recipes')),
+          h('p', { class: 'muted small' }, 'A generic, sensible version of the style sized to 5 gallons at 72% efficiency and checked against the style ranges. Scale the batch size on the recipe form after "Brew this" and everything recalculates.'));
+        return;
+      }
+      const q = inp('', 'search', { placeholder: `search ${RC.RECIPES.length} recipes` });
+      const region = sel(['All regions'].concat(RC.REGIONS), 'All regions');
+      const strength = sel([{ v: 'all', t: 'Any strength' }, { v: 'low', t: 'Under 4.5%' }, { v: 'mid', t: '4.5 to 6.5%' }, { v: 'high', t: 'Over 6.5%' }], 'all');
+      const out = h('div');
+      const draw = () => { out.innerHTML = ''; const t = q.value.toLowerCase();
+        const list = RC.RECIPES.filter(r => (!t || r.name.toLowerCase().includes(t) || r.group.toLowerCase().includes(t) || r.region.toLowerCase().includes(t))
+          && (region.value === 'All regions' || r.region === region.value)
+          && (strength.value === 'all' || (strength.value === 'low' && r.abv < 4.5) || (strength.value === 'mid' && r.abv >= 4.5 && r.abv <= 6.5) || (strength.value === 'high' && r.abv > 6.5)));
+        if (!list.length) return out.append(h('div', { class: 'empty' }, 'No recipe matches that.'));
+        const regions = region.value === 'All regions' ? RC.REGIONS : [region.value];
+        for (const rg of regions) { const inR = list.filter(r => r.region === rg); if (!inR.length) continue;
+          out.append(h('h3', null, rg, h('span', { class: 'muted small' }, `  ${inR.length}`)));
+          for (const r of inR) out.append(h('div', { class: 'rec' }, h('span', { class: 'swatch', style: 'background:' + B.srmHex(r.srm) }),
+            h('div', { class: 't' }, h('b', null, r.name), h('div', { class: 'meta' }, `${r.og.toFixed(3)} \u00B7 ${r.ibu} IBU \u00B7 ${r.srm} SRM \u00B7 ${r.abv}% \u00B7 ${r.yeast.split('/')[0].trim()}`)),
+            h('button', { class: 'act', onclick: () => go('ref', 'recipe:' + r.name) }, 'Open'))); } };
+      [q, region, strength].forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', draw));
+      view.append(back, h('h2', null, 'Recipes by style'), field('Search', q), h('div', { class: 'row' }, field('Region', region), field('Strength', strength)), out,
+        h('p', { class: 'muted small' }, 'Every recipe is a 5-gallon generic version of its style, sized by the same math as the calculators and verified against the style ranges. They are starting points, not award winners.'));
+      draw(); return;
+    }
     if (sub === 'world') {
       const q = inp('', 'search', { placeholder: `search ${D.WORLD.length} beers` });
       const era = sel(['All eras'].concat(D.WORLD_ERAS), 'All eras');
@@ -533,7 +581,8 @@
             h('div', { class: 'body' },
               h('p', { class: 'muted small' }, `${w.era} \u00B7 ${w.region} \u00B7 ${when} \u00B7 ${w.abvLow} to ${w.abvHigh}% \u00B7 ${w.ibuLow} to ${w.ibuHigh} IBU`),
               h('p', null, w.note),
-              h('p', null, h('b', null, 'What makes it: '), w.key))));
+              h('p', null, h('b', null, 'What makes it: '), w.key),
+              (() => { const rec = RC.RECIPES.find(r => r.name.toLowerCase().startsWith(w.name.toLowerCase().split(' (')[0].slice(0, 8))); return rec ? h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => go('ref', 'recipe:' + rec.name) }, 'Recipe: ' + rec.name)) : null; })())));
         } };
       [q, era, strength, bitter, sort].forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', draw));
       view.append(back, h('h2', null, 'Beers of the world'), field('Search', q),
@@ -602,6 +651,7 @@
       return;
     }
     add(h('h2', null, 'Reference'), h('ul', { class: 'list' }, [
+      ['recipes', 'Recipes by style', `${RC.RECIPES.length} sized 5-gallon recipes across ${RC.REGIONS.length} regions, each verified against its style`],
       ['hops', 'Hops', `${D.HOPS.length} varieties grouped by genre, with alpha, flavour and substitutes`],
       ['fermentables', 'Fermentables', `${D.FERMENTABLES.length} malts, adjuncts, sugars and extracts with PPG and colour`],
       ['yeast', 'Yeast', `${D.YEAST.length} strains: attenuation, pitch and ferment range, flocculation`],
