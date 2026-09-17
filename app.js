@@ -4,7 +4,7 @@
   const B = window.BrewCore, D = window.BrewData, SH = window.BrewShop, RC = window.BrewRecipes;
   B.setHopRef(D.HOPS);
   const OCR_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
-  const APP_VERSION = '1.3.0';
+  const APP_VERSION = '1.5.0';
   const BOOK = { title: 'Homebrewer\'s Brew Log Book', url: '', blurb: 'The paper companion: brew day sheets, fermentation charts and recipe pages built to be photographed into this app.' };
   const CDN = { jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js' };
   const STATUSES = ['Planned', 'Brewing', 'Fermenting', 'Conditioning', 'Packaged', 'Drinking', 'Finished'];
@@ -99,7 +99,7 @@
     const r = b || BLANK();
     const f = {};
     const mk = (k, label, type, extra, hint) => { f[k] = inp(r[k], type, extra); return field(label, f[k], hint); };
-    const styleList = h('datalist', { id: 'styles' }, D.STYLES.map(s => h('option', { value: s.name })));
+    const styleList = h('datalist', { id: 'styles' }, RC.RECIPES.map(s => h('option', { value: s.name })));
     f.style = inp(r.style, 'text', { list: 'styles' });
     const stats = h('div', { class: 'readout' });
     const rows = { fermentables: h('div'), hops: h('div'), salts: h('div') };
@@ -113,7 +113,7 @@
     }
     function refresh() {
       const cur = collect(); const est = recipeStats(cur); stats.innerHTML = '';
-      const style = D.STYLES.find(s => s.name === cur.style);
+      const styleRec = RC.RECIPES.find(r => r.name === cur.style); const style = styleRec ? { ogLow: styleRec.ranges.og[0], ogHigh: styleRec.ranges.og[1], ibuLow: styleRec.ranges.ibu[0], ibuHigh: styleRec.ranges.ibu[1], srmLow: styleRec.ranges.srm[0], srmHigh: styleRec.ranges.srm[1] } : D.STYLES.find(s => s.name === cur.style);
       const line = (l, v, inRange, n) => stats.append(h('div', { class: 'line ' + (inRange === true ? 'ok' : inRange === false ? 'bad' : '') }, h('span', { class: 'l' }, l, n ? h('span', { class: 'n' }, n) : null), h('span', { class: 'v' }, v)));
       const within = (v, lo, hi) => style && v ? (v >= lo && v <= hi) : null;
       line('Estimated OG', est.og ? est.og.toFixed(3) : '-', within(est.og, style && style.ogLow, style && style.ogHigh), style ? `style ${style.ogLow.toFixed(3)} to ${style.ogHigh.toFixed(3)}` : null);
@@ -290,9 +290,14 @@
   let timer = null;
   async function renderBrewday() {
     const list = await batchList(); const b = await currentBatch(list);
+    if (state.sub === 'go' && b) return renderGo(b);
+    clearInterval(goTimer);
     view.append(h('h2', null, 'Brew day'));
     if (!b) return view.append(h('div', { class: 'empty' }, 'Create a batch first; the brew day list is built from its recipe.'), h('button', { class: 'btn block', onclick: () => go('batches', 'new') }, 'New batch'));
     view.append(h('div', { class: 'chips' }, list.slice(0, 8).map(x => h('button', { class: 'chip' + (x.id === b.id ? ' on' : ''), style: 'font-family:inherit', onclick: async () => { state.batchId = x.id; await S.set('lastBatch', x.id); render(); } }, x.name || 'batch'))));
+    const goState = await S.get('go:' + b.id, null);
+    view.append(h('button', { class: 'btn block', style: 'font-size:18px;min-height:56px', onclick: () => go('brewday', 'go') }, goState ? `Continue guided brew day (step ${goState.i + 1})` : 'Go: guided brew day, start to finish'),
+      h('p', { class: 'muted small' }, 'One step at a time from strike water to pitching, with timers, hop alarms and gravity checks built from this recipe and your equipment profile.'));
     const done = (await S.get('steps:' + b.id, {})) || {};
     // numbers you want in your hand on brew day
     const grainLb = (b.fermentables || []).reduce((s, f) => { const ref = D.FERMENTABLES.find(x => x.name === f.name); return s + (ref && ref.extract ? 0 : num(f.lb)); }, 0);
@@ -447,6 +452,84 @@
     draw();
   }
 
+
+  // ---------- guided brew day ("Go") ----------
+  let goTimer = null, wakeLock = null;
+  function beep(times) {
+    try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const n = times || 3;
+      for (let i = 0; i < n; i++) { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 880; o.connect(g); g.connect(ctx.destination); const t = ctx.currentTime + i * 0.35; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.4, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28); o.start(t); o.stop(t + 0.3); } } catch (e) { /* no audio */ }
+    try { navigator.vibrate && navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) { /* no vibration */ }
+  }
+  async function notify(title, body) { try { if ('Notification' in window && Notification.permission === 'granted') new Notification(title, { body, tag: 'brewday' }); } catch (e) { /* not available */ } }
+  async function keepAwake() { try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) { /* denied */ } }
+  const fmtMS = s => `${String(Math.floor(Math.abs(s) / 60)).padStart(2, '0')}:${String(Math.abs(s) % 60).padStart(2, '0')}`;
+  async function renderGo(b) {
+    clearInterval(goTimer);
+    const est = recipeStats(b);
+    const grainLb = (b.fermentables || []).reduce((sum, f) => { const ref = D.FERMENTABLES.find(x => x.name === f.name); return sum + (ref && ref.extract ? 0 : num(f.lb)); }, 0);
+    const plan = B.brewPlan(b, EQ, grainLb, est.boilG);
+    const key = 'go:' + b.id;
+    const st = (await S.get(key, null)) || { i: 0, timers: {}, fired: {}, ticked: {}, startedAt: Date.now() };
+    const save = () => S.set(key, st);
+    if (st.i >= plan.length) {
+      view.innerHTML = ''; view.append(h('button', { class: 'back', onclick: () => go('brewday') }, '\u2039 Brew day'), h('h2', null, 'Brew day complete'),
+        h('p', null, `${b.name || 'The batch'} is in the fermenter. Gravity readings from the Batches screen from here on; the fermentation state updates itself.`),
+        h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: () => go('batches', 'view:' + b.id) }, 'Open the batch'), h('button', { class: 'btn secondary', onclick: async () => { await S.set(key, null); go('brewday'); } }, 'Clear this brew day')));
+      return;
+    }
+    keepAwake();
+    const step = plan[st.i]; const next = plan[st.i + 1];
+    view.innerHTML = '';
+    view.append(h('button', { class: 'back', onclick: () => go('brewday') }, '\u2039 Brew day'),
+      h('p', { class: 'muted small' }, `Step ${st.i + 1} of ${plan.length} \u00B7 ${b.name || 'batch'}`),
+      h('h2', null, step.title));
+    add(h('ul', { style: 'padding-left:18px;margin:0 0 12px' }, step.detail.map(d => h('li', { style: 'margin:0 0 6px' }, d))));
+    const tdisp = h('div', { class: 'timer' }, '');
+    const nextEl = h('p', { class: 'muted small', style: 'text-align:center;margin-top:-4px' });
+    const alarmList = h('div');
+    if (step.kind === 'timer') {
+      const started = st.timers[step.id];
+      const tick = () => {
+        if (!started) { tdisp.textContent = fmtMS(step.minutes * 60); nextEl.textContent = 'Not started'; return; }
+        const el = Math.floor((Date.now() - started) / 1000); const left = step.minutes * 60 - el;
+        tdisp.textContent = (left < 0 ? '+' : '') + fmtMS(left); tdisp.style.color = left < 0 ? 'var(--warn)' : '';
+        const due = (step.alarms || []).filter(a => a.at * 60 <= el);
+        for (const a of due) { const k = step.id + ':' + a.at; if (!st.fired[k]) { st.fired[k] = Date.now(); save(); beep(3); notify(step.title, a.label); } }
+        const upcoming = (step.alarms || []).find(a => a.at * 60 > el);
+        nextEl.textContent = upcoming ? `Next: ${upcoming.label} in ${fmtMS(upcoming.at * 60 - el)}` : (left > 0 ? 'No more additions; timer runs to the end' : 'Time is up');
+        alarmList.querySelectorAll('[data-alarm]').forEach(row => { const k = row.dataset.alarm; row.classList.toggle('done', !!st.ticked[k]); row.querySelector('.tm').textContent = st.fired[k] ? 'now' : `+${row.dataset.at}m`; });
+      };
+      view.append(tdisp, nextEl);
+      if (!started) view.append(h('div', { class: 'btns' }, h('button', { class: 'btn block', onclick: async () => { st.timers[step.id] = Date.now(); await save(); await DB.put('entries', { batchId: b.id, type: 'step', date: today(), text: `${step.title} started ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, created: Date.now() }); if ('Notification' in window && Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (e) { /* ignore */ } } renderGo(b); } }, `Start ${step.minutes}-minute timer`)));
+      for (const a of step.alarms || []) { const k = step.id + ':' + a.at;
+        alarmList.append(h('div', { class: 'step' + (st.ticked[k] ? ' done' : ''), 'data-alarm': k, 'data-at': a.at }, h('span', { class: 'tm' }, `+${a.at}m`), h('span', { class: 't' }, a.label),
+          h('button', { class: 'act', onclick: async () => { st.ticked[k] = !st.ticked[k]; await save(); if (st.ticked[k]) await DB.put('entries', { batchId: b.id, type: 'step', date: today(), text: `${a.label} at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, created: Date.now() }); renderGo(b); } }, st.ticked[k] ? 'Undo' : 'Done'))); }
+      view.append(alarmList);
+      goTimer = setInterval(tick, 1000); tick();
+    }
+    if (step.kind === 'input') {
+      const sg = inp('', 'number', { placeholder: 'e.g. 1.052' }), temp = inp('', 'number', { placeholder: 'sample temp F' }), vol = inp('', 'number', { placeholder: 'gal' });
+      const corr = h('p', { class: 'muted small' });
+      const upd = () => { const v = num(sg.value), t = num(temp.value); if (!v) { corr.textContent = ''; return; } const c = t ? B.hydrometerCorrect(v, t, EQ.hydroCalF) : v; let msg = `Corrected: ${c.toFixed(3)}`;
+        if (step.id === 'preboil' && est.boilG) { const d = Math.round((c - est.boilG) * 1000); msg += d === 0 ? ', on target' : d > 0 ? `, ${d} points high: add ${B.waterToHitGravity(c, num(vol.value) || num(b.boilGal) || EQ.boilGal, est.boilG)} gal water` : `, ${Math.abs(d)} points low: boil longer or accept a lighter beer`; }
+        if (step.id === 'og' && (b.og || est.og)) { const target = num(b.og) || est.og; const d = Math.round((c - target) * 1000); msg += d === 0 ? ', on target' : `, ${Math.abs(d)} points ${d > 0 ? 'high' : 'low'} vs ${target.toFixed(3)}`; }
+        corr.textContent = msg; };
+      [sg, temp, vol].forEach(i => i.addEventListener('input', upd));
+      view.append(h('div', { class: 'row3' }, field('Gravity', sg), field('Sample temp (F)', temp), field('Volume (gal)', vol)), corr);
+      view.append(h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { const v = num(sg.value); if (v) { const c = num(temp.value) ? B.hydrometerCorrect(v, num(temp.value), EQ.hydroCalF) : v; await DB.put('entries', { batchId: b.id, type: 'gravity', date: today(), sg: c, raw: v, tempF: temp.value, instrument: 'sg', note: `${step.id === 'og' ? 'OG' : 'Pre-boil'}${vol.value ? ', ' + vol.value + ' gal' : ''}`, created: Date.now() }); if (step.id === 'og') { b.og = c; await DB.put('batches', b); } } st.i++; await save(); renderGo(b); } }, sg.value ? 'Log and continue' : 'Continue'),
+        h('button', { class: 'btn secondary', onclick: async () => { st.i++; await save(); renderGo(b); } }, 'Skip')));
+    } else {
+      view.append(h('div', { class: 'btns' },
+        h('button', { class: 'btn', onclick: async () => { await DB.put('entries', { batchId: b.id, type: 'step', date: today(), text: `${step.done} at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, created: Date.now() });
+          if (step.id === 'pitch') { b.status = 'Fermenting'; await DB.put('batches', b); } else if (b.status === 'Planned') { b.status = 'Brewing'; await DB.put('batches', b); }
+          st.i++; await save(); renderGo(b); } }, step.done),
+        step.optional ? h('button', { class: 'btn secondary', onclick: async () => { st.i++; await save(); renderGo(b); } }, 'Skip') : null,
+        st.i > 0 ? h('button', { class: 'btn secondary', onclick: async () => { st.i--; await save(); renderGo(b); } }, 'Back') : null));
+    }
+    if (next) view.append(h('div', { class: 'note' }, h('b', null, 'Next: '), next.title, next.kind === 'timer' ? ` (${next.minutes} min)` : ''));
+    view.append(h('p', { class: 'muted small' }, 'Timers keep running if the phone locks or the app closes; reopen and the countdown is where it should be. Every step and addition is timestamped into the batch log.'));
+  }
+
   // ---------- calculators ----------
   const CALCS = [
     { id: 'abv', title: 'ABV and attenuation', fields: [{ k: 'og', l: 'OG', v: 1.050 }, { k: 'fg', l: 'FG', v: 1.010 }],
@@ -513,10 +596,10 @@
       [q, genre, use].forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', draw));
       view.append(back, h('h2', null, 'Hops'), field('Search', q), h('div', { class: 'row' }, field('Genre', genre), field('Use', use)), out); draw(); return;
     }
-    if (sub === 'recipes' || (sub && sub.startsWith('recipe:'))) {
+    if (sub === 'styles' || (sub && sub.startsWith('recipe:'))) {
       if (sub.startsWith('recipe:')) {
         const r = RC.RECIPES.find(x => x.name === sub.slice(7)); if (!r) return go('ref', 'recipes');
-        view.append(h('button', { class: 'back', onclick: () => go('ref', 'recipes') }, '\u2039 Recipes'),
+        view.append(h('button', { class: 'back', onclick: () => go('ref', r.group === 'Historic' ? 'world' : 'styles') }, r.group === 'Historic' ? '\u2039 Beers of the world' : '\u2039 Styles'),
           h('h2', null, h('span', { class: 'swatch', style: 'background:' + B.srmHex(r.srm) }), r.name),
           h('p', { class: 'muted' }, `${r.region} \u00B7 ${r.group} \u00B7 ${r.gallons} gal, ${r.boilMin} min boil, ${r.efficiency}% efficiency`));
         const ro = h('div', { class: 'readout' });
@@ -537,28 +620,29 @@
             b.extras = r.hops.filter(hp => hp.use === 'Dry hop').map(hp => `Dry hop: ${hp.oz} oz ${hp.name}, ${hp.dryDays} days`);
             b.yeast = r.yeast; b.notes = `${r.water}. ${r.notes}`;
             const id = await DB.put('batches', b); state.batchId = id; await S.set('lastBatch', id); toast('Batch created from the recipe'); go('batches', 'view:' + id); } }, 'Brew this'),
-            h('button', { class: 'btn secondary', onclick: () => go('ref', 'recipes') }, 'Back to recipes')),
+            h('button', { class: 'btn secondary', onclick: () => go('ref', r.group === 'Historic' ? 'world' : 'styles') }, 'Back')),
           h('p', { class: 'muted small' }, 'A generic, sensible version of the style sized to 5 gallons at 72% efficiency and checked against the style ranges. Scale the batch size on the recipe form after "Brew this" and everything recalculates.'));
         return;
       }
-      const q = inp('', 'search', { placeholder: `search ${RC.RECIPES.length} recipes` });
-      const region = sel(['All regions'].concat(RC.REGIONS), 'All regions');
+      const MODERN = RC.RECIPES.filter(r => r.group !== 'Historic'); const MREG = [...new Set(MODERN.map(r => r.region))];
+      const q = inp('', 'search', { placeholder: `search ${MODERN.length} styles` });
+      const region = sel(['All regions'].concat(MREG), 'All regions');
       const strength = sel([{ v: 'all', t: 'Any strength' }, { v: 'low', t: 'Under 4.5%' }, { v: 'mid', t: '4.5 to 6.5%' }, { v: 'high', t: 'Over 6.5%' }], 'all');
       const out = h('div');
       const draw = () => { out.innerHTML = ''; const t = q.value.toLowerCase();
-        const list = RC.RECIPES.filter(r => (!t || r.name.toLowerCase().includes(t) || r.group.toLowerCase().includes(t) || r.region.toLowerCase().includes(t))
+        const list = MODERN.filter(r => (!t || r.name.toLowerCase().includes(t) || r.group.toLowerCase().includes(t) || r.region.toLowerCase().includes(t))
           && (region.value === 'All regions' || r.region === region.value)
           && (strength.value === 'all' || (strength.value === 'low' && r.abv < 4.5) || (strength.value === 'mid' && r.abv >= 4.5 && r.abv <= 6.5) || (strength.value === 'high' && r.abv > 6.5)));
         if (!list.length) return out.append(h('div', { class: 'empty' }, 'No recipe matches that.'));
-        const regions = region.value === 'All regions' ? RC.REGIONS : [region.value];
+        const regions = region.value === 'All regions' ? MREG : [region.value];
         for (const rg of regions) { const inR = list.filter(r => r.region === rg); if (!inR.length) continue;
           out.append(h('h3', null, rg, h('span', { class: 'muted small' }, `  ${inR.length}`)));
           for (const r of inR) out.append(h('div', { class: 'rec' }, h('span', { class: 'swatch', style: 'background:' + B.srmHex(r.srm) }),
             h('div', { class: 't' }, h('b', null, r.name), h('div', { class: 'meta' }, `${r.og.toFixed(3)} \u00B7 ${r.ibu} IBU \u00B7 ${r.srm} SRM \u00B7 ${r.abv}% \u00B7 ${r.yeast.split('/')[0].trim()}`)),
             h('button', { class: 'act', onclick: () => go('ref', 'recipe:' + r.name) }, 'Open'))); } };
       [q, region, strength].forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', draw));
-      view.append(back, h('h2', null, 'Recipes by style'), field('Search', q), h('div', { class: 'row' }, field('Region', region), field('Strength', strength)), out,
-        h('p', { class: 'muted small' }, 'Every recipe is a 5-gallon generic version of its style, sized by the same math as the calculators and verified against the style ranges. They are starting points, not award winners.'));
+      view.append(back, h('h2', null, 'Styles and recipes'), field('Search', q), h('div', { class: 'row' }, field('Region', region), field('Strength', strength)), out,
+        h('p', { class: 'muted small' }, 'Each style shows its published ranges and a generic 5-gallon recipe sized to the middle of them by the same math as the calculators. Starting points, not award winners. Historical beers are under Beers of the world.'));
       draw(); return;
     }
     if (sub === 'world') {
@@ -582,7 +666,12 @@
               h('p', { class: 'muted small' }, `${w.era} \u00B7 ${w.region} \u00B7 ${when} \u00B7 ${w.abvLow} to ${w.abvHigh}% \u00B7 ${w.ibuLow} to ${w.ibuHigh} IBU`),
               h('p', null, w.note),
               h('p', null, h('b', null, 'What makes it: '), w.key),
-              (() => { const rec = RC.RECIPES.find(r => r.name.toLowerCase().startsWith(w.name.toLowerCase().split(' (')[0].slice(0, 8))); return rec ? h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => go('ref', 'recipe:' + rec.name) }, 'Recipe: ' + rec.name)) : null; })())));
+              (() => { const stem = w.name.toLowerCase().split(' (')[0].slice(0, 8); const rec = RC.RECIPES.find(r => r.name.toLowerCase().startsWith(stem)); if (!rec) return h('p', { class: 'muted small' }, 'No reconstruction: the original method does not translate to a home kettle.');
+                return h('div', null, h('h4', { style: 'margin:10px 0 4px;font-size:13px' }, `Brew it: ${rec.og.toFixed(3)} \u00B7 ${rec.ibu} IBU \u00B7 ${rec.abv}%`),
+                  h('p', { class: 'small', style: 'margin:0 0 4px' }, rec.fermentables.map(f => `${f.lb} lb ${f.name}`).join(', ')),
+                  rec.hops.length ? h('p', { class: 'small', style: 'margin:0 0 4px' }, rec.hops.map(hp => `${hp.oz} oz ${hp.name} ${hp.use === 'Dry hop' ? 'dry' : hp.use === 'Whirlpool' ? 'whirlpool' : hp.minutes + ' min'}`).join(', ')) : null,
+                  h('p', { class: 'small', style: 'margin:0 0 6px' }, `${rec.yeast}, mash ${rec.mashF}F, ferment ${rec.fermF}F`),
+                  h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => go('ref', 'recipe:' + rec.name) }, 'Full recipe and Brew this'))); })())));
         } };
       [q, era, strength, bitter, sort].forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', draw));
       view.append(back, h('h2', null, 'Beers of the world'), field('Search', q),
@@ -608,16 +697,23 @@
       q.addEventListener('input', draw); view.append(back, h('h2', null, 'Fermentables'), field('Search', q), out); draw(); return;
     }
     if (sub === 'yeast') {
-      view.append(back, h('h2', null, 'Yeast'));
-      for (const y of D.YEAST) {
-        const rowsData = [['Type', y.type], ['Attenuation', y.attLow + ' to ' + y.attHigh + '%'], ['Temperature', y.tempLow + ' to ' + y.tempHigh + ' F'], ['Flocculation', y.floc]];
-        view.append(h('details', { class: 'plat' }, h('summary', null, y.name), h('div', { class: 'body' },
-          h('p', null, y.note),
-          h('div', { class: 'tablewrap' }, h('table', { class: 'ref' }, h('tbody', null,
-            rowsData.map(r => h('tr', null, h('th', { style: 'width:36%' }, r[0]), h('td', null, r[1]))))))))); }
-      return;
+      const types = [...new Set(D.YEAST.map(y => y.type))];
+      const typeSel = sel(['All types'].concat(types), 'All types');
+      const q = inp('', 'search', { placeholder: `search ${D.YEAST.length} strains` });
+      const out = h('div');
+      const draw = () => { out.innerHTML = ''; const t = q.value.toLowerCase();
+        const list = D.YEAST.filter(y => (typeSel.value === 'All types' || y.type === typeSel.value) && (!t || y.name.toLowerCase().includes(t) || y.note.toLowerCase().includes(t)));
+        if (typeSel.value === 'Kveik') out.append(h('div', { class: 'note' }, h('b', null, 'Handling kveik'), h('ul', { style: 'margin:6px 0 0;padding-left:18px' }, D.KVEIK_NOTES.map(x => h('li', { class: 'small', style: 'margin:0 0 5px' }, x)))));
+        if (!list.length) return out.append(h('div', { class: 'empty' }, 'No strain matches that.'));
+        for (const y of list) {
+          const rowsData = [['Type', y.type], ['Attenuation', y.attLow + ' to ' + y.attHigh + '%'], ['Temperature', y.tempLow + ' to ' + y.tempHigh + ' F'], ['Flocculation', y.floc]];
+          out.append(h('details', { class: 'plat' }, h('summary', null, y.name), h('div', { class: 'body' }, h('p', null, y.note),
+            h('div', { class: 'tablewrap' }, h('table', { class: 'ref' }, h('tbody', null, rowsData.map(r => h('tr', null, h('th', { style: 'width:36%' }, r[0]), h('td', null, r[1])))))))));
+        } };
+      [q, typeSel].forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', draw));
+      view.append(back, h('h2', null, 'Yeast'), field('Search', q), field('Type', typeSel), out); draw(); return;
     }
-    if (sub === 'styles') {
+    if (sub === 'styles-old') {
       const q = inp('', 'search', { placeholder: `search ${D.STYLES.length} styles` }); const out = h('div');
       const draw = () => { out.innerHTML = ''; const t = q.value.toLowerCase();
         const list = D.STYLES.filter(x => !t || x.name.toLowerCase().includes(t) || x.group.toLowerCase().includes(t));
@@ -651,15 +747,13 @@
       return;
     }
     add(h('h2', null, 'Reference'), h('ul', { class: 'list' }, [
-      ['recipes', 'Recipes by style', `${RC.RECIPES.length} sized 5-gallon recipes across ${RC.REGIONS.length} regions, each verified against its style`],
+      ['styles', 'Styles and recipes', `${RC.RECIPES.filter(r => r.group !== 'Historic').length} styles by region, each with its ranges and a sized 5-gallon recipe`],
       ['hops', 'Hops', `${D.HOPS.length} varieties grouped by genre, with alpha, flavour and substitutes`],
       ['fermentables', 'Fermentables', `${D.FERMENTABLES.length} malts, adjuncts, sugars and extracts with PPG and colour`],
       ['yeast', 'Yeast', `${D.YEAST.length} strains: attenuation, pitch and ferment range, flocculation`],
-      ['kveik', 'Kveik', `${D.YEAST.filter(y => y.type === 'Kveik').length} cultures, and how to handle them`],
-      ['styles', 'Styles', `${D.STYLES.length} styles with OG, FG, IBU, SRM and ABV ranges`],
       ['water', 'Water profiles', 'Classic and target profiles in ppm'],
       ['off', 'Off-flavours', 'What it tastes like, what causes it, how to fix it'],
-      ['world', 'Beers of the world', `${D.WORLD.length} historical and regional beers, filter by era, strength and bitterness`],
+      ['world', 'Beers of the world', `${D.WORLD.length} historical and regional beers with brewable reconstructions, filter by era, strength and bitterness`],
       ['process', 'Process notes', 'Brew day, fermentation, packaging, cleaning']
     ].map(([id, t, s]) => h('li', null, h('button', { onclick: () => go('ref', id) }, h('span', { class: 't' }, h('b', null, t), h('span', null, s)), h('span', { class: 'k' }, '\u203A'))))));
   }

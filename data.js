@@ -140,13 +140,6 @@
     ['Hornindal Kveik', 'Kveik', 75, 82, 77, 98, 'High', 'Tropical: pineapple, mango. The most expressive common kveik; hot and fast.'],
     ['Lutra Kveik', 'Kveik', 75, 82, 68, 95, 'High', 'Exceptionally clean at any temperature: the pseudo-lager kveik. Good for a fast crisp beer with no temperature control.'],
     ['Oslo Kveik', 'Kveik', 72, 80, 60, 98, 'High', 'Clean and lager-like, and unusual among kveik for working down into the 60s.'],
-    ['Ebbegarden Kveik', 'Kveik', 75, 82, 75, 95, 'High', 'Stone fruit and light spice; a touch more character than Voss.'],
-    ['Stranda Kveik', 'Kveik', 75, 82, 75, 95, 'High', 'Earthy and savoury with light smoke character; a farmhouse note.'],
-    ['Opshaug Kveik', 'Kveik', 75, 82, 75, 95, 'High', 'Cleaner and more neutral; good when you want speed without fruit.'],
-    ['Framgarden Kveik', 'Kveik', 75, 82, 75, 98, 'High', 'Citrus and light funk; tolerates very high gravity.'],
-    ['Skare Kveik', 'Kveik', 75, 82, 77, 98, 'High', 'Fruity and fast, similar territory to Hornindal.'],
-    ['Gjernes Kveik', 'Kveik', 75, 82, 75, 95, 'High', 'Balanced, malt-friendly; good in darker beers.'],
-    ['Laerdal Kveik', 'Kveik', 75, 82, 75, 95, 'High', 'Restrained fruit, clean finish.'],
     ['HotHead Ale', 'Kveik', 75, 80, 68, 98, 'Medium-high', 'Norwegian ale strain that stays clean up to 98F; not strictly a kveik culture but used the same way.'],
     ['LalBrew Verdant IPA', 'Ale', 75, 82, 64, 72, 'Medium', 'Peach and stone fruit, leaves body; the dry option for hazy IPA.'],
     ['LalBrew New England', 'Ale', 74, 78, 59, 72, 'Medium', 'Tropical esters, low attenuation for a full mouthfeel.'],
@@ -236,7 +229,8 @@
     'Temperature steers the flavour. The same culture is close to neutral at 70F and full of fruit at 95F.',
     'Harvest it. Kveik is traditionally dried on a ring or a log and stored for months; slurry keeps in the fridge and rouses back easily.',
     'It tolerates high gravity and low oxygen better than most ale yeast, which is why it suits big beers brewed in a hurry.',
-    'Kveik is a culture, not a single strain. Two packs labelled Voss from different suppliers can behave differently.'
+    'Kveik is a culture, not a single strain. Two packs labelled Voss from different suppliers can behave differently.',
+    'Beyond the five listed there are a dozen other named farmhouse cultures (Ebbegarden, Stranda, Opshaug, Framgarden, Skare, Gjernes, Laerdal among them), mostly through Escarpment Labs and the kveik ring; treat them like Voss until you know them.'
   ];
   D.WATER_PROFILES = [
     ['Distilled / RO', 0, 0, 0, 0, 0, 0, 'Blank slate: build what the style wants'],

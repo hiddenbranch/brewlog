@@ -88,3 +88,21 @@ assert(empty.every(s => !s.canBrew), 'nothing brewable from an empty shelf');
 assert(empty[0].missing.some(x => /base malt/.test(x)), 'missing list explains why');
 assert.strictEqual(B.totalOf(fullShelf, 'Hop'), 4);
 console.log('inventory tests passed');
+// ---- guided brew day plan ----
+const EQ = { batchGal: 5.5, boilGal: 7, boilMin: 60, efficiency: 72, qtPerLb: 1.25, tunLossF: 2, boilOffGalHr: 1.2, trubGal: 0.5, absorbGalLb: 0.125 };
+const plan = B.brewPlan({ boilMin: 60, mashF: 152, boilGal: 7, og: 1.062, yeast: 'US-05', fermF: 66,
+  hops: [{ name: 'Columbus', oz: 0.6, minutes: 60 }, { name: 'Citra', oz: 1, minutes: 5 }, { name: 'Citra', oz: 1, minutes: 0, whirlpool: true }],
+  extras: ['Dry hop: 2 oz Mosaic, 4 days'] }, EQ, 12, 1.050);
+const ids = plan.map(p => p.id);
+assert.deepStrictEqual(ids, ['strike', 'mashin', 'mashout', 'sparge', 'preboil', 'boil', 'whirlpool', 'chill', 'og', 'pitch', 'dryhop'], 'step order: ' + ids);
+const boil = plan.find(p => p.id === 'boil');
+assert.strictEqual(boil.minutes, 60);
+assert.deepStrictEqual(boil.alarms.map(a => a.at), [0, 45, 55, 60], 'boil alarms at the right minutes: ' + JSON.stringify(boil.alarms));
+assert(boil.alarms[0].label.includes('Columbus') && boil.alarms[2].label.includes('Citra') && boil.alarms[3].label === 'Flameout');
+assert(plan.find(p => p.id === 'strike').detail[0].startsWith('3.75 gal'), 'strike volume from the profile');
+assert(plan.find(p => p.id === 'whirlpool').detail[0].includes('1 oz Citra'));
+assert(plan.find(p => p.id === 'mashin').alarms[0].at === 30, 'mash halfway alarm');
+// extract batch skips the mash
+const ext = B.brewPlan({ boilMin: 60, boilGal: 5.5, hops: [] }, EQ, 0, 1.05);
+assert.deepStrictEqual(ext.map(p => p.id), ['water', 'boil', 'chill', 'og', 'pitch'], 'extract plan: ' + ext.map(p => p.id));
+console.log('brew plan tests passed');

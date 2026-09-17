@@ -298,6 +298,45 @@
   };
   B.setHopRef = ref => { B._hopRef = ref; };
 
+
+  // ---- guided brew day plan ----
+  /* Builds the step sequence for a batch from its recipe and the equipment profile. Pure, so it is testable.
+     batch: the app's batch; eq: equipment profile; grainLb: mashed grain weight; boilG: estimated boil gravity */
+  B.brewPlan = function (batch, eq, grainLb, boilG) {
+    const n = v => Number(v) || 0;
+    const boilMin = n(batch.boilMin) || eq.boilMin || 60, mashF = n(batch.mashF) || 152, mashMin = n(batch.mashMin) || 60;
+    const strikeGal = B.strikeWaterVolume(grainLb, eq.qtPerLb), strikeF = B.strikeTemp(eq.qtPerLb, 65, mashF, eq.tunLossF);
+    const preBoil = n(batch.boilGal) || eq.boilGal, spargeGal = B.spargeVolume(preBoil, strikeGal, grainLb, eq.absorbGalLb);
+    const hops = (batch.hops || []).filter(h => h.name);
+    const boilHops = hops.filter(h => !h.whirlpool && h.minutes !== '' && n(h.minutes) <= boilMin).map(h => ({ at: boilMin - n(h.minutes), label: `Add ${h.oz} oz ${h.name}` })).sort((a, b) => a.at - b.at);
+    const wp = hops.filter(h => h.whirlpool);
+    const extras = (batch.extras || []).filter(Boolean);
+    const dryHops = extras.filter(e => /^dry hop/i.test(e));
+    const steps = [];
+    const yeastNote = batch.yeast ? `Yeast: ${batch.yeast}` : 'Yeast: as planned';
+    if (grainLb > 0) {
+      steps.push({ id: 'strike', kind: 'action', title: 'Heat strike water', detail: [`${strikeGal} gal at ${eq.qtPerLb} qt per lb`, `Target ${strikeF}F (grain at 65F, ${eq.tunLossF}F lost to the vessel)`, 'Salts in the water now if the recipe has them'], done: 'Water is at temperature' });
+      steps.push({ id: 'mashin', kind: 'timer', minutes: mashMin, title: 'Mash in', detail: [`Stir the grain in, break every dough ball, check the bed reads ${mashF}F`, `Hold ${mashMin} minutes`, 'Recirculating system: pump on once the bed settles'], alarms: [{ at: Math.round(mashMin / 2), label: 'Halfway: check the mash temperature and stir if it has stratified' }, { at: mashMin, label: 'Mash complete' }], done: 'Mash finished' });
+      steps.push({ id: 'mashout', kind: 'timer', minutes: 10, title: 'Mash out', detail: ['Raise to 168F and hold 10 minutes; stops conversion and thins the sugars for the sparge', 'Skip on a single-infusion no-sparge system if you prefer'], alarms: [{ at: 10, label: 'Mash out done' }], done: 'At 168F for 10 minutes', optional: true });
+      steps.push({ id: 'sparge', kind: 'action', title: 'Sparge and collect', detail: [`Sparge with about ${spargeGal} gal at 168F`, `Collect ${preBoil} gal pre-boil`, 'Stop when runnings drop below 1.010 or the collected volume is reached'], done: `Collected ${preBoil} gal` });
+      steps.push({ id: 'preboil', kind: 'input', title: 'Pre-boil gravity', detail: [boilG ? `Expected about ${boilG.toFixed(3)} at ${preBoil} gal` : 'Take a reading and note the volume', 'Cool the sample; write the temperature next to the reading'], input: 'gravity', done: 'Reading taken' });
+    } else {
+      steps.push({ id: 'water', kind: 'action', title: 'Heat the water', detail: [`Bring ${preBoil} gal to a boil`, 'Extract batch: add extract off the heat, stir until dissolved, then return to the boil'], done: 'Extract dissolved, back on the heat' });
+    }
+    const boilAlarms = boilHops.map(h => ({ at: h.at, label: h.label }));
+    if (boilMin >= 15) boilAlarms.push({ at: boilMin - 15, label: 'Whirlfloc or Irish moss, and drop the chiller in to sanitise' });
+    boilAlarms.push({ at: boilMin, label: 'Flameout' });
+    boilAlarms.sort((a, b) => a.at - b.at);
+    steps.push({ id: 'boil', kind: 'timer', minutes: boilMin, title: `Boil ${boilMin} minutes`, detail: ['Watch the first five minutes for boilover', 'Additions fire as alarms below; tick each one as it goes in'], alarms: boilAlarms, done: 'Flameout' });
+    if (wp.length) steps.push({ id: 'whirlpool', kind: 'timer', minutes: 20, title: 'Whirlpool hop stand', detail: [`Cool to 170F, then add ${wp.map(h => `${h.oz} oz ${h.name}`).join(', ')}`, 'Stir to a whirlpool, lid on, 20 minutes'], alarms: [{ at: 20, label: 'Stand complete: start chilling' }], done: 'Stand finished' });
+    const pitchF = n(batch.fermF) || 66;
+    steps.push({ id: 'chill', kind: 'action', title: 'Chill', detail: [`Chill to ${pitchF}F, or as close as the tap water allows`, 'Sanitise everything from here on: fermenter, lid, airlock, hydrometer, thief'], done: 'At pitching temperature' });
+    steps.push({ id: 'og', kind: 'input', title: 'Transfer and original gravity', detail: [batch.og ? `Expected OG ${Number(batch.og).toFixed(3)}` : 'Take the OG reading', 'Leave the trub behind; note the volume in the fermenter', 'Aerate or oxygenate before pitching'], input: 'gravity', done: 'OG logged' });
+    steps.push({ id: 'pitch', kind: 'action', title: 'Pitch', detail: [yeastNote, `Pitch at ${pitchF}F and hold the first 72 hours there`, 'Airlock or blow-off on; label the fermenter with the batch and date'], done: 'Pitched' });
+    if (dryHops.length) steps.push({ id: 'dryhop', kind: 'note', title: 'Later: dry hop', detail: dryHops.concat(['After active fermentation, three to four days, then crash']), done: 'Noted' });
+    return steps;
+  };
+
   B.csvEscape = v => { const s = v === null || v === undefined ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   B.toCsv = (rows, cols) => [cols.map(c => B.csvEscape(c.label)).join(',')].concat(rows.map(r => cols.map(c => B.csvEscape(typeof c.key === 'function' ? c.key(r) : r[c.key])).join(','))).join('\n');
 

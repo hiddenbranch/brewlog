@@ -81,6 +81,26 @@ const setInput = (label, val) => { const f = $$('#view label.field').find(l => l
   await sleep(1100); console.assert(/All hops in; flameout in|Next:/.test(text()), 'countdown text after start: ' + text().slice(0, 400));
   const doneBtn = $$('#view .step button')[0]; doneBtn.click(); await sleep(140);
   console.assert($$('#view .step.done').length === 1, 'step marked done');
+  // guided brew day: walks the plan, starts a timer, logs steps
+  await tab(1); const testChip = $$('#view .chip').find(c => c.textContent.trim() === 'Test IPA'); if (testChip) { testChip.click(); await sleep(120); }
+  await clickText('Go: guided brew day, start to finish'); await sleep(60);
+  console.assert(text().includes('Step 1 of') && text().includes('Heat strike water') && text().includes('gal at 1.5 qt per lb'), 'go step 1: ' + text().slice(0, 200));
+  await clickText('Water is at temperature'); await sleep(60);
+  console.assert(text().includes('Mash in') && text().includes('60-minute timer'), 'go step 2: ' + text().slice(0, 200));
+  await clickText('Start 60-minute timer'); await sleep(1200);
+  console.assert(/59:5\d/.test($('#view .timer').textContent), 'mash countdown running: ' + $('#view .timer').textContent);
+  console.assert(text().includes('Next: Halfway'), 'next alarm shown');
+  await clickText('Mash finished'); await sleep(60);
+  console.assert(text().includes('Mash out'), 'step 3');
+  await clickText('Skip'); await sleep(60); console.assert(text().includes('Sparge and collect'), 'step 4 after skip');
+  await clickText('Collected 7 gal'); await sleep(60); console.assert(text().includes('Pre-boil gravity'), 'step 5 input');
+  const gIn = $$('#view input[type=number]'); gIn[0].value = '1.045'; gIn[0].dispatchEvent(new w.Event('input')); await sleep(20);
+  console.assert(text().includes('Corrected: 1.045'), 'pre-boil correction text');
+  await clickText('Continue'); await sleep(60);
+  console.assert(text().includes('Boil 60 minutes') && text().includes('Citra') && text().includes('Flameout'), 'boil step with hop alarms: ' + text().slice(0, 300));
+  // leave the guided day here; check the batch log took the steps
+  await tab(0); $$('#view .rec button').find(b => b.closest('.rec').textContent.includes('Test IPA')).click(); await sleep(120);
+  console.assert(text().includes('Water is at temperature') && text().includes('Mash in started'), 'steps logged into the batch: ' + text().slice(0, 300));
   // calculators
   await tab(2); const n = $$('#view .list button').length;
   for (let i = 0; i < n; i++) { await tab(2); $$('#view .list button')[i].click(); await sleep(60);
@@ -94,8 +114,8 @@ const setInput = (label, val) => { const f = $$('#view label.field').find(l => l
     console.assert($$('#view table, #view details, #view ul, #view .rec').length > 0, 'ref ' + i); }
   console.log('reference ok:', refs);
   // recipes: browse, open, brew this
-  await tab(3); $$('#view .list button').find(b => b.textContent.includes('Recipes by style')).click(); await sleep(120);
-  console.assert($$('#view .rec').length >= 90, 'recipes listed: ' + $$('#view .rec').length);
+  await tab(3); $$('#view .list button').find(b => b.textContent.includes('Styles and recipes')).click(); await sleep(120);
+  console.assert($$('#view .rec').length >= 70 && !text().includes('Sumerian'), 'modern styles listed, historic excluded: ' + $$('#view .rec').length);
   const rsel = $$('#view select')[0]; rsel.value = 'Belgian'; rsel.dispatchEvent(new w.Event('change')); await sleep(60);
   console.assert($$('#view .rec').length === 12 && $$('#view h3').length === 1, 'region filter: ' + $$('#view .rec').length);
   $$('#view .rec button').find(b => b.closest('.rec').textContent.includes('Belgian tripel')).click(); await sleep(100);
@@ -107,13 +127,15 @@ const setInput = (label, val) => { const f = $$('#view label.field').find(l => l
   console.assert($$('#view h3').length >= 8, 'hops grouped by genre: ' + $$('#view h3').length);
   const gsel = $$('#view select')[0]; gsel.value = 'Noble'; gsel.dispatchEvent(new w.Event('change')); await sleep(60);
   console.assert($$('#view h3').length === 1 && $$('#view tbody tr').length === 9, 'noble filter: ' + $$('#view tbody tr').length);
-  // kveik screen
-  await tab(3); $$('#view .list button').find(b => b.textContent.includes('Kveik')).click(); await sleep(80);
-  console.assert($$('#view .rec').length >= 10 && text().includes('Voss') && text().includes('Lutra'), 'kveik cultures listed: ' + $$('#view .rec').length);
+  // kveik under the yeast filter
+  await tab(3); $$('#view .list button').find(b => b.querySelector('b') && b.querySelector('b').textContent === 'Yeast').click(); await sleep(120);
+  const ysel = $$('#view select')[0]; ysel.value = 'Kveik'; ysel.dispatchEvent(new w.Event('change')); await sleep(60);
+  console.assert($$('#view details').length === 5 && text().includes('Handling kveik'), 'five kveik with notes: ' + $$('#view details').length);
   // world beers with filters
   await tab(3); $$('#view .list button').find(b => b.textContent.includes('Beers of the world')).click(); await sleep(90);
   const all = $$('#view details').length;
   console.assert(all >= 30, 'world beers listed: ' + all);
+  console.assert(text().includes('Brew it:') && text().includes('Full recipe and Brew this'), 'world entries carry their reconstruction');
   const eraSel = $$('#view select')[0]; eraSel.value = 'Ancient'; eraSel.dispatchEvent(new w.Event('change')); await sleep(60);
   console.assert($$('#view details').length < all && $$('#view details').length >= 3, 'era filter: ' + $$('#view details').length);
   eraSel.value = 'All eras'; eraSel.dispatchEvent(new w.Event('change'));
