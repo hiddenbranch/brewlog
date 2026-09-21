@@ -1,9 +1,9 @@
-# Brew Log (PWA) v1.7.1
+# Brew Log (PWA) v1.7.2
 
 Batches with live recipe stats, a brew day list built from the recipe with a boil timer, fermentation tracking, thirteen calculators, a reference library, and a shopping list that links to homebrew retailers. Installs to a phone, works offline, no accounts, nothing leaves the phone.
 
 ## Deploy
-Same as the other apps: new repository, upload `index.html`, `data.js`, `shop.js`, `core.js`, `app.js`, `sw.js`, `manifest.webmanifest` and `icons/`, then Settings > Pages > main branch, root. Upload `recipes.js`, `beerxml.js`, `catalog-build.mjs` and the `.github` folder too. Run `node bump.mjs 1.7.2` (the next number) before any later upload so no cache serves a stale file.
+Same as the other apps: new repository, upload `index.html`, `data.js`, `shop.js`, `core.js`, `app.js`, `sw.js`, `manifest.webmanifest` and `icons/`, then Settings > Pages > main branch, root. Upload `recipes.js`, `beerxml.js`, `catalog-build.mjs` and the `.github` folder too. Run `node bump.mjs 1.7.3` (the next number) before any later upload so no cache serves a stale file.
 
 ## What it does
 - **Batches**: recipe with fermentables, hops, yeast and water salts. As you type it shows estimated OG, IBU (SMPH model, with the Tinseth figure alongside), colour, and expected FG and ABV from the chosen yeast's attenuation, each marked against the style's published range. Alpha acid fills itself from the hop table. After brewing it shows measured OG and FG, ABV, calories, BU:GU and the mash efficiency you actually achieved.
@@ -41,8 +41,8 @@ Shopify shops accept a link that fills the cart: `/cart/<variant>:<qty>,...?stor
 - The builder reads each shop's public `/products.json`, matches ingredients, and writes the two files. Shops that are not on Shopify, or have the feed switched off, are skipped and the report says why. To try another Shopify homebrew shop, add it to `VENDORS` in `shop.js`.
 - The app fetches `catalog.json` fresh at start-up (network first, last good copy kept for offline), so a rebuilt catalog needs no version bump. **Release zips never contain `catalog.json`**, so uploading a new version cannot overwrite it.
 - With a catalog present the Shop screen lists those shops first and shows **Add all to cart at <shop>**, the estimated total, exactly which packs go in (cheapest combination that covers the recipe, milled or unmilled grain), and what the cart could not cover (salts, anything unmatched), which keeps its Find link. Without one the button simply does not appear.
-- MoreBeer runs its own platform and publishes no way to fill a cart from a link, so it stays search-per-item (plus the kit search). Worth asking their affiliate manager.
-- The matcher is tested against a Shopify-format fixture, not yet against a real shop's titles. The first real `catalog-report.txt` shows what needs tuning (the alias table is at the top of the cart section in `shop.js`).
+- First real build (21 Sept 2026): MoreBeer (6,640 products, 137 of 165 ingredients matched), Northern Brewer (127) and Adventures in Homebrewing (123) all publish a feed, so all three can take a filled cart. Ritebrew, Yeast Market, The Malt Miller and Get Er Brewed do not, and stay search-per-item.
+- The matcher is covered by regression tests built from those shops' real titles (wheat malt is not flaked or midnight wheat, honey is not honey malt, the sachet and never the 500 g brick, sizes written as "Ten pounds", milling as a Yes/No option, the classic origin when a hop is sold from two countries). `catalog-report.txt` lists near misses for anything unmatched, which is where the next round of tuning comes from; the alias table is at the top of the cart section in `shop.js`.
 
 ## Affiliate links: what to paste
 Settings takes whatever shape the programme hands out: a network deep link with `{url}` where the destination goes, a parameter such as `a_aid=abc123` that the shop adds to its own links, or a bare Amazon tag. Searches and filled carts both go through it. A network link with no `{url}` cannot deep-link, and Settings says so. Cart links also carry `ref=brewlog`, which Shopify shows the shop as the referral code on the order: evidence of the traffic you send when you ask a shop for a direct deal.

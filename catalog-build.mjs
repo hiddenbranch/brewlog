@@ -47,7 +47,7 @@ for (const shop of shops) {
     report.push(`== ${shop.name} (${shop.origin}): ${products.length} products read, ${n} of ${wanted} ingredients matched`, '');
     if (n >= 20) catalog.vendors[shop.id] = { name: shop.name, origin: shop.origin, region: shop.region, items: built.items };
     else report.push('  Too few matches to offer a cart here; left out of catalog.json.', '');
-    report.push('  MATCHED', ...built.matched.map(([ing, title]) => `    ${ing}  ->  ${title}  [${built.items[ing].map(v => `${v.size} ${v.unit}${v.form && v.form !== 'pellet' ? ' ' + v.form : ''}${v.milled === true ? ' milled' : v.milled === false ? ' unmilled' : ''}${v.price !== null ? ' $' + v.price : ''}`).join(', ')}]`), '', '  NOT FOUND', ...built.unmatched.map(x => '    ' + x), '');
+    report.push('  MATCHED', ...built.matched.map(([ing, title]) => `    ${ing}  ->  ${title}  [${built.items[ing].map(v => `${v.size} ${v.unit}${v.form && v.form !== 'pellet' ? ' ' + v.form : ''}${v.milled === true ? ' milled' : v.milled === false ? ' unmilled' : ''}${v.price !== null ? ' $' + v.price : ''}`).join(', ')}]`), '', '  NOT FOUND (with the nearest titles the shop does have, if any)', ...built.unmatched.map(x => '    ' + x + (built.near[x] ? '   ~ ' + built.near[x].join(' | ') : '')), '');
     console.log(`  ${n} of ${wanted} ingredients matched${n >= 20 ? '' : ' (too few: left out)'}`);
   } catch (e) { console.log(`  skipped: ${e.message}`); report.push(`== ${shop.name} (${shop.origin}): skipped, ${e.message}`, ''); }
 }

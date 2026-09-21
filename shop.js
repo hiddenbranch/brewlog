@@ -98,26 +98,38 @@
   /* Shopify shops accept a link that fills the cart: /cart/<variant>:<qty>,<variant>:<qty>. The variant numbers come from
      catalog.json, which catalog-build.mjs writes from each shop's public product feed. No catalog, no button: everything else still works.
      catalog: { built, vendors: { id: { name, origin, items: { '<ingredient name>': [ { id, size, unit, price, form, milled, title } ] } } } } */
-  const norm = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9.]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const norm = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['\u2019]/g, '').toLowerCase().replace(/[^a-z0-9.]+/g, ' ').replace(/\s+/g, ' ').trim();
   const KG_LB = 2.20462, G_OZ = 28.3495;
-  // "1 lb", "5 lbs", "2 oz", "500 g", "1 kg" -> a number in the unit the ingredient is bought in
+  const WORD_NUM = { half: 0.5, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, eight: 8, ten: 10, twenty: 20, 'twenty five': 25, fifty: 50, 'fifty five': 55 };
+  // "1 lb", "5 lbs", "Ten pounds", "2 oz", "500 g", "1 kg" -> a number in the unit the ingredient is bought in
   S.parseSize = function (text, unit) {
-    const m = String(text || '').toLowerCase().match(/(\d+(?:\.\d+)?)\s*(lbs?|pounds?|oz|ounces?|kg|kilos?|g|grams?)\b/); if (!m) return null;
+    let t = String(text || '').toLowerCase().replace(/\b(twenty five|fifty five|half|one|two|three|four|five|six|eight|ten|twenty|fifty)\b(?=\s*(lbs?|pounds?|oz|ounces?|kg|kilos?)\b)/g, w => WORD_NUM[w]);
+    const m = t.match(/(\d+(?:\.\d+)?)\s*(lbs?|pounds?|oz|ounces?|kg|kilos?|g|grams?)\b/); if (!m) return null;
     const n = Number(m[1]), u = m[2]; let lb;
     if (/^(lb|pound)/.test(u)) lb = n; else if (/^(oz|ounce)/.test(u)) lb = n / 16; else if (/^k/.test(u)) lb = n * KG_LB; else lb = n / G_OZ / 16;
     return Math.round((unit === 'oz' ? lb * 16 : lb) * 100) / 100;
   };
   const NOT_INGREDIENT = /\b(kit|kits|rhizome|plant|seeds?|shirt|hat|glass|poster|book|candle|soap|sign|sticker|gift|mill|scale|bag only|bucket|spoon)\b/;
-  const ALIASES = {   // generic names in the app against the way shops title the same thing
-    '2-row pale malt': ['2 row', 'two row', '2row'], 'Pilsner malt': ['pilsner', 'pilsen', 'pils'], 'Maris Otter': ['maris otter'], 'Munich malt': ['munich'], 'Vienna malt': ['vienna'],
-    'Wheat malt': ['white wheat', 'wheat malt', 'pale wheat'], 'Flaked oats': ['flaked oats', 'oat flakes'], 'Flaked corn (maize)': ['flaked corn', 'flaked maize'], 'Flaked barley': ['flaked barley'], 'Flaked rice': ['flaked rice'],
-    'Corn sugar (dextrose)': ['corn sugar', 'dextrose'], 'Table sugar (sucrose)': [], 'Light DME': ['light dme', 'light dry malt extract', 'golden light dme'], 'Light LME': ['light lme', 'light liquid malt extract', 'golden light lme'],
-    'CaraPils / Carafoam': ['carapils', 'carafoam', 'dextrin'], 'Columbus / CTZ': ['columbus', 'ctz', 'tomahawk', 'zeus'], 'Hallertau Mittelfrüh': ['hallertau mittelfruh', 'hallertau mittelfrueh', 'hallertauer mittelfruh', 'hallertau']
+  const ALIASES = {   // generic names in the app against the way shops title the same thing; the first alias that matches anything wins
+    '2-row pale malt': ['2 row', 'two row', '2row'], 'Pilsner malt': ['pilsner malt', 'pilsen malt', 'pilsner', 'pilsen', 'pils'], 'Maris Otter': ['maris otter'], 'Munich malt': ['munich malt', 'munich'], 'Vienna malt': ['vienna'],
+    'Wheat malt': ['white wheat malt', 'wheat malt', 'white wheat', 'pale wheat'], 'Flaked oats': ['flaked oats', 'oat flakes'], 'Flaked corn (maize)': ['flaked corn', 'flaked maize'], 'Flaked barley': ['flaked barley'], 'Flaked rice': ['flaked rice'],
+    'Corn sugar (dextrose)': ['corn sugar', 'dextrose', 'priming sugar'], 'Table sugar (sucrose)': [], 'Light DME': ['light dme', 'dme light', 'light dry malt extract', 'golden light dme', 'pilsen light dry malt extract'], 'Light LME': ['light lme', 'lme light', 'light liquid malt extract', 'golden light lme', 'light malt syrup'],
+    'CaraPils / Carafoam': ['carapils', 'carafoam', 'dextrin malt', 'dextrine malt'], 'Carafa Special II': ['carafa special ii', 'carafa ii special', 'carafa special 2', 'carafa 2 special', 'dehusked carafa ii'], 'Victory malt': ['victory'],
+    'Belgian candi syrup D-45': ['candi syrup d 45', 'd 45 candi', 'd 45', 'd45'], 'Belgian candi syrup D-180': ['candi syrup d 180', 'd 180 candi', 'd 180', 'd180'],
+    'Columbus / CTZ': ['columbus', 'ctz', 'tomahawk', 'zeus'], 'Hallertau Mittelfrüh': ['hallertau mittelfruh', 'hallertau mittelfrueh', 'hallertauer mittelfruh', 'hallertauer mittelfrueh', 'mittelfruh', 'hallertau', 'hallertauer'],
+    'East Kent Golding': ['east kent golding', 'kent golding', 'ekg'], Tettnang: ['tettnang', 'tettnanger'], Spalt: ['spalt', 'spalter'], 'Huell Melon': ['huell melon', 'hull melon'], 'Styrian Golding': ['styrian golding', 'celeia']
   };
+  // A word in the shop's title that makes it a different ingredient, unless our ingredient has the word too
+  const MODIFIERS = ['flaked', 'torrified', 'unmalted', 'raw', 'smoked', 'oak', 'cherrywood', 'peated', 'midnight', 'chocolate', 'roasted', 'black', 'dark', 'caramel', 'crystal', 'honey', 'candi', 'rye', 'wheat', 'oat', 'oats', 'spelt', 'toasted', 'red', 'acidulated', 'melanoidin', 'special'];
+  // Where the classic version of a hop grows: breaks the tie when a shop sells the same name from two countries
+  const UK = 'uk|english|british|england', DE = 'german|germany';
+  const HOP_ORIGIN = { Fuggle: UK, 'East Kent Golding': UK, Challenger: UK, Target: UK, 'Bramling Cross': UK, Progress: UK, Saaz: 'czech', Tettnang: DE, Spalt: DE, Perle: DE, Hersbrucker: DE, Magnum: DE, 'Northern Brewer': DE, 'Hallertau Mittelfrüh': DE, 'Styrian Golding': 'slovenia|slovenian' };
+  const BULK_YEAST = /\b(100|250|500)\s*(g|grams?)\b|\b1\s*kg\b|\bbrick\b|\bbulk\b/;
   S.aliasesFor = function (name, kind) {
     if (ALIASES[name]) return ALIASES[name].map(norm);
     const parts = String(name).replace(/w-34\/70/i, 'W-34-70').split('/').map(x => x.trim()).filter(Boolean);
-    if (kind === 'Yeast') return parts.map(p => { const clean = p.replace(/\((dry|liquid)\)/i, ''); const code = clean.match(/\b([a-z]{1,4}-?\d{2,4}(?:-\d+)?|\d{4})\b/i); return norm(code ? code[1] : clean); }).filter(Boolean);
+    if (kind === 'Yeast') { const codes = [], names = []; for (const p of parts) { const clean = p.replace(/\((dry|liquid)\)/i, ''); const code = clean.match(/\b([a-z]{1,4}-?\d{2,4}(?:-\d+)?|\d{4})\b/i); if (code) codes.push(norm(code[1])); else names.push(norm(clean.replace(/\b(lalbrew|lallemand|omega|mangrove jack|escarpment|wildbrew|fermentis)\b/ig, ''))); }
+      return (codes.length ? codes : names).filter(Boolean); }   // a strain number is exact; a descriptive name ("Kölsch") is only used when there is no number
     if (parts.length === 1) return [norm(name)];
     // "Crystal / Caramel 60L": the qualifier on the last name belongs to every name
     const last = parts[parts.length - 1].split(' '), tail = last.length > 1 ? last.slice(1).join(' ') : '';
@@ -125,41 +137,57 @@
   };
   const hasWords = (titleWords, alias) => alias.split(' ').every(w => titleWords.includes(w) || (/^\d+l$/.test(w) && (titleWords.includes(w.slice(0, -1)) || titleWords.includes(w.slice(0, -1) + ' l'))) || (w.length > 3 && titleWords.some(t => t === w + 's')));
   /* Turn a shop's product feed into catalog items. products: the "products" array of Shopify's /products.json.
-     refs: { fermentables, hops, yeast } from data.js. Returns { items, matched: [[ingredient, product title]], unmatched: [names] }. */
+     refs: { fermentables, hops, yeast } from data.js. Returns { items, matched: [[ingredient, product title]], unmatched: [names], near: { name: [titles] } }. */
   S.buildCatalogItems = function (products, refs) {
-    const items = {}, matched = [], unmatched = [];
+    const items = {}, matched = [], unmatched = [], near = {};
     const prods = (products || []).map(p => { const t = norm(p.title); return { p, t, words: t.split(' '), type: norm(p.product_type), tags: norm(Array.isArray(p.tags) ? p.tags.join(' ') : p.tags) }; }).filter(x => !NOT_INGREDIENT.test(x.t));
     const kinds = [['Fermentable', refs.fermentables || [], 'lb'], ['Hop', refs.hops || [], 'oz'], ['Yeast', refs.yeast || [], 'pack']];
-    for (const [kind, list, unit] of kinds) for (const ref of list) {
-      const aliases = S.aliasesFor(ref.name, kind); let best = null;
-      for (const x of prods) {
-        const hay = x.t + ' ' + x.type + ' ' + x.tags;
-        if (kind === 'Hop' && !/\bhops?\b/.test(hay)) continue;
-        if (kind === 'Hop' && /\b(extract|oil|terpene|tea)\b/.test(x.t)) continue;
-        if (kind === 'Yeast' && !/\b(yeast|wyeast|white labs|wlp|safale|saflager|lalbrew|lallemand|omega|imperial|fermentis)\b/.test(hay)) continue;
-        if (kind === 'Fermentable' && /\bhops?\b|\byeast\b/.test(x.t)) continue;
-        if (kind === 'Fermentable' && !ref.extract && /\b(extract|dme|lme|syrup)\b/.test(x.t)) continue;
-        const hit = aliases.find(al => hasWords(x.words, al)); if (!hit) continue;
-        const score = hit.split(' ').length / x.words.length + (new RegExp('\\b' + (kind === 'Hop' ? 'hop' : kind === 'Yeast' ? 'yeast' : 'grain|malt') , 'i').test(x.type) ? 0.2 : 0) + (kind === 'Hop' && /\bpellet/.test(x.t) ? 0.1 : 0);
-        if (!best || score > best.score) best = { x, score };
-      }
-      // hops are often one product per form: gather every product that matches, not only the best
-      const pool = kind === 'Hop' ? prods.filter(x => /\bhops?\b/.test(x.t + ' ' + x.type + ' ' + x.tags) && !/\b(extract|oil|terpene|tea)\b/.test(x.t) && aliases.some(al => hasWords(x.words, al)) && best && x.words.length <= best.x.words.length + 3) : (best ? [best.x] : []);
-      const variants = [];
-      for (const x of pool) for (const v of x.p.variants || []) {
+    const variantsOf = (x, kind, unit) => {
+      const out = [], opts = (x.p.options || []).map(o => norm(o && o.name)), millAt = opts.findIndex(o => /mill|crush|grind/.test(o));
+      const grams = (x.p.variants || []).map(v => v.grams || 0), gramsDiffer = new Set(grams).size > 1;
+      for (const v of x.p.variants || []) {
         if (v.available === false) continue;
-        const vt = norm([v.title, v.option1, v.option2, v.option3].filter(Boolean).join(' '));
-        let size = unit === 'pack' ? 1 : (S.parseSize(vt, unit) || S.parseSize(x.t, unit));
-        if (!size && unit !== 'pack' && v.grams > 0) { const raw = unit === 'oz' ? v.grams / G_OZ : v.grams / G_OZ / 16; size = raw >= 0.9 ? Math.round(raw) : Math.round(raw * 4) / 4; }
+        const vt = norm([v.title, v.option1, v.option2, v.option3].filter(Boolean).join(' ')), text = vt + ' ' + x.t;
+        const price = v.price !== undefined && v.price !== null && isFinite(Number(v.price)) ? Number(v.price) : null;
+        if (kind === 'Yeast' && (BULK_YEAST.test(text) || (price !== null && price > 40))) continue;   // bricks are for breweries
+        const fromGrams = v.grams > 0 && unit !== 'pack' ? (() => { const raw = unit === 'oz' ? v.grams / G_OZ : v.grams / G_OZ / 16; return raw >= 0.9 ? Math.round(raw) : Math.round(raw * 4) / 4; })() : null;
+        // the variant's own words first; then its shipping weight when the variants differ by weight; only then the product title
+        const size = unit === 'pack' ? 1 : (S.parseSize(vt, unit) || (gramsDiffer ? fromGrams : null) || S.parseSize(x.t, unit) || fromGrams);
         if (!size) continue;
-        const text = vt + ' ' + x.t;
-        variants.push({ id: v.id, size, unit, price: v.price !== undefined && v.price !== null && isFinite(Number(v.price)) ? Number(v.price) : null, title: `${x.p.title}${v.title && v.title !== 'Default Title' ? ' \u2013 ' + v.title : ''}`,
-          form: kind === 'Hop' ? (/\bcryo|lupuln2|lupomax\b/.test(text) ? 'cryo' : /\b(leaf|whole|cone)\b/.test(text) ? 'leaf' : 'pellet') : undefined,
-          milled: kind === 'Fermentable' ? (/\b(unmilled|uncrushed|whole)\b/.test(vt) ? false : /\b(milled|crushed)\b/.test(vt) ? true : null) : undefined });
+        let milled; if (kind === 'Fermentable') { const mv = millAt >= 0 ? norm(v['option' + (millAt + 1)]) : '';
+          milled = /^(no|none|unmilled|uncrushed|whole)\b/.test(mv) || /\b(unmilled|uncrushed|whole)\b/.test(vt) ? false : /^(yes|milled|crushed)\b/.test(mv) || /\b(milled|crushed)\b/.test(vt) ? true : null; }
+        out.push({ id: v.id, size, unit, price, title: `${x.p.title}${v.title && v.title !== 'Default Title' ? ' \u2013 ' + v.title : ''}`,
+          form: kind === 'Hop' ? (/\b(cryo|lupuln2|lupomax|cryogenic|lupulin)\b/.test(text) ? 'cryo' : /\b(leaf|whole|cone)\b/.test(text) ? 'leaf' : 'pellet') : undefined, milled });
       }
-      if (variants.length) { items[ref.name] = variants; matched.push([ref.name, [...new Set(variants.map(v => v.title.split(' \u2013 ')[0]))].join(' | ')]); } else unmatched.push(ref.name);
+      return out;
+    };
+    for (const [kind, list, unit] of kinds) for (const ref of list) {
+      const aliases = S.aliasesFor(ref.name, kind), own = norm(ref.name + ' ' + aliases.join(' ')).split(' ');
+      const allowed = x => {
+        const hay = x.t + ' ' + x.type + ' ' + x.tags;
+        if (kind === 'Hop') return /\bhops?\b/.test(hay) && !/\b(extract|oil|terpene|tea|hash)\b/.test(x.t);
+        if (kind === 'Yeast') return /\b(yeast|wyeast|white labs|wlp|safale|saflager|lalbrew|lallemand|omega|imperial|fermentis|wildbrew)\b/.test(hay);
+        if (/\bhops?\b|\byeast\b/.test(x.t)) return false;
+        if (!ref.extract && /\b(extract|dme|lme|syrup)\b/.test(x.t)) return false;
+        if (ref.extract && !/\bmalt\b/.test(norm(ref.name)) && !/dme|lme/i.test(ref.name) && /\bmalt\b/.test(x.t)) return false;   // honey is not honey malt
+        return !MODIFIERS.some(m => x.words.includes(m) && !own.includes(m));
+      };
+      const origin = HOP_ORIGIN[ref.name] ? new RegExp('\\b(' + HOP_ORIGIN[ref.name] + ')\\b') : null;
+      const score = (x, al) => al.split(' ').length / x.words.length + (new RegExp('\\b(' + (kind === 'Hop' ? 'hop' : kind === 'Yeast' ? 'yeast' : 'grain|malt') + ')', 'i').test(x.type) ? 0.2 : 0) + (origin && origin.test(x.t) ? 0.3 : 0) + (/\borganic\b/.test(x.t) ? -0.15 : 0);
+      let variants = [], titles = [];
+      for (const al of aliases) {           // most specific alias first; stop at the first one the shop stocks
+        const hits = prods.filter(x => allowed(x) && (kind !== 'Hop' || !(al === 'hallertau' || al === 'hallertauer') || !/\b(blanc|tradition|magnum|taurus|merkur|herkules|hersbrucker|mittelfruh)\b/.test(x.t)) && hasWords(x.words, al))
+          .map(x => ({ x, s: score(x, al), vs: variantsOf(x, kind, unit) })).filter(h => h.vs.length).sort((a, b) => b.s - a.s);
+        if (!hits.length) continue;
+        if (kind === 'Hop') { const seen = {}; for (const h of hits) for (const form of [...new Set(h.vs.map(v => v.form))]) if (!seen[form]) { seen[form] = true; variants.push(...h.vs.filter(v => v.form === form)); titles.push(h.x.p.title); } }   // the best product for each form
+        else { variants = hits[0].vs; titles = [hits[0].x.p.title]; }
+        break;
+      }
+      if (variants.length) { items[ref.name] = variants; matched.push([ref.name, [...new Set(titles)].join(' | ')]); }
+      else { unmatched.push(ref.name); const key = aliases.concat([norm(ref.name)]).join(' ').split(' ').filter(w => w.length > 3 && !['malt', 'hops', 'yeast', 'belgian', 'german', 'american', 'english', 'lager', 'syrup', 'sugar'].includes(w));
+        const close = prods.filter(x => key.some(w => x.words.includes(w) || x.words.includes(w + 's'))).slice(0, 4).map(x => x.p.title); if (close.length) near[ref.name] = close; }
     }
-    return { items, matched, unmatched };
+    return { items, matched, unmatched, near };
   };
   /* The cheapest set of packs that covers the amount, or when prices are unknown the one with least left over, then fewest packs.
      variants: [{id, size, price}] -> [{id, qty, size, price}] */
