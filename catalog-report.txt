@@ -1,6 +1,6 @@
 Brew Log catalog, built 2026-09-21
 
-== MoreBeer (https://www.morebeer.com): 6640 products read, 138 of 165 ingredients matched
+== MoreBeer (https://www.morebeer.com): 6640 products read, 146 of 173 ingredients matched
 
   MATCHED
     2-row pale malt  ->  2-Row Malt - Briess Malting  [1 lb unmilled $2.69, 1 lb milled $2.79, 3 lb unmilled $7.19, 3 lb milled $7.49, 5 lb unmilled $10.89, 5 lb milled $11.39, 10 lb unmilled $19.69, 10 lb milled $20.69, 50 lb unmilled $48.99]
@@ -141,6 +141,14 @@ Brew Log catalog, built 2026-09-21
     Novalager (dry)  ->  Lallemand | LalBrew® NovaLager™ Modern Hybrid Lager Yeast | Dry Beer Yeast  [1 pack $7.99]
     WLP570 Belgian Golden  ->  White Labs Yeast | WLP570 Belgian Golden Ale | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
     Wyeast 1272 American Ale II  ->  Wyeast | 1272 American Ale II | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    Campden tablets  ->  Campden Tablets (Potassium Metabisulfite)  [each $1.99, each $19.99, each $79.99]
+    Lactic acid  ->  Five Star | Lactic Acid (88%)  [each $272.99, each $2707.99]
+    Whirlfloc tablets  ->  Whirlfloc Tablets  [each $0.69, each $2.99, each $26.99, each $129.99]
+    Yeast nutrient  ->  Fermaid O Yeast Nutrient  [each $3.79, each $14.99, each $62.99, each $153.99, each $505.99]
+    Gypsum  ->  Gypsum (Calcium Sulfate)  [each $1.99, each $3.99, each $14.99, each $59.99]
+    Calcium chloride  ->  Calcium Chloride  [each $2.49, each $4.99, each $17.99, each $89.99]
+    Epsom salt  ->  Epsom Salt (Magnesium Sulfate)  [each $1.39, each $3.29, each $149.99]
+    Sanitizer  ->  Five Star | Star San Sanitizer | Acid-Based Sanitizer | High Foaming | Flavorless, Odorless, & Non-Toxic  [each $17.99, each $22.99, each $32.99, each $84.99, each $274.99, each $743.99, each $2536.99]
 
   NOT FOUND (with the nearest titles the shop does have, if any)
     Amber malt   ~ Brewmaster Belgian Candi Syrup | Amber | 1 LB | Briess CBW® Sparkling Amber | Concentrated Brewers Wort | Liquid Malt Extract | LME | 11 SRM | PopTops™ Swing Top Bottles - 16 oz Amber - 2 Cases of 12 (Qty 24) - FREE SHIPPING!!! | Growler - 64 oz Amber Screw Top
@@ -171,7 +179,7 @@ Brew Log catalog, built 2026-09-21
     Baker's yeast (sahti)   ~ Sahti Malt - Viking Malt
     Wyeast 2035 American Lager   ~ Wyeast | 4134 Saké | Saké, Wine Yeast | Activator Smack-Pack System™ | 100 Billion Cells | Wyeast | 4632 Dry Mead | Mead Yeast | Activator Smack-Pack System™ | 100 Billion Cells | Wyeast | 4184 Sweet Mead | Mead, Cider, Saké Yeast | Activator Smack-Pack System™ | 100 Billion Cells | Wyeast | 4766 Cider | Cider Yeast | Activator Smack-Pack System™ | 100 Billion Cells
 
-== Northern Brewer (https://www.northernbrewer.com): 2630 products read, 129 of 165 ingredients matched
+== Northern Brewer (https://www.northernbrewer.com): 2630 products read, 136 of 173 ingredients matched
 
   MATCHED
     2-row pale malt  ->  2-Row Malt - Rahr  [1 lb unmilled $3.79, 1 lb milled $3.99, 10 lb unmilled $19.99, 10 lb milled $21.99]
@@ -303,6 +311,13 @@ Brew Log catalog, built 2026-09-21
     Diamond Lager (dry)  ->  LalBrew® Diamond Lager Dry Yeast  [1 pack $7.99]
     Novalager (dry)  ->  LalBrew® NovaLager™ Hybrid Dry Lager Yeast  [1 pack $11.99]
     Wyeast 1272 American Ale II  ->  Wyeast 1272 American Ale II Yeast  [1 pack $14.99]
+    Campden tablets  ->  Campden Tablets (sodium metabisulfite)  [each $2.49, each $4.99, each $24.99]
+    Lactic acid  ->  Lactic Acid 4 oz.  [each $5.99]
+    Whirlfloc tablets  ->  Whirlfloc Tablet - 10 count  [each $2.99]
+    Yeast nutrient  ->  Yeast Nutrient  [each $2.99, each $6.49, each $8.99]
+    Gypsum  ->  Gypsum 1 lb.  [each $3.99]
+    Calcium chloride  ->  Calcium Chloride 1 lb.  [each $5.99]
+    Sanitizer  ->  Star San Sanitizer - No-Rinse Sanitizer for Homebrewing & Winemaking  [each $19.99, each $31.99, each $44.99]
 
   NOT FOUND (with the nearest titles the shop does have, if any)
     Table sugar (sucrose)   ~ Cannular Replacement Table Spacer for 500ml/16.9 oz. Cans | Cannular Table Spacer for 330ml/11.1 oz. Cans
@@ -341,8 +356,9 @@ Brew Log catalog, built 2026-09-21
     WLP833 German Bock   ~ Omega Yeast OYL-111 German Bock Lager Yeast | Omega Yeast OYL-111 German Bock (2 pack)
     WLP800 Pilsner   ~ MCM Bavarian Pilsner Malt - Montana Craft Malt - 55 lb. Sack | MCM Bavarian Pilsner Malt - Montana Craft Malt | MCM Pilsner Malt - Montana Craft Malt - 55 lb. Sack | MCM Pilsner Malt - Montana Craft Malt
     WLP570 Belgian Golden   ~ Golden Candi Syrup Inc - Premium Candi Syrups | 5 Lovibond Golden Belgian Candi Syrup 1 lb | Lyle's Golden Syrup | English Golden Naked Oats Malt - Simpsons - 55 lb. Sack
+    Epsom salt   ~ Salt Water Taffy Flavoring - 1 oz
 
-== Adventures in Homebrewing (https://www.homebrewing.org): 4414 products read, 130 of 165 ingredients matched
+== Adventures in Homebrewing (https://www.homebrewing.org): 4414 products read, 137 of 173 ingredients matched
 
   MATCHED
     2-row pale malt  ->  Malta Mexico 2-Row Malt - Malteurop  [1 lb unmilled $2.99, 1 lb milled $3.19, 10 lb unmilled $19.99, 10 lb milled $21.99]
@@ -475,6 +491,13 @@ Brew Log catalog, built 2026-09-21
     Diamond Lager (dry)  ->  Diamond Lager Dry Yeast (Danstar)  [1 pack $7.99]
     Novalager (dry)  ->  Lallemand NovaLager™ Hybrid Dry Lager Yeast  [1 pack $11.99]
     Wyeast 1272 American Ale II  ->  Wyeast 1272 American Ale II Yeast  [1 pack $14.99]
+    Campden tablets  ->  Campden Tablets - Sodium Metabisulphite 1 lb.  [each $24.99]
+    Lactic acid  ->  Lactic Acid 4oz.  [each $5.99]
+    Whirlfloc tablets  ->  Whirlfloc Tablet - 10 count  [each $2.99]
+    Yeast nutrient  ->  Servomyces Yeast Nutrient - 500g  [each $449.99]
+    Gypsum  ->  Gypsum 1 LB.  [each $3.99]
+    Calcium chloride  ->  Calcium Chloride 1 LB  [each $5.99]
+    Sanitizer  ->  Star San Sanitizer 8 oz  [each $19.99]
 
   NOT FOUND (with the nearest titles the shop does have, if any)
     Table sugar (sucrose)   ~ Cannular Table Spacer for 330ml/11.1 oz. Cans | Cannular Replacement Table Spacer for 500ml/16.9 oz. Cans
@@ -512,6 +535,7 @@ Brew Log catalog, built 2026-09-21
     WLP833 German Bock   ~ Omega Yeast 111 German Bock | Shiner Bock Partial Mash Recipe | Shiner Bock Clone All Grain Recipe | American Amber Bock All Grain Recipe
     WLP800 Pilsner   ~ MCM Bavarian Pilsner Malt - Montana Craft Malt - 55 lb. Sack | MCM Bavarian Pilsner Malt - Montana Craft Malt | MCM Pilsner Malt - Montana Craft Malt | MCM Pilsner Malt - Montana Craft Malt - 55 lb. Sack
     WLP570 Belgian Golden   ~ Golden Candi Syrup Inc - Premium Candi Syrups | Big Wave Golden Ale Partial Mash Recipe | Big Wave Golden Ale Clone All Grain Recipe | Briess Golden Light Liquid Malt Extract Growler 32 lbs.
+    Epsom salt   ~ Salt Water Taffy Flavoring - 1 oz | Burton Water Salts 9 grams
 
 == Ritebrew (https://www.ritebrew.com): skipped, HTTP 404
 
