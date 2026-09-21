@@ -1,0 +1,39 @@
+# Builds catalog.json, the product list behind the "Add all to cart" button, on GitHub's own machines.
+# Runs on the 3rd of every month, whenever the matching code changes, and on demand:
+#   Actions tab > Build shop catalog > Run workflow
+# Output: catalog.json (the app fetches it at start-up) and catalog-report.txt (what matched at each shop, and what did not).
+name: Build shop catalog
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 9 3 * *'
+  push:
+    branches: [main]
+    paths: ['shop.js', 'data.js', 'catalog-build.mjs', '.github/workflows/catalog.yml']
+permissions:
+  contents: write
+concurrency:
+  group: catalog
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Read the shops' product feeds and match ingredients
+        run: node catalog-build.mjs
+      - name: Show the report
+        run: head -c 6000 catalog-report.txt
+      - name: Commit the catalog if it changed
+        run: |
+          git config user.name "brew-log catalog"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add catalog.json catalog-report.txt
+          if git diff --cached --quiet; then echo "Catalog unchanged"; exit 0; fi
+          git commit -m "Shop catalog refresh"
+          git pull --rebase
+          git push
