@@ -1,0 +1,522 @@
+Brew Log catalog, built 2026-09-21
+
+== MoreBeer (https://www.morebeer.com): 6640 products read, 137 of 165 ingredients matched
+
+  MATCHED
+    2-row pale malt  ->  2-Row Malt - Briess Malting  [1 lb unmilled $2.69, 1 lb milled $2.79, 3 lb unmilled $7.19, 3 lb milled $7.49, 5 lb unmilled $10.89, 5 lb milled $11.39, 10 lb unmilled $19.69, 10 lb milled $20.69, 50 lb unmilled $48.99]
+    Maris Otter  ->  Maris Otter Malt - Thomas Fawcett Malting  [1 lb unmilled $3.99, 1 lb milled $4.09, 5 lb unmilled $16.79, 5 lb milled $17.29, 10 lb unmilled $30.89, 10 lb milled $31.89, 55 lb unmilled $85.99]
+    Pilsner malt  ->  Pilsen Malt - BestMalz  [1 lb unmilled $3.59, 1 lb milled $3.69, 5 lb unmilled $15.19, 5 lb milled $15.69, 55 lb unmilled $76.99]
+    Vienna malt  ->  Vienna Malt - BestMalz  [1 lb unmilled $3.69, 5 lb unmilled $15.39, 1 lb milled $3.79, 5 lb milled $15.89, 55 lb unmilled $77.99]
+    Munich malt  ->  Light Munich Malt - BestMalz  [1 lb unmilled $3.69, 5 lb unmilled $15.39, 1 lb milled $3.79, 5 lb milled $15.89, 55 lb unmilled $77.99]
+    Wheat malt  ->  Flaked White Wheat  [1 lb $2.79, 5 lb $11.99, 50 lb $48.99]
+    Flaked wheat  ->  Flaked White Wheat  [1 lb $2.79, 5 lb $11.99, 50 lb $48.99]
+    Flaked oats  ->  Flaked Oats  [1 lb $2.99, 5 lb $12.99]
+    Flaked barley  ->  Flaked Barley  [1 lb $2.79, 5 lb $11.99]
+    Flaked corn (maize)  ->  Flaked Corn (Maize) - Briess Malting  [1 lb $3.59, 5 lb $15.19, 50 lb $64.99]
+    Flaked rice  ->  Flaked Rice - Briess Malting  [1 lb $4.29, 5 lb $18.29, 50 lb $84.99]
+    Crystal / Caramel 20L  ->  Caramel 20L Malt - Briess Malting  [1 lb unmilled $3.39, 1 lb milled $3.49, 5 lb unmilled $14.39, 50 lb unmilled $66.99]
+    Crystal / Caramel 40L  ->  Briess Caramel 40L Malt  [1 lb unmilled $3.39, 1 lb milled $3.49, 5 lb unmilled $14.39, 50 lb unmilled $66.99]
+    Crystal / Caramel 60L  ->  Caramel 60L Malt - Briess Malting  [1 lb unmilled $3.39, 1 lb milled $3.49, 5 lb unmilled $14.39, 50 lb unmilled $65.99]
+    Crystal / Caramel 80L  ->  Caramel 80L Malt - Briess Malting  [1 lb unmilled $3.39, 1 lb milled $3.49, 5 lb unmilled $14.39, 50 lb unmilled $66.99]
+    Crystal / Caramel 120L  ->  Briess Caramel 120L Malt  [1 lb unmilled $3.39, 1 lb milled $3.49, 5 lb unmilled $14.39, 50 lb unmilled $65.99]
+    CaraMunich  ->  CaraMunich® I Malt - Weyermann® Specialty Malts  [1 lb unmilled $4.59, 1 lb milled $4.69, 5 lb unmilled $19.39, 55 lb unmilled $80.99]
+    CaraPils / Carafoam  ->  Carapils Malt - Briess Malting  [1 lb unmilled $3.49, 1 lb milled $3.59, 5 lb unmilled $14.79, 50 lb unmilled $67.99]
+    Special B  ->  Special B Malt - Dingemans Malting  [1 lb unmilled $4.59, 1 lb milled $4.69, 5 lb unmilled $19.59, 55 lb unmilled $81.99]
+    Biscuit malt  ->  Biscuit Malt - Dingemans Malting  [1 lb unmilled $4.69, 1 lb milled $4.79, 5 lb unmilled $20.09, 55 lb unmilled $83.99]
+    Victory malt  ->  Victory Malt - Briess Malting  [1 lb unmilled $3.59, 1 lb milled $3.69, 5 lb unmilled $14.99, 50 lb unmilled $68.99]
+    Brown malt  ->  Export Brown Malt | Simpsons Malt  [1 lb unmilled $4.69, 1 lb milled $4.79, 5 lb unmilled $20.19, 55 lb unmilled $84.49]
+    Chocolate malt  ->  Chocolate Malt | Viking Malt  [1 lb unmilled $3.99, 1 lb milled $4.09, 5 lb unmilled $16.79, 55 lb unmilled $79.99]
+    Pale chocolate  ->  Export Pale Chocolate Malt | Simpsons Malt  [1 lb unmilled $4.89, 5 lb unmilled $21.19, 1 lb milled $4.99, 5 lb milled $21.69, 55 lb unmilled $88.99]
+    Roasted barley  ->  Roasted Barley - Viking Malt  [1 lb unmilled $3.39, 1 lb milled $3.49, 5 lb unmilled $14.39, 55 lb unmilled $67.99]
+    Black patent  ->  Black (Patent) Malt - Briess Malting  [1 lb unmilled $3.59, 1 lb milled $3.69, 5 lb unmilled $15.19, 50 lb unmilled $69.99]
+    Carafa Special II  ->  Carafa® Special II Malt - Weyermann® Specialty Malts  [1 lb unmilled $5.09, 1 lb milled $5.19, 5 lb unmilled $21.79, 55 lb unmilled $91.99]
+    Acidulated malt  ->  Acidulated Malt - BestMalz  [1 lb unmilled $4.79, 5 lb unmilled $20.49, 1 lb milled $4.89, 5 lb milled $20.99, 55 lb unmilled $106.99]
+    Smoked / Rauch malt  ->  Smoked Wheat Malt - Viking Malt  [1 lb unmilled $3.29, 1 lb milled $3.39, 5 lb unmilled $13.49, 55 lb unmilled $62.99]
+    Peated malt  ->  Peated Malt - Simpsons Malt  [1 lb unmilled $5.39, 1 lb milled $5.49, 5 lb unmilled $23.09, 55 lb unmilled $97.99]
+    Rye malt  ->  Rye Malt - Viking Malt  [1 lb unmilled $3.09, 1 lb milled $3.19, 5 lb unmilled $12.59, 5 lb milled $13.09, 55 lb unmilled $56.99]
+    Melanoidin malt  ->  Melanoidin Malt - Weyermann® Specialty Malts  [1 lb unmilled $4.39, 1 lb milled $4.49, 5 lb unmilled $18.49, 55 lb unmilled $76.49]
+    Honey malt  ->  Honey Malt - Gabrinus Malting®  [1 lb unmilled $3.89, 1 lb milled $3.99, 5 lb unmilled $16.59, 55 lb unmilled $67.99]
+    Light DME  ->  Briess CBW® Pilsen Light | Concentrated Brewers Wort | Dry Malt Extract | DME | 2 SRM  [0.5 lb $3.99, 1 lb $7.49, 3 lb $17.99, 50 lb $132.99]
+    Light LME  ->  Briess CBW® Pilsen Light | Concentrated Brewers Wort | Liquid Malt Extract | LME | 2 SRM  [3.3 lb $14.99, 32 lb $99.99, 180 lb $309.99, 650 lb $949.99]
+    Wheat DME  ->  Briess CBW® Bavarian Wheat | Concentrated Brewers Wort | Dry Malt Extract | DME | 3 SRM  [0.5 lb $3.99, 1 lb $7.49, 3 lb $17.99, 50 lb $132.99]
+    Corn sugar (dextrose)  ->  Corn Sugar (Premium Dextrose) | Non-GMO & Domestic  [0.25 lb $1.99, 0.31 lb $2.19, 1 lb $3.49, 5 lb $12.99, 50 lb $54.99]
+    Honey  ->  Wildflower Honey  [1.5 lb $12.99, 3 lb $24.99, 6 lb $47.99]
+    Lactose  ->  Lactose  [1 lb $4.99, 5 lb $15.99, 55 lb $99.99]
+    Aromatic malt  ->  Aromatic Munich Malt 20L - Briess Malting  [1 lb unmilled $2.99, 1 lb milled $3.09, 5 lb unmilled $12.39, 50 lb unmilled $55.99]
+    Torrified wheat  ->  Torrified Wheat | Briess Malting  [1 lb unmilled $3.29, 1 lb milled $3.39, 5 lb unmilled $13.79, 5 lb milled $14.29, 50 lb unmilled $62.99]
+    Unmalted wheat  ->  Unmalted White Wheat | Rahr Malting Co.®  [1 lb unmilled $2.49, 5 lb unmilled $10.19, 1 lb milled $2.59, 5 lb milled $10.69, 55 lb unmilled $44.99]
+    Molasses  ->  Brewmaster Blackstrap Molasses  [1 lb $4.99, 50 lb $79.99]
+    Rice hulls  ->  Rice Hulls  [1 lb $2.99, 50 lb $30.49]
+    Cascade  ->  Cascade | Cryo Hops® | Cascade | Whole Cone Hops | Cascade | Pellet Hops  [1 oz cryo $3.99, 16 oz cryo $28.99, 80 oz cryo $120.99, 176 oz cryo $245.99, 2 oz leaf $3.49, 16 oz leaf $16.99, 0.5 oz $1.49, 1 oz $1.99, 2 oz $2.99, 8 oz $8.99, 16 oz $14.99, 80 oz $64.99, 176 oz $123.49]
+    Centennial  ->  Centennial | Pellet Hops | Centennial | Cryo Hops®  [1 oz $1.49, 2 oz $2.49, 8 oz $7.99, 16 oz $12.99, 80 oz $55.49, 176 oz $105.99, 1 oz cryo $4.49, 16 oz cryo $30.99, 80 oz cryo $129.99, 176 oz cryo $271.99]
+    Chinook  ->  Chinook | Pellet Hops | Chinook | Cryo Hops®  [1 oz $1.99, 2 oz $2.99, 8 oz $7.99, 16 oz $14.99, 80 oz $58.99, 176 oz $119.99, 1 oz cryo $3.99, 16 oz cryo $31.49, 80 oz cryo $135.99, 176 oz cryo $259.99]
+    Columbus / CTZ  ->  Columbus / CTZ | Cryo Hops® | Columbus | CTZ | Pellet Hops  [1 oz cryo $2.99, 16 oz cryo $26.99, 80 oz cryo $115.49, 176 oz cryo $220.49, 1 oz $1.99, 2 oz $2.99, 8 oz $7.99, 16 oz $11.99, 80 oz $49.99, 176 oz $89.99]
+    Simcoe  ->  Simcoe® Brand YCR 14 | Cryo Hops® | Simcoe® Brand YCR 14 | Pellet Hops  [1 oz cryo $4.99, 16 oz cryo $39.99, 80 oz cryo $166.99, 176 oz cryo $350.99, 1 oz $2.99, 16 oz $18.99, 80 oz $81.99, 176 oz $164.99]
+    Citra  ->  Citra® Brand HBC 394 | Cryo Hops® | Citra® Brand HBC 394 | Whole Cone Hops | Citra® Brand HBC 394 Hops | Pellet Hops  [1 oz cryo $4.99, 16 oz cryo $40.99, 80 oz cryo $173.99, 176 oz cryo $319.99, 2 oz leaf $6.99, 16 oz leaf $18.99, 176 oz leaf $141.99, 176 oz leaf $156.99, 1 oz $2.49, 2 oz $3.99, 8 oz $12.49, 16 oz $20.99, 80 oz $87.99, 176 oz $171.99]
+    Mosaic  ->  Mosaic® Brand HBC 369 | Cryo Hops® | Mosaic® Brand HBC 369 | Whole Cone Hops | Mosaic® Brand HBC 369 | Pellet Hops  [1 oz cryo $4.99, 16 oz cryo $39.99, 80 oz cryo $166.99, 176 oz cryo $307.99, 2 oz leaf $4.99, 16 oz leaf $24.99, 176 oz leaf $189.99, 1 oz $2.49, 2 oz $3.49, 8 oz $11.49, 16 oz $18.49, 80 oz $78.99, 176 oz $150.99]
+    Amarillo  ->  Amarillo® Brand VGXP01 | Cryo Hops® | Amarillo® Brand VGXP01 | Whole Cone Hops | Amarillo® | Pellet Hops  [1 oz cryo $5.49, 16 oz cryo $24.99, 80 oz cryo $119.99, 176 oz cryo $234.99, 176 oz cryo $314.99, 2 oz leaf $6.09, 16 oz leaf $21.99, 1 oz $2.49, 2 oz $3.49, 8 oz $9.99, 16 oz $16.99, 80 oz $69.99, 176 oz $135.99]
+    Galaxy  ->  Galaxy® | Pellet Hops  [1 oz $2.99, 2 oz $4.99, 8 oz $14.99, 16 oz $26.99, 80 oz $119.99, 176 oz $226.99]
+    Nelson Sauvin  ->  Nelson Sauvin | Pellet Hops  [1 oz $2.49, 2 oz $3.49, 8 oz $11.49, 16 oz $18.99, 80 oz $80.49, 176 oz $138.99, 176 oz $153.99]
+    Sabro  ->  Sabro® Brand HBC 438 | Cryo Hops® | Sabro™ Brand HBC 438 | Pellet Hops  [1 oz cryo $4.99, 16 oz cryo $19.99, 80 oz cryo $94.99, 176 oz cryo $199.99, 176 oz cryo $269.99, 1 oz $2.49, 2 oz $3.99, 16 oz $15.99, 80 oz $69.99, 176 oz $145.99]
+    El Dorado  ->  El Dorado | Pellet Hops  [1 oz $2.29, 2 oz $3.49, 8 oz $10.99, 16 oz $19.99, 80 oz $81.99, 176 oz $149.99]
+    Idaho 7  ->  Idaho 7® Brand J-007 | Cryo Hops® | Idaho #7 | Pellet Hops  [1 oz cryo $3.99, 16 oz cryo $34.99, 80 oz cryo $148.99, 176 oz cryo $302.99, 1 oz $2.49, 2 oz $3.49, 8 oz $10.49, 16 oz $17.49, 80 oz $74.49, 176 oz $141.99]
+    Strata  ->  Strata | Pellet Hops  [1 oz $1.69, 2 oz $2.8, 8 oz $8.49, 16 oz $16.14, 80 oz $69.99, 176 oz $149.99]
+    Willamette  ->  Willamette | Pellet Hops  [1 oz $1.99, 2 oz $2.99, 8 oz $9.49, 16 oz $15.49, 80 oz $65.99, 176 oz $125.99]
+    Fuggle  ->  British Fuggle | Pellet Hops  [1 oz $2.54, 2 oz $4.24, 8 oz $14.02, 16 oz $22.94, 80 oz $116.99, 176 oz $223.49]
+    Northern Brewer  ->  German Northern Brewer | Pellet Hops  [1 oz $1.69, 2 oz $2.54, 8 oz $7.64, 16 oz $11.89, 80 oz $57.99, 176 oz $104.99]
+    Magnum  ->  Magnum | Pellet Hops  [1 oz $1.69, 2 oz $2.54, 8 oz $7.64, 16 oz $11.89, 80 oz $57.99, 176 oz $104.99]
+    Warrior  ->  Warrior® Brand YCR 5 | Pellet Hops  [1 oz $2.49, 16 oz $15.99, 80 oz $66.99, 176 oz $136.99]
+    Nugget  ->  Nugget | Pellet Hops  [1 oz $1.99, 8 oz $7.99, 16 oz $17.99, 80 oz $73.99, 176 oz $134.99, 176 oz $151.99]
+    Hallertau Mittelfrüh  ->  German Hallertau Blanc | Pellet Hops | Hallertau Mittelfruh | Pellet Hops  [1 oz $1.89, 8 oz $7.99, 16 oz $13.99, 80 oz $54.99, 176 oz $89.99, 176 oz $99.99, 1 oz $1.44, 2 oz $2.46, 8 oz $8.07, 16 oz $16.14, 80 oz $76.99, 176 oz $139.99]
+    Saaz  ->  Czech Saaz | Pellet Hops  [0.5 oz $1.09, 1 oz $2.12, 2 oz $3.39, 8 oz $10.19, 16 oz $17.84, 80 oz $89.99, 176 oz $156.99]
+    Spalt  ->  German Spalt | Pellet Hops  [1 oz $1.99, 8 oz $8.99, 16 oz $14.99, 80 oz $59.99, 176 oz $109.99]
+    Perle  ->  German Perle | Pellet Hops  [1 oz $1.99, 2 oz $2.99, 8 oz $8.99, 16 oz $13.99, 80 oz $57.99, 176 oz $104.99]
+    Hersbrucker  ->  German Hersbrucker | Pellet Hops  [0.5 oz $1.49, 1 oz $1.89, 2 oz $2.89, 8 oz $8.99, 16 oz $16.99, 80 oz $68.99, 176 oz $109.99, 176 oz $124.99]
+    Styrian Golding  ->  Styrian Goldings (Celeia) | Pellet Hops  [1 oz $2.54, 8 oz $11.47, 16 oz $18.69, 80 oz $94.49, 176 oz $180.49, 0.5 oz $1.99]
+    Motueka  ->  Motueka™ Brand, 87.14-20 | Cryo Hops® | New Zealand Motueka | Pellet Hops  [1 oz cryo $4.49, 16 oz cryo $38.99, 176 oz cryo $321.99, 1 oz $2.49, 2 oz $3.99, 8 oz $11.99, 16 oz $19.49, 80 oz $82.99, 176 oz $157.99]
+    Riwaka  ->  Riwaka™ Brand, 85.6-23 | Cryo Hops® | Riwaka™ | Pellet Hops  [1 oz cryo $5.99, 16 oz cryo $60.99, 80 oz cryo $254.99, 1 oz $2.99, 2 oz $4.99, 16 oz $25.99, 80 oz $111.49, 176 oz $212.99]
+    Wai-iti  ->  New Zealand Wai-iti Hops (Pellets)  [1 oz $2.49, 2 oz $3.89, 16 oz $14.99, 80 oz $59.99]
+    Vic Secret  ->  Vic Secret | Pellet Hops  [1 oz $3.49, 16 oz $28.99, 80 oz $125.49, 176 oz $239.99]
+    Enigma  ->  Enigma™ Hops (Pellets)  [1 oz $1.79, 16 oz $8.99]
+    Huell Melon  ->  German Huell Melon | Pellet Hops  [1 oz $1.89, 16 oz $13.99, 80 oz $57.99, 176 oz $89.99, 176 oz $104.99]
+    Mandarina Bavaria  ->  German Mandarina Bavaria | Pellet Hops  [1 oz $1.99, 8 oz $6.99, 16 oz $13.99, 80 oz $54.99, 176 oz $89.99, 176 oz $99.99]
+    Hallertau Blanc  ->  German Hallertau Blanc | Pellet Hops  [1 oz $1.89, 8 oz $7.99, 16 oz $13.99, 80 oz $54.99, 176 oz $89.99, 176 oz $99.99]
+    Apollo  ->  Apollo™ | Pellet Hops  [1 oz $2.19, 16 oz $15.89, 80 oz $70.69, 176 oz $151.99]
+    Summit  ->  Summit | Pellet Hops  [1 oz $2.19, 16 oz $17.99, 80 oz $70.99]
+    Azacca  ->  Azacca® | Pellet Hops  [1 oz $2.49, 2 oz $3.99, 8 oz $11.99, 16 oz $19.49, 80 oz $84.49, 176 oz $161.49]
+    Comet  ->  Comet | Pellet Hops  [1 oz $1.99, 16 oz $15.99, 176 oz $114.99]
+    Cluster  ->  Cluster | Pellet Hops  [1 oz $1.99, 16 oz $15.49, 80 oz $66.99, 176 oz $127.49]
+    Liberty  ->  Liberty | Pellet Hops  [1 oz $2.99, 2 oz $4.49, 8 oz $14.49, 16 oz $23.99, 80 oz $102.99]
+    Mt. Hood  ->  Mt. Hood | Pellet Hops  [1 oz $2.29, 80 oz $81.99]
+    Sterling  ->  Sterling | Pellet Hops  [1 oz $2.59, 16 oz $24.99, 176 oz $189.99]
+    Crystal  ->  Crystal | Pellet Hops  [1 oz $1.99, 8 oz $8.49, 16 oz $14.99, 80 oz $60.99, 176 oz $110.99]
+    US-05 / WLP001 / Wyeast 1056  ->  Fermentis | SafAle™ US-05 American Ale | Dry Beer Yeast  [1 pack $6.79, 1 pack $49.99, 1 pack $109.99]
+    S-04 / WLP002 / Wyeast 1968  ->  Fermentis | SafAle™ S-04 English Ale | Dry Beer Yeast  [1 pack $6.79, 1 pack $49.99, 1 pack $109.99]
+    Nottingham  ->  Lallemand | LalBrew® Nottingham High Performance Ale Yeast | Dry Beer Yeast  [1 pack $5.99, 1 pack $169.99]
+    WLP007 Dry English  ->  White Labs Yeast | WLP007 Dry English Ale | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    Wyeast 1318 London Ale III  ->  Wyeast | 1318 London Ale III | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP095 Burlington  ->  White Labs Yeast | WLP095 Burlington Ale | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    Verdant IPA  ->  Lallemand | LalBrew® Verdant IPA Ale Yeast | Dry Beer Yeast  [1 pack $6.99, 1 pack $189.99]
+    WLP029 German Ale / Kölsch  ->  Angel Yeast | KO Kölsch-Style Hybrid Ale Yeast | 500 g  [1 pack $53.99]
+    Wyeast 1007 German Ale  ->  Wyeast | 1007 German Ale | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP300 Hefeweizen  ->  White Labs Yeast | WLP300 Hefeweizen Ale | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    Wyeast 3068 Weihenstephan  ->  Wyeast | 3068 Weihenstephan Weizen | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP530 Abbey Ale  ->  White Labs Yeast | WLP530 Abbey Ale | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    Wyeast 3787 Trappist High Gravity  ->  Wyeast | 3787 Belgian High Gravity | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP565 Saison I  ->  White Labs Yeast | WLP565 Belgian Saison I | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    Wyeast 3711 French Saison  ->  Wyeast | 3711 French Saison | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    Belle Saison (dry)  ->  Lallemand | LalBrew® Belle Saison Belgian Style Ale Yeast | 500 g  [1 pack $179.99]
+    WLP644 Brett Trois (Sacch)  ->  White Labs Yeast | WLP644 Saccharomyces "Bruxellensis" Trois | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    WLP001 + Brett blends  ->  White Labs | WLP001 California Ale Yeast® | Beer Yeast | Premium Active Dry Brewers Yeast  [1 pack $9.99, 1 pack $224.99]
+    Voss Kveik  ->  CellarScience® VOSS Dry Yeast | Kveik Ale | Premium Beer Yeast  [1 pack $4.99, 1 pack $84.99]
+    Hornindal Kveik  ->  Omega Yeast | OYL-091 Hornindal Kveik | Beer Yeast | Double Pitch | 225 Billion Cells  [1 pack $14.99]
+    Lutra Kveik  ->  Omega Yeast | OYL-071 Lutra® Kveik | Beer Yeast | Double Pitch | 225 Billion Cells  [1 pack $14.99]
+    LalBrew Verdant IPA  ->  Lallemand | LalBrew® Verdant IPA Ale Yeast | Dry Beer Yeast  [1 pack $6.99, 1 pack $189.99]
+    LalBrew New England  ->  Lallemand | LalBrew® New England American East Coast Ale Yeast | Dry Beer Yeast  [1 pack $6.49, 1 pack $189.99]
+    LalBrew Windsor  ->  Lallemand | LalBrew® Windsor British Style Ale Yeast | Dry Beer Yeast  [1 pack $6.99, 1 pack $179.99]
+    LalBrew BRY-97  ->  Lallemand | LalBrew® BRY-97 American West Coast Ale Yeast | Dry Beer Yeast  [1 pack $5.99, 1 pack $179.99]
+    LalBrew Munich Classic  ->  Lallemand | LalBrew® Munich Classic German Wheat Style Ale Yeast | Dry Beer Yeast  [1 pack $6.49, 1 pack $199.99]
+    Lallemand Philly Sour  ->  Lallemand | WildBrew™ Philly Sour Yeast | Lactic Acid Producing Dry Beer Yeast  [1 pack $7.99, 1 pack $214.99]
+    WildBrew Sour Pitch  ->  Lallemand | WildBrew™ Sour Pitch | Dry Souring Bacteria  [1 pack $19.99, 1 pack $169.99]
+    Wyeast 1084 Irish Ale / WLP004  ->  Wyeast | 1084 Irish Ale | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    Wyeast 1728 Scottish Ale / WLP028  ->  Wyeast | 1728 Scottish Ale | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP013 London Ale / Wyeast 1028  ->  Wyeast | 1028 London Ale | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP023 Burton Ale  ->  White Labs Yeast | WLP023 Burton Ale | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    WLP036 Düsseldorf Alt  ->  White Labs Yeast | WLP036 Dusseldorf Alt Ale | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    Wyeast 3944 Belgian Witbier / WLP400  ->  Wyeast | 3944 Belgian Witbier | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    Wyeast 3522 Belgian Ardennes  ->  Wyeast | 3522 Belgian Ardennes | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP510 Bastogne / Wyeast 1762  ->  Wyeast | 1762 Belgian Abbey Style Ale II | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    Wyeast 3763 Roeselare blend  ->  Wyeast | 3763 Roeselare Ale Blend | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP810 San Francisco Lager  ->  White Labs Yeast | WLP810 San Francisco Lager | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    Wyeast 2206 Bavarian Lager  ->  Wyeast | 2206 Bavarian Lager | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    Wyeast 2308 Munich Lager  ->  Wyeast | 2308 Munich Lager | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP940 Mexican Lager  ->  White Labs Yeast | WLP940 Mexican Lager | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    W-34/70 / WLP830 / Wyeast 2124  ->  Fermentis | SafLager™ W-34/70 Bohemian Lager | Dry Beer Yeast  [1 pack $8.79, 1 pack $83.99, 1 pack $169.99]
+    WLP833 German Bock  ->  White Labs Yeast | WLP833 German Bock Lager | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    Wyeast 2278 Czech Pils  ->  Wyeast | 2278 Czech Pils | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP800 Pilsner  ->  White Labs Yeast | WLP800 Pilsner Lager | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    Wyeast 2007 Pilsen  ->  Wyeast | 2007 Pilsen Lager | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    Diamond Lager (dry)  ->  Lallemand | LalBrew® Diamond Lager Yeast | Dry Beer Yeast  [1 pack $6.49, 1 pack $199.99]
+    Novalager (dry)  ->  Lallemand | LalBrew® NovaLager™ Modern Hybrid Lager Yeast | Dry Beer Yeast  [1 pack $7.99, 1 pack $224.99]
+    WLP570 Belgian Golden  ->  White Labs Yeast | WLP570 Belgian Golden Ale | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
+    Wyeast 1272 American Ale II  ->  Wyeast | 1272 American Ale II | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+
+  NOT FOUND
+    Amber malt
+    Table sugar (sucrose)
+    Belgian candi syrup D-45
+    Belgian candi syrup D-180
+    Maple syrup
+    Agave nectar
+    Sorghum malt
+    Millet malt
+    Oak-smoked wheat malt
+    Brown sugar
+    Dates
+    East Kent Golding
+    Challenger
+    Target
+    Tettnang
+    Sorachi Ace
+    Brewer's Gold
+    Bramling Cross
+    Progress
+    Oslo Kveik
+    HotHead Ale
+    LalBrew Köln
+    Omega Cosmic Punch
+    Mangrove Jack M44 US West Coast
+    Escarpment Foggy London
+    WLP072 French Ale
+    Baker's yeast (sahti)
+    Wyeast 2035 American Lager
+
+== Northern Brewer (https://www.northernbrewer.com): 2628 products read, 127 of 165 ingredients matched
+
+  MATCHED
+    2-row pale malt  ->  2-Row Malt - Rahr  [1 lb unmilled $3.79, 1 lb milled $3.99, 10 lb unmilled $19.99, 10 lb milled $21.99]
+    Maris Otter  ->  English Maris Otter Malt - Simpsons  [1 lb unmilled $4.79, 1 lb milled $4.99, 10 lb unmilled $29.99, 10 lb milled $31.99]
+    Pilsner malt  ->  Pilsner Malt - MaltWerks  [1 lb unmilled $2.99, 1 lb milled $3.19, 10 lb unmilled $21.99, 10 lb milled $23.99]
+    Vienna malt  ->  Vienna Malt - Briess Goldpils®  [1 lb unmilled $2.49, 1 lb milled $2.69, 10 lb unmilled $19.99, 10 lb milled $21.99]
+    Munich malt  ->  Briess Lighthouse Munich Malt  [1 lb unmilled $2.49, 1 lb milled $2.69, 10 lb unmilled $19.99, 10 lb milled $21.99]
+    Wheat malt  ->  Midnight Wheat Malt - Briess  [1 lb unmilled $3.59, 1 lb milled $3.79]
+    Flaked wheat  ->  Flaked Wheat  [1 lb unmilled $3.99, 10 lb unmilled $32.99]
+    Flaked oats  ->  Flaked Oats  [1 lb unmilled $3.99, 10 lb unmilled $32.99]
+    Flaked barley  ->  Flaked Barley  [1 lb unmilled $3.99, 10 lb unmilled $32.99]
+    Flaked corn (maize)  ->  Flaked Maize (Corn)  [1 lb unmilled $4.99, 10 lb unmilled $29.99]
+    Flaked rice  ->  Flaked Rice  [1 lb unmilled $4.99, 10 lb unmilled $39.99]
+    Crystal / Caramel 20L  ->  Caramel 20L Malt - Briess  [1 lb unmilled $2.99, 1 lb milled $3.19]
+    Crystal / Caramel 40L  ->  Caramel 40L Malt - Briess  [1 lb unmilled $2.99, 1 lb milled $3.19, 10 lb unmilled $21.99, 10 lb milled $23.99]
+    Crystal / Caramel 60L  ->  Caramel 60L Malt - Briess  [1 lb unmilled $2.99, 1 lb milled $3.19, 10 lb unmilled $21.99, 10 lb milled $23.99]
+    Crystal / Caramel 80L  ->  Caramel 80L Malt - Briess  [1 lb unmilled $2.99, 1 lb milled $3.19]
+    Crystal / Caramel 120L  ->  Caramel 120L Malt - Briess  [1 lb unmilled $2.99, 1 lb milled $3.19]
+    CaraMunich  ->  German Caramunich III Malt - Weyermann®  [1 lb unmilled $3.49, 1 lb milled $3.69]
+    CaraPils / Carafoam  ->  Carapils Malt - Briess  [1 lb unmilled $2.99, 1 lb milled $3.19, 10 lb unmilled $21.99, 10 lb milled $23.99]
+    Special B  ->  Special B® Malt - Dingemans  [1 lb unmilled $4.79, 1 lb milled $4.99]
+    Biscuit malt  ->  Biscuit Malt  [1 lb unmilled $2.99, 1 lb milled $3.19]
+    Victory malt  ->  Victory Malt - Briess  [1 lb unmilled $2.99, 1 lb milled $3.19]
+    Amber malt  ->  English Amber Malt  [1 lb unmilled $3.49, 1 lb milled $3.69, 10 lb unmilled $29.99, 10 lb milled $31.99]
+    Brown malt  ->  English Brown Malt - Fawcett  [1 lb unmilled $3.49, 1 lb milled $3.69]
+    Chocolate malt  ->  Chocolate Malt - Briess  [1 lb unmilled $2.69, 1 lb milled $2.89, 10 lb unmilled $22.99, 10 lb milled $24.99]
+    Pale chocolate  ->  English Pale Chocolate Malt - Thomas Fawcett Malting  [1 lb unmilled $3.49, 1 lb milled $3.69]
+    Roasted barley  ->  Light Roasted Barley - Briess  [1 lb unmilled $2.79, 1 lb milled $2.99, 10 lb unmilled $22.99, 10 lb milled $24.99]
+    Black patent  ->  Black (Patent) Malt - Briess  [1 lb unmilled $2.99, 1 lb milled $3.19]
+    Acidulated malt  ->  German Acidulated Malt - Weyermann®  [1 lb unmilled $3.99, 1 lb milled $4.19]
+    Smoked / Rauch malt  ->  German Smoked Malt - Weyermann®  [1 lb unmilled $3.99, 1 lb milled $4.19]
+    Peated malt  ->  English Peated Malt - Simpsons  [1 lb unmilled $4.49, 1 lb milled $4.69]
+    Rye malt  ->  Rye Malt - Briess  [1 lb unmilled $2.99, 1 lb milled $3.19, 10 lb unmilled $22.99, 10 lb milled $24.99]
+    Melanoidin malt  ->  German Melanoidin Malt - Weyermann®  [1 lb unmilled $3.69, 1 lb milled $3.89]
+    Honey malt  ->  Honey Malt  [1 lb unmilled $4.69, 1 lb milled $4.89, 10 lb unmilled $25.99, 10 lb milled $27.99]
+    Light DME  ->  Muntons DME Light - Dry Malt Extract  [1 lb $9.99, 3 lb $24.99]
+    Light LME  ->  Briess Organic Light Malt Syrup (LME)  [3.15 lb $15.99, 6 lb $26.99]
+    Wheat DME  ->  Muntons DME Wheat - Dry Malt Extract  [1 lb $9.99, 3 lb $24.99]
+    Corn sugar (dextrose)  ->  Corn Sugar - Dextrose (Priming Sugar)  [1 lb $3.99, 2 lb $7.99, 4 lb $11.99]
+    Honey  ->  Honey Malt  [1 lb unmilled $4.69, 1 lb milled $4.89, 10 lb unmilled $25.99, 10 lb milled $27.99]
+    Lactose  ->  Lactose 1 lb.  [1 lb $7.99]
+    Aromatic malt  ->  Aromatic Malt - Briess  [1 lb unmilled $2.49, 1 lb milled $2.69]
+    Torrified wheat  ->  English Torrified Wheat - Crisp  [1 lb unmilled $2.99, 1 lb milled $3.19]
+    Unmalted wheat  ->  Unmalted Wheat - Rahr  [1 lb unmilled $2.49, 1 lb milled $2.69]
+    Oak-smoked wheat malt  ->  German Oak-Smoked Pale Wheat Malt - Weyermann®  [1 lb unmilled $3.99, 1 lb milled $4.19]
+    Molasses  ->  Blackstrap Molasses  [2 lb $9.99, 12 lb $24.99]
+    Brown sugar  ->  Brown Soft Candi Sugar - 1 lb.  [1 lb $12.99]
+    Rice hulls  ->  Rice Hulls  [1 lb unmilled $3.49, 10 lb unmilled $32.99]
+    Cascade  ->  Cascade Hops Pellets 1 oz | Cascade Cryo Hops® LupuLN2® Pellets 1 oz.  [1 oz $1.99, 1 oz cryo $5.99]
+    Centennial  ->  Centennial Cryo Hops® LupuLN2® Pellets 1 oz. | Centennial Hops Pellets 1 oz  [1 oz cryo $5.99, 1 oz $3.09]
+    Chinook  ->  Chinook Hops Pellets 1 oz  [1 oz $1.99]
+    Columbus / CTZ  ->  Columbus Hops Pellets 1 oz (CTZ Hops Pellets 1 oz)  [1 oz $2.19]
+    Simcoe  ->  Simcoe Cryo Hops® LupuLN2® Pellets 1 oz. | Simcoe® Hops Pellets 1 oz  [1 oz cryo $7.99, 1 oz $3.09]
+    Citra  ->  Citra Cryo Hops® LupuLN2® Pellets 1 oz. | Citra Hops Pellets 1 oz  [1 oz cryo $7.79, 1 oz $3.69]
+    Mosaic  ->  Mosaic® Hops Pellets 1 oz | Mosaic Cryo Hops® LupuLN2® Pellets 1 oz.  [1 oz $3.69, 1 oz cryo $7.49]
+    Amarillo  ->  Amarillo® Cryo Hops® LupuLN2® Pellets 1 oz. | Amarillo® Hops Pellets 1 oz  [1 oz cryo $8.99, 1 oz $3.29]
+    Galaxy  ->  Galaxy Hops Pellets 1 oz  [1 oz $3.69]
+    Nelson Sauvin  ->  Nelson Sauvin Amplifire Cryogenic/Lupulin Hop Pellets | Nelson Sauvin Hops Pellets 1 oz - New Zealand  [1 oz cryo $7.99, 1 oz $3.99]
+    Sabro  ->  Sabro™ Hops Pellets 1 oz  [1 oz $4.99]
+    El Dorado  ->  El Dorado Hops Pellets 1 oz  [1 oz $2.49]
+    Idaho 7  ->  Idaho 7 Hops Pellets 1 oz  [1 oz $3.09]
+    Strata  ->  Strata  Cryogenic/Lupulin Hop Pellets - 1 oz | Strata Hops Pellets 1 oz  [1 oz cryo $7.99, 1 oz $3.19]
+    Willamette  ->  Willamette Hops Pellets 1 oz  [1 oz $2.49]
+    Fuggle  ->  Fuggle Hops Pellets 1 oz - US | Fuggle Hops Pellets 1 oz - UK  [1 oz $4.29, 1 oz $3.09]
+    East Kent Golding  ->  East Kent Goldings (EKG) Hops Pellets 1 oz  [1 oz $3.69]
+    Challenger  ->  Challenger Hops Pellets 1 oz - UK  [1 oz $4.29]
+    Target  ->  Target Hops Pellets 1 oz - UK  [1 oz $4.29]
+    Northern Brewer  ->  Northern Brewer Hops Pellets 1 oz - Germany | Northern Brewer Hops Pellets 1 oz - US  [1 oz $2.49, 1 oz $3.09]
+    Magnum  ->  Magnum Hops Pellets 1 oz - US | Magnum Hops Pellets 1 oz - Germany  [1 oz $2.59, 1 oz $3.09]
+    Warrior  ->  Warrior® Hops Pellets 1 oz  [1 oz $2.49]
+    Nugget  ->  Nugget Hops Pellets 1 oz  [1 oz $3.09]
+    Hallertau Mittelfrüh  ->  Hallertau Hops Pellets 1 oz | Hallertau Blanc Hops Pellets 1 oz - Germany  [1 oz $2.59, 1 oz $1.99]
+    Tettnang  ->  Tettnang Hops Pellets 1 oz - US | Tettnang Hops Pellets 1 oz - Germany  [1 oz $1.69, 1 oz $2.49]
+    Saaz  ->  Saaz Hops Pellets 1 oz - Czech | Saaz Hops Pellets 1 oz - US  [1 oz $2.49, 1 oz $2.79]
+    Perle  ->  Perle Hops Pellets 1 oz - Germany | Perle Hops Pellets 1 oz - US  [1 oz $2.49, 1 oz $2.49]
+    Hersbrucker  ->  Hersbrucker Hops Pellets 1 oz - Germany  [1 oz $2.49]
+    Styrian Golding  ->  Styrian Goldings Hops Pellets 1 oz  [1 oz $2.49]
+    Motueka  ->  Motueka Amplifire Cryogenic/Lupulin Hop Pellets | Motueka Hops Pellets 1 oz - New Zealand  [1 oz cryo $7.99, 1 oz $3.99]
+    Riwaka  ->  Riwaka Amplifire Cryogenic/Lupulin Hop Pellets  [1 oz cryo $7.99]
+    Vic Secret  ->  Vic Secret Hops Pellets 1 oz  [1 oz $4.99]
+    Hallertau Blanc  ->  Hallertau Blanc Hops Pellets 1 oz - Germany  [1 oz $1.99]
+    Sorachi Ace  ->  Sorachi Ace Hops Pellets 1 oz  [1 oz $2.99]
+    Apollo  ->  Apollo Hops Pellets 1 oz  [1 oz $2.49]
+    Summit  ->  Summit Hops Pellets 1 oz  [1 oz $2.49]
+    Azacca  ->  Azacca® Hops Pellets 1 oz  [1 oz $2.49]
+    Cluster  ->  Cluster Hops Pellets 1 oz  [1 oz $2.49]
+    Liberty  ->  Liberty Hops Pellets 1 oz  [1 oz $3.09]
+    Mt. Hood  ->  Mt. Hood Hops Pellets 1 oz  [1 oz $3.09]
+    Sterling  ->  Sterling Hops Pellets 1 oz  [1 oz $3.09]
+    Crystal  ->  Crystal Hops Pellets 1 oz  [1 oz $2.49]
+    US-05 / WLP001 / Wyeast 1056  ->  SafAle US-05 Dry Yeast - 500 grams  [1 pack $149.99]
+    S-04 / WLP002 / Wyeast 1968  ->  SafAle S-04 Dry Yeast - 500 grams  [1 pack $149.99]
+    Nottingham  ->  LalBrew® Nottingham English Ale Dry Yeast  [1 pack $7.99]
+    Wyeast 1318 London Ale III  ->  Wyeast 1318 London Ale III Yeast  [1 pack $14.99]
+    Verdant IPA  ->  LalBrew® Verdant IPA Dry Yeast  [1 pack $7.99]
+    WLP029 German Ale / Kölsch  ->  Wyeast 2565 Kolsch Yeast  [1 pack $14.99]
+    Wyeast 1007 German Ale  ->  Wyeast 1007 German Ale Yeast  [1 pack $14.99]
+    WLP300 Hefeweizen  ->  WLP300 Hefeweizen - White Labs Yeast Pure Pitch Next Gen  [1 pack $21.99]
+    Wyeast 3068 Weihenstephan  ->  Wyeast 3068 Weihenstephan Wheat Yeast  [1 pack $14.99]
+    WLP530 Abbey Ale  ->  WLP530 Abbey Ale - White Labs Yeast Pure Pitch Next Gen  [1 pack $21.99]
+    Wyeast 3787 Trappist High Gravity  ->  Wyeast 3787 Trappist High Gravity Yeast  [1 pack $14.99]
+    Wyeast 3711 French Saison  ->  Wyeast 3711 French Saison Yeast  [1 pack $14.99]
+    WLP001 + Brett blends  ->  WLP001 California Ale - White Labs Yeast Pure Pitch Next Gen  [1 pack $21.99]
+    Voss Kveik  ->  LalBrew® Voss Kveik Ale Dry Yeast  [1 pack $7.99]
+    Hornindal Kveik  ->  Omega Yeast OYL-091 Hornindal Kveik  [1 pack $16.99]
+    Lutra Kveik  ->  Omega Yeast OYL071 Dried Lutra Kveik  [1 pack $12.99]
+    HotHead Ale  ->  Omega Yeast OYL-057 HotHead Ale - Kveik Strain  [1 pack $16.99]
+    LalBrew Verdant IPA  ->  LalBrew® Verdant IPA Dry Yeast  [1 pack $7.99]
+    LalBrew New England  ->  LalBrew® New England Dry Yeast  [1 pack $8.99]
+    LalBrew Windsor  ->  LalBrew® Windsor British Ale Dry Yeast  [1 pack $7.99]
+    LalBrew BRY-97  ->  LalBrew® BRY-97 American West Coast Ale Dry Yeast  [1 pack $7.99]
+    LalBrew Munich Classic  ->  LalBrew® Munich Classic Wheat Beer Dry Yeast  [1 pack $9.99]
+    Lallemand Philly Sour  ->  Lallemand WildBrew™ Philly Sour - 11g  [1 pack $9.99]
+    WildBrew Sour Pitch  ->  WildBrew™ Sour Pitch Lactobacillus Plantarum - 10 grams  [1 pack $39.99]
+    Wyeast 1084 Irish Ale / WLP004  ->  Wyeast 1084 Irish Ale Yeast  [1 pack $14.99]
+    Wyeast 1728 Scottish Ale / WLP028  ->  Wyeast 1728 Scottish Ale Yeast  [1 pack $14.99]
+    WLP013 London Ale / Wyeast 1028  ->  Wyeast 1028 London Ale Yeast  [1 pack $14.99]
+    Wyeast 3944 Belgian Witbier / WLP400  ->  Wyeast 3944 Belgian Wit Yeast  [1 pack $14.99]
+    Wyeast 3522 Belgian Ardennes  ->  Wyeast 3522 Belgian Ardennes Yeast  [1 pack $14.99]
+    WLP510 Bastogne / Wyeast 1762  ->  Wyeast 1762 Belgian Abbey II Yeast  [1 pack $14.99]
+    Wyeast 2206 Bavarian Lager  ->  Wyeast 2206 Bavarian Lager Yeast  [1 pack $14.99]
+    Wyeast 2308 Munich Lager  ->  Wyeast 2308 Munich Lager Yeast  [1 pack $14.99]
+    WLP940 Mexican Lager  ->  WLP940 Mexican Lager - White Labs Yeast Pure Pitch Next Gen  [1 pack $21.99]
+    W-34/70 / WLP830 / Wyeast 2124  ->  SafLager W-34/70 Dry Yeast - 500 grams  [1 pack $249.99]
+    Wyeast 2278 Czech Pils  ->  Wyeast 2278 Czech Pils Yeast  [1 pack $14.99]
+    Wyeast 2007 Pilsen  ->  Wyeast 2007 Pilsen Lager Yeast  [1 pack $14.99]
+    Diamond Lager (dry)  ->  LalBrew® Diamond Lager Dry Yeast  [1 pack $7.99]
+    Novalager (dry)  ->  LalBrew® NovaLager™ Hybrid Dry Lager Yeast  [1 pack $11.99]
+    Wyeast 1272 American Ale II  ->  Wyeast 1272 American Ale II Yeast  [1 pack $14.99]
+
+  NOT FOUND
+    Carafa Special II
+    Table sugar (sucrose)
+    Belgian candi syrup D-45
+    Belgian candi syrup D-180
+    Maple syrup
+    Agave nectar
+    Sorghum malt
+    Millet malt
+    Dates
+    Spalt
+    Wai-iti
+    Enigma
+    Huell Melon
+    Mandarina Bavaria
+    Comet
+    Brewer's Gold
+    Bramling Cross
+    Progress
+    WLP007 Dry English
+    WLP095 Burlington
+    WLP565 Saison I
+    Belle Saison (dry)
+    WLP644 Brett Trois (Sacch)
+    Oslo Kveik
+    LalBrew Köln
+    Omega Cosmic Punch
+    Mangrove Jack M44 US West Coast
+    Escarpment Foggy London
+    WLP023 Burton Ale
+    WLP036 Düsseldorf Alt
+    WLP072 French Ale
+    Wyeast 3763 Roeselare blend
+    Baker's yeast (sahti)
+    Wyeast 2035 American Lager
+    WLP810 San Francisco Lager
+    WLP833 German Bock
+    WLP800 Pilsner
+    WLP570 Belgian Golden
+
+== Adventures in Homebrewing (https://www.homebrewing.org): 4414 products read, 123 of 165 ingredients matched
+
+  MATCHED
+    2-row pale malt  ->  Malta Mexico 2-Row Malt - Malteurop  [1 lb unmilled $2.99, 1 lb milled $3.19, 10 lb unmilled $19.99, 10 lb milled $21.99]
+    Maris Otter  ->  Maris Otter  [1 lb $4.99, 1 lb $4.79, 10 lb $31.99, 10 lb $29.99]
+    Pilsner malt  ->  Belgian Pilsner  [1 lb $4.49, 1 lb $4.29, 10 lb $31.99, 10 lb $29.99]
+    Vienna malt  ->  Vienna Malt - Root Shoot Malting  [1 lb unmilled $3.49, 1 lb milled $3.69]
+    Munich malt  ->  Dark Munich  [1 lb $4.79, 1 lb $4.59, 10 lb $26.99, 10 lb $28.99]
+    Wheat malt  ->  Munich Wheat Malt - Root Shoot Malting  [1 lb unmilled $3.99, 1 lb milled $4.19]
+    Flaked wheat  ->  Flaked Wheat  [1 lb $3.99, 10 lb $32.99]
+    Flaked oats  ->  Flaked Oats  [1 lb $3.99, 10 lb $32.99]
+    Flaked barley  ->  Flaked Barley  [1 lb $3.99, 10 lb $32.99]
+    Flaked corn (maize)  ->  Flaked Maize / Corn  [1 lb $4.99, 10 lb $29.99]
+    Flaked rice  ->  Flaked Rice  [1 lb $4.99, 10 lb $39.99]
+    Crystal / Caramel 20L  ->  Crystal 20L 1 lb  [1 lb $3.19, 1 lb $2.99]
+    Crystal / Caramel 40L  ->  Crystal 40L  [1 lb $3.19, 1 lb $2.99, 10 lb $23.99, 10 lb $21.99]
+    Crystal / Caramel 60L  ->  Crystal 60L  [1 lb $3.19, 1 lb $2.99, 10 lb $23.99, 10 lb $21.99]
+    Crystal / Caramel 80L  ->  Crystal 80L 1 lb  [1 lb $3.19, 1 lb $2.99]
+    Crystal / Caramel 120L  ->  Crystal 120L 1 lb  [1 lb $3.19, 1 lb $2.99]
+    CaraMunich  ->  Weyermann® German Caramunich I Malt 1 lb  [1 lb $3.69, 1 lb $3.49]
+    CaraPils / Carafoam  ->  MCM Dextrin Malt - Montana Craft Malt  [1 lb unmilled $2.49, 1 lb milled $2.69, 10 lb unmilled $19.99, 10 lb milled $21.99]
+    Special B  ->  Special B 1 lb  [1 lb $4.99, 1 lb $4.79]
+    Biscuit malt  ->  Biscuit Malt 1 lb  [1 lb $3.19, 1 lb $2.99]
+    Amber malt  ->  Amber Malt 1 lb  [1 lb unmilled $3.49, 1 lb milled $3.69, 1 lb unmilled $29.99, 1 lb milled $31.99]
+    Brown malt  ->  Brown Malt 1 lb  [1 lb $3.69, 1 lb $3.49]
+    Chocolate malt  ->  Chocolate Malt  [1 lb $2.89, 1 lb $2.69, 10 lb $24.99, 10 lb $22.99]
+    Pale chocolate  ->  Pale Chocolate 1 lb  [1 lb $3.69, 1 lb $3.49]
+    Roasted barley  ->  Briess Light Roasted Barley  [1 lb $2.99, 1 lb $2.79, 10 lb $24.99, 10 lb $22.99]
+    Black patent  ->  Black Malt (Black Patent) 1 lb  [1 lb $3.19, 1 lb $2.99]
+    Acidulated malt  ->  Acidulated Malt 1 lb  [1 lb $4.19, 1 lb $3.99]
+    Smoked / Rauch malt  ->  Briess Cherrywood Smoked Malt 1 lb  [1 lb $4.19, 1 lb $3.99]
+    Peated malt  ->  Heavy Peated Malt  [1 lb $3.19, 1 lb $2.99, 10 lb $27.99, 10 lb $25.99]
+    Rye malt  ->  Rye Malt - Root Shoot Malting  [1 lb unmilled $3.49, 1 lb milled $3.69, 10 lb unmilled $29.99, 10 lb milled $31.99]
+    Melanoidin malt  ->  Melanoidin Malt 1 lb  [1 lb $3.89, 1 lb $3.69]
+    Honey malt  ->  Honey Malt  [1 lb $4.89, 1 lb $4.69, 10 lb $27.99, 10 lb $25.99]
+    Light DME  ->  Muntons Plain Light DME 3 LBS  [3 lb $24.99]
+    Light LME  ->  Organic Light LME Malt Syrup  [3.15 lb $15.99, 6 lb $26.99]
+    Wheat DME  ->  Muntons Plain Wheat DME 3 LBS  [3 lb $24.99]
+    Honey  ->  Wildflower Honey  [1 lb $7.99, 3 lb $25.99, 6 lb $49.99]
+    Lactose  ->  Lactose (1 pound)  [1 lb $7.99]
+    Aromatic malt  ->  Aromatic Malt 1 lb  [1 lb $2.69, 1 lb $2.49]
+    Torrified wheat  ->  Torrified Wheat 1 lb  [1 lb $3.19, 1 lb $2.99]
+    Unmalted wheat  ->  Rahr Unmalted Wheat 1 lb  [1 lb $2.69, 1 lb $2.49]
+    Oak-smoked wheat malt  ->  Weyermann® German Oak-Smoked Pale Wheat Malt 1 lb  [1 lb $4.19, 1 lb $3.99]
+    Molasses  ->  Blackstrap Molasses  [2 lb $9.99, 12 lb $24.99]
+    Brown sugar  ->  Brown Soft Candi Sugar - 1 lb.  [1 lb $12.99]
+    Rice hulls  ->  Rice Hulls 1 lb  [1 lb $3.49, 1 lb $32.99]
+    Cascade  ->  Cascade Hop Pellets 1 oz  [1 oz $1.99]
+    Centennial  ->  Centennial Hop Pellets 1 oz  [1 oz $3.09]
+    Chinook  ->  Chinook Hop Pellets 1 oz  [1 oz $1.99]
+    Columbus / CTZ  ->  Columbus Hop Pellets 1 oz  [1 oz $2.19]
+    Simcoe  ->  Simcoe LupuLN2 Cryo Hop Pellets 1 oz | Simcoe Hop Pellets 1 oz  [1 oz cryo $7.99, 1 oz $3.09]
+    Citra  ->  Citra LupuLN2 Cryo Hop Pellets 1 oz | Citra Hop Pellets 1 oz  [1 oz cryo $7.79, 1 oz $3.69]
+    Mosaic  ->  Mosaic LupuLN2 Cryo Hop Pellets 1 oz | Mosaic (US) Hop Pellets 1 oz  [1 oz cryo $7.49, 1 oz $3.69]
+    Amarillo  ->  Amarillo LupuLN2 Cryo Hop Pellets 1 oz | Amarillo Hop Pellets 1 oz  [1 oz cryo $8.99, 1 oz $3.29]
+    Galaxy  ->  Galaxy (Australia) Hop Pellets 1 oz  [1 oz $3.69]
+    Nelson Sauvin  ->  Nelson Sauvin Amplifire Cryogenic/Lupulin Hop Pellets | Nelson Sauvin (New Zealand) Hop Pellets 1 oz  [1 oz cryo $7.99, 1 oz $3.99]
+    Sabro  ->  Sabro™ Hops Pellets 1 oz  [1 oz $4.99]
+    El Dorado  ->  El Dorado Hop Pellets 1 oz  [1 oz $2.49]
+    Idaho 7  ->  Idaho 7 Hop Pellets 1 oz  [1 oz $3.09]
+    Strata  ->  Strata Cryogenic/Lupulin Hop Pellets - 1 oz | Strata Hops Pellets - 1 oz  [1 oz cryo $7.99, 1 oz $3.19]
+    Willamette  ->  Willamette Hop Pellets 1 oz  [1 oz $2.49]
+    Fuggle  ->  Fuggle Hops Pellets UK - 1 oz | Fuggle Hop Pellets 1 oz  [1 oz $3.09, 1 oz $4.29]
+    East Kent Golding  ->  East Kent Goldings Hop Pellets 1 oz  [1 oz $3.69]
+    Challenger  ->  Challenger (UK) Hop Pellets 1 oz  [1 oz $4.29]
+    Target  ->  Target (UK) Hop Pellets 1 oz  [1 oz $4.29]
+    Northern Brewer  ->  Northern Brewer Hops Pellets - 1 oz | Northern Brewer (German) Hop Pellets 1 oz  [1 oz $3.09, 1 oz $2.49]
+    Magnum  ->  Magnum Hops Pellets (US) - 1 oz | Magnum (German) Hop Pellets 1 oz  [1 oz $2.59, 1 oz $3.09]
+    Warrior  ->  Warrior Hop Pellets 1 oz  [1 oz $2.49]
+    Nugget  ->  Nugget Hop Pellets 1 oz  [1 oz $3.09]
+    Hallertau Mittelfrüh  ->  Hallertau Blanc (German) Hop Pellets 1 oz | Hallertau Tradition Hop Pellets 1 oz | Hallertau Mittelfruh Pellet Hops (GR) - 1 oz  [1 oz $1.99, 1 oz $3.09, 1 oz $2.59]
+    Tettnang  ->  Tettnang Hops Pellets (US) - 1 oz | Tettnang Hop Pellets (German)  1 oz  [1 oz $1.69, 1 oz $2.49]
+    Saaz  ->  Saaz Hops Pellets (US) - 1 oz | Saaz (Czech) Hop Pellets 1 oz  [1 oz $2.79, 1 oz $2.49]
+    Perle  ->  Perle Hops Pellets - 1 oz | Perle Hop Pellets (German) 1 oz  [1 oz $2.49, 1 oz $2.49]
+    Hersbrucker  ->  Hersbrucker (German) Hop Pellets 1 oz  [1 oz $2.49]
+    Styrian Golding  ->  Styrian Celeia Goldings (Slovenia) Hop Pellets 1 oz  [1 oz $2.49]
+    Motueka  ->  Motueka Amplifire Cryogenic/Lupulin Hop Pellets | Motueka (New Zealand) Hop Pellets 1 oz  [1 oz cryo $7.99, 1 oz $3.99]
+    Riwaka  ->  Riwaka Amplifire Cryogenic/Lupulin Hop Pellets  [1 oz cryo $7.99]
+    Vic Secret  ->  Vic Secret Hop Pellets 1 oz  [1 oz $4.99]
+    Mandarina Bavaria  ->  Mandarina Bavaria (German) Hop Pellets 1 oz  [1 oz $1.99]
+    Hallertau Blanc  ->  Hallertau Blanc (German) Hop Pellets 1 oz  [1 oz $1.99]
+    Sorachi Ace  ->  Sorachi Ace Hop Pellets 1 oz.  [1 oz $2.99]
+    Apollo  ->  Apollo Hop Pellets - 1 oz  [1 oz $2.49]
+    Summit  ->  Summit Hop Pellets 1 oz  [1 oz $2.49]
+    Azacca  ->  Azacca Pellet Hops - 1 oz  [1 oz $2.49]
+    Cluster  ->  Cluster Hop Pellets 1 oz  [1 oz $2.49]
+    Liberty  ->  Liberty Hop Pellets - 1 oz  [1 oz $3.09]
+    Mt. Hood  ->  Mt. Hood Hop Pellets 1 oz  [1 oz $3.09]
+    Sterling  ->  Sterling Hop Pellets 1 oz  [1 oz $3.09]
+    Crystal  ->  Crystal Hop Pellets 1 oz  [1 oz $2.49]
+    US-05 / WLP001 / Wyeast 1056  ->  Fermentis SafAle™ US-05 Yeast  [1 pack $6.99]
+    S-04 / WLP002 / Wyeast 1968  ->  Fermentis SafAle™ S-04 Yeast  [1 pack $6.99]
+    Nottingham  ->  Nottingham Ale Yeast (Danstar)  [1 pack $7.99]
+    Wyeast 1318 London Ale III  ->  Wyeast 1318 London Ale III Yeast  [1 pack $14.99]
+    Verdant IPA  ->  Lallemand Verdant IPA Ale Yeast 11 Grams  [1 pack $7.99]
+    WLP029 German Ale / Kölsch  ->  Omega Yeast 017 Kolsch I  [1 pack $16.99]
+    Wyeast 1007 German Ale  ->  Wyeast 1007 German Ale Yeast  [1 pack $14.99]
+    WLP300 Hefeweizen  ->  WLP300 Hefeweizen - White Labs Yeast Pure Pitch Next Gen  [1 pack $21.99]
+    Wyeast 3068 Weihenstephan  ->  Wyeast 3068 Weihenstephan Weizen Yeast  [1 pack $14.99]
+    WLP530 Abbey Ale  ->  WLP530 Abbey Ale - White Labs Yeast Pure Pitch Next Gen  [1 pack $21.99]
+    Wyeast 3787 Trappist High Gravity  ->  Wyeast 3787 Trappist High Gravity Yeast  [1 pack $14.99]
+    Wyeast 3711 French Saison  ->  Wyeast 3711 French Saison Yeast  [1 pack $14.99]
+    WLP001 + Brett blends  ->  WLP001 California Ale - White Labs Yeast Pure Pitch Next Gen  [1 pack $21.99]
+    Voss Kveik  ->  Omega Yeast 061 Voss Kveik Ale  [1 pack $16.99]
+    Hornindal Kveik  ->  Omega Yeast 091 Hornindal Kveik Ale  [1 pack $16.99]
+    Lutra Kveik  ->  Omega Yeast 071 Lutra Kveik  [1 pack $16.99]
+    HotHead Ale  ->  Omega Yeast 057 Hothead Ale  [1 pack $16.99]
+    LalBrew New England  ->  Lalbrew Premium Series New England American East Coast Ale Yeast 11 gram  [1 pack $8.99]
+    LalBrew BRY-97  ->  BRY-97 American West Coast Ale Yeast (Danstar)  [1 pack $7.99]
+    Lallemand Philly Sour  ->  Lallemand Wildbrew Philly Sour Ale Yeast 11 Gram  [1 pack $9.99]
+    WildBrew Sour Pitch  ->  Wildbrew Sour Pitch Bacteria 10 gram  [1 pack $39.99]
+    Wyeast 1084 Irish Ale / WLP004  ->  Wyeast 1084 Irish Ale Yeast  [1 pack $14.99]
+    Wyeast 1728 Scottish Ale / WLP028  ->  Wyeast 1728 Scottish Ale Yeast  [1 pack $14.99]
+    WLP013 London Ale / Wyeast 1028  ->  Wyeast 1028 London Ale Yeast  [1 pack $14.99]
+    Wyeast 3944 Belgian Witbier / WLP400  ->  Wyeast 3944 Belgian Witbier Yeast  [1 pack $14.99]
+    Wyeast 3522 Belgian Ardennes  ->  Wyeast 3522 Belgian Ardennes Yeast  [1 pack $14.99]
+    WLP510 Bastogne / Wyeast 1762  ->  Wyeast 1762 Belgian Abbey II Yeast  [1 pack $14.99]
+    Wyeast 2206 Bavarian Lager  ->  Wyeast 2206 Bavarian Lager Yeast  [1 pack $14.99]
+    Wyeast 2308 Munich Lager  ->  Wyeast 2308 Munich Lager Yeast  [1 pack $14.99]
+    WLP940 Mexican Lager  ->  WLP940 Mexican Lager - White Labs Yeast Pure Pitch Next Gen  [1 pack $21.99]
+    W-34/70 / WLP830 / Wyeast 2124  ->  Fermentis SafLager™ W-34/70 Yeast  [1 pack $8.99]
+    Wyeast 2278 Czech Pils  ->  Wyeast 2278 Czech Pils Yeast  [1 pack $14.99]
+    Wyeast 2007 Pilsen  ->  Wyeast 2007 Pilsen Lager Yeast  [1 pack $14.99]
+    Diamond Lager (dry)  ->  Diamond Lager Dry Yeast (Danstar)  [1 pack $7.99]
+    Novalager (dry)  ->  Lallemand NovaLager™ Hybrid Dry Lager Yeast  [1 pack $11.99]
+    Wyeast 1272 American Ale II  ->  Wyeast 1272 American Ale II Yeast  [1 pack $14.99]
+
+  NOT FOUND
+    Victory malt
+    Carafa Special II
+    Corn sugar (dextrose)
+    Table sugar (sucrose)
+    Belgian candi syrup D-45
+    Belgian candi syrup D-180
+    Maple syrup
+    Agave nectar
+    Sorghum malt
+    Millet malt
+    Dates
+    Spalt
+    Wai-iti
+    Enigma
+    Huell Melon
+    Comet
+    Brewer's Gold
+    Bramling Cross
+    Progress
+    WLP007 Dry English
+    WLP095 Burlington
+    WLP565 Saison I
+    Belle Saison (dry)
+    WLP644 Brett Trois (Sacch)
+    Oslo Kveik
+    LalBrew Verdant IPA
+    LalBrew Köln
+    LalBrew Windsor
+    LalBrew Munich Classic
+    Omega Cosmic Punch
+    Mangrove Jack M44 US West Coast
+    Escarpment Foggy London
+    WLP023 Burton Ale
+    WLP036 Düsseldorf Alt
+    WLP072 French Ale
+    Wyeast 3763 Roeselare blend
+    Baker's yeast (sahti)
+    Wyeast 2035 American Lager
+    WLP810 San Francisco Lager
+    WLP833 German Bock
+    WLP800 Pilsner
+    WLP570 Belgian Golden
+
+== Ritebrew (https://www.ritebrew.com): skipped, HTTP 404
+
+== Yeast Market (https://yeastmarket.com): skipped, fetch failed
+
+== The Malt Miller (https://www.themaltmiller.co.uk): skipped, no product feed here (not a Shopify shop, or the feed is switched off)
+
+== Get Er Brewed (https://www.geterbrewed.com): skipped, HTTP 404
