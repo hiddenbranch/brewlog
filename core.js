@@ -422,6 +422,22 @@
       ra: B.residualAlkalinity(result), excessAlk: Math.max(0, Math.round(B.alkalinityFromHco3(result.HCO3 - tgt.HCO3))) };
   };
 
+  // ---- scaling a recipe to another batch size and another system ----
+  B.roundLb = lb => lb >= 1 ? Math.round(lb * 4) / 4 : Math.max(0.05, Math.round(lb * 20) / 20);
+  B.roundOz = oz => oz >= 4 ? Math.round(oz * 4) / 4 : Math.max(0.1, Math.round(oz * 10) / 10);
+  /* Mashed grain follows both the volume and the mash efficiency; extract, sugar and hops follow the volume only.
+     fermentables: [{lb, extract}] (extract true for anything that is not mashed); hops: [{oz}]. Returns copies with new amounts. */
+  B.scaleAmounts = function (fermentables, hops, fromGal, toGal, fromEff, toEff) {
+    const vol = (Number(toGal) || 1) / (Number(fromGal) || 1), eff = (Number(fromEff) || 72) / (Number(toEff) || Number(fromEff) || 72);
+    return { fermentables: (fermentables || []).map(f => Object.assign({}, f, { lb: B.roundLb((Number(f.lb) || 0) * vol * (f.extract ? 1 : eff)) })),
+      hops: (hops || []).map(hp => Object.assign({}, hp, { oz: B.roundOz((Number(hp.oz) || 0) * vol) })) };
+  };
+  // Packs of yeast to buy: one per six gallons, doubled for lagers and for anything over 1.065. Kveik is happy underpitched.
+  B.yeastPacks = function (gallons, og, yeastType) {
+    const base = Math.max(1, Math.ceil((Number(gallons) || 5) / 6 - 1e-9));
+    return base * (yeastType !== 'Kveik' && (yeastType === 'Lager' || Number(og) >= 1.065) ? 2 : 1);
+  };
+
   // ---- gravity came in low: sugar, or a longer boil ----
   B.sugarToReach = (currentSg, gallons, targetSg, ppg) => { const pts = (B.points(targetSg) - B.points(currentSg)) * gallons; return pts > 0 && ppg ? r2(pts / ppg) : 0; };   // lb
   B.extraBoilMinutes = function (currentSg, gallons, targetSg, boilOffGalHr) {

@@ -53,13 +53,14 @@
   };
   S.hasAnyTag = tags => !!(tags && Object.values(tags).some(t => t && String(t).trim()));
   // Build a shopping list from a recipe: one line per ingredient, with a sensible search term.
-  S.shoppingList = function (batch) {
+  S.shoppingList = function (batch, opts) {
+    const packs = Math.max(1, Math.round(Number(opts && opts.yeastPacks) || 1));
     const out = [];
     (batch.fermentables || []).forEach(f => { if (f.name && !f.late) out.push({ qty: f.lb ? `${f.lb} lb` : '', item: f.name, term: f.name.replace(/\s*\/.*$/, ''), group: 'Fermentables', key: f.name, unit: 'lb' }); });
     (batch.hops || []).forEach(hp => { if (hp.name) out.push({ qty: hp.oz ? `${hp.oz} oz` : '', item: `${hp.name}${hp.minutes !== undefined && hp.minutes !== '' ? ' (' + hp.minutes + ' min)' : ''}`, term: hp.name + ' hops' + formTerm(hp.type), group: 'Hops', key: hp.name, unit: 'oz', form: hp.type || 'pellet' }); });
     const dry = Array.isArray(batch.dryHops) ? batch.dryHops : [];
     dry.forEach(d => { if (d.name && !d.extra) out.push({ qty: d.oz ? `${d.oz} oz` : '', item: `${d.name} (dry hop)`, term: d.name + ' hops' + formTerm(d.type), group: 'Hops', key: d.name, unit: 'oz', form: d.type || 'pellet' }); });
-    if (batch.yeast) out.push({ qty: '1', item: batch.yeast, term: batch.yeast.split('/')[0].trim() + ' yeast', group: 'Yeast', key: batch.yeast, unit: 'pack' });
+    if (batch.yeast) out.push({ qty: String(packs), item: batch.yeast + (packs > 1 ? ` (${packs} packs)` : ''), term: batch.yeast.split('/')[0].trim() + ' yeast', group: 'Yeast', key: batch.yeast, unit: 'pack' });
     (batch.salts || []).forEach(s => { if (s.salt && s.grams) out.push({ qty: `${s.grams} g`, item: s.salt, term: s.salt.replace(/\s*\(.*\)/, ''), group: 'Water' }); });
     (batch.extras || []).forEach(e => { if (!e) return; const m = /^dry hop:\s*(.*)$/i.exec(e);
       if (m && !dry.length) { const name = m[1].replace(/(\d+(?:\.\d+)?)\s*oz/i, '').replace(/,?\s*\d+\s*days?/i, '').replace(/^[\s,]+|[\s,]+$/g, ''); const oz = (m[1].match(/(\d+(?:\.\d+)?)\s*oz/i) || [])[1]; out.push({ qty: oz ? `${oz} oz` : '', item: `${name} (dry hop)`, term: name + ' hops', group: 'Hops' }); }
@@ -94,6 +95,25 @@
     const groups = [...new Set(list.map(l => l.group))];
     return groups.map(g => g.toUpperCase() + '\n' + list.filter(l => l.group === g).map(l => `- ${l.qty ? l.qty + '  ' : ''}${l.item}${l.buy ? '  (' + l.buy + ')' : ''}`).join('\n')).join('\n\n');
   };
+  /* The short list of brew day extras offered beside a cart. Deliberately short: the things most brewers use on most batches.
+     use: borrow an ingredient already in the catalog (priming sugar is corn sugar). salt: the recipe salt this one covers. */
+  S.EXTRAS = [
+    { name: 'Campden tablets', aliases: ['campden tablets', 'campden'], note: 'Takes chlorine and chloramine out of tap water: half a tablet per 10 gallons' },
+    { name: 'Lactic acid', aliases: ['lactic acid'], note: 'Brings mash pH down when the water is alkaline; a bottle lasts a year' },
+    { name: 'Whirlfloc tablets', aliases: ['whirlfloc', 'irish moss'], note: 'Kettle finings for clear beer: one tablet at 15 minutes' },
+    { name: 'Yeast nutrient', aliases: ['yeast nutrient', 'wyeast nutrient', 'fermaid'], note: 'Worth it for strong beers, lagers and anything with a lot of sugar' },
+    { name: 'Gypsum', aliases: ['gypsum', 'calcium sulfate'], salt: 'Gypsum (CaSO4)', note: 'Sulfate, for hoppy beers' },
+    { name: 'Calcium chloride', aliases: ['calcium chloride'], salt: 'Calcium chloride (CaCl2)', note: 'Chloride, for malty and hazy beers' },
+    { name: 'Epsom salt', aliases: ['epsom salt', 'magnesium sulfate'], salt: 'Epsom salt (MgSO4)', onlyIfSalt: true, note: 'Magnesium and sulfate' },
+    { name: 'Priming sugar', use: 'Corn sugar (dextrose)', need: 0.31, unit: 'lb', note: 'About 5 oz of corn sugar, enough to bottle 5 gallons' },
+    { name: 'Sanitizer', aliases: ['star san', 'starsan', 'io star', 'sanitizer'], note: 'No-rinse sanitizer; the small bottle makes dozens of batches' }
+  ];
+  // Which extras to show for a batch: the standing list, plus any salt its water calls for; those are flagged
+  S.extrasFor = function (batch) {
+    const salts = ((batch && batch.salts) || []).filter(x => x.salt && x.grams).map(x => x.salt);
+    return S.EXTRAS.filter(e => !e.onlyIfSalt || salts.includes(e.salt)).map(e => Object.assign({}, e, { inRecipe: !!e.salt && salts.includes(e.salt) }));
+  };
+
   // ---- one-tap carts ----
   /* Shopify shops accept a link that fills the cart: /cart/<variant>:<qty>,<variant>:<qty>. The variant numbers come from
      catalog.json, which catalog-build.mjs writes from each shop's public product feed. No catalog, no button: everything else still works.
@@ -141,7 +161,7 @@
   S.buildCatalogItems = function (products, refs) {
     const items = {}, matched = [], unmatched = [], near = {};
     const prods = (products || []).map(p => { const t = norm(p.title); return { p, t, words: t.split(' '), type: norm(p.product_type), tags: norm(Array.isArray(p.tags) ? p.tags.join(' ') : p.tags) }; }).filter(x => !NOT_INGREDIENT.test(x.t));
-    const kinds = [['Fermentable', refs.fermentables || [], 'lb'], ['Hop', refs.hops || [], 'oz'], ['Yeast', refs.yeast || [], 'pack']];
+    const kinds = [['Fermentable', refs.fermentables || [], 'lb'], ['Hop', refs.hops || [], 'oz'], ['Yeast', refs.yeast || [], 'pack'], ['Extra', (refs.extras || S.EXTRAS).filter(e => !e.use), 'each']];
     const variantsOf = (x, kind, unit) => {
       const out = [], opts = (x.p.options || []).map(o => norm(o && o.name)), millAt = opts.findIndex(o => /mill|crush|grind/.test(o));
       const grams = (x.p.variants || []).map(v => v.grams || 0), gramsDiffer = new Set(grams).size > 1;
@@ -152,7 +172,7 @@
         if (kind === 'Yeast' && (BULK_YEAST.test(text) || (price !== null && price > 40))) continue;   // bricks are for breweries
         const fromGrams = v.grams > 0 && unit !== 'pack' ? (() => { const raw = unit === 'oz' ? v.grams / G_OZ : v.grams / G_OZ / 16; return raw >= 0.9 ? Math.round(raw) : Math.round(raw * 4) / 4; })() : null;
         // the variant's own words first; then its shipping weight when the variants differ by weight; only then the product title
-        const size = unit === 'pack' ? 1 : (S.parseSize(vt, unit) || (gramsDiffer ? fromGrams : null) || S.parseSize(x.t, unit) || fromGrams);
+        const size = unit === 'pack' || unit === 'each' ? 1 : (S.parseSize(vt, unit) || (gramsDiffer ? fromGrams : null) || S.parseSize(x.t, unit) || fromGrams);
         if (!size) continue;
         let milled; if (kind === 'Fermentable') { const mv = millAt >= 0 ? norm(v['option' + (millAt + 1)]) : '';
           milled = /^(no|none|unmilled|uncrushed|whole)\b/.test(mv) || /\b(unmilled|uncrushed|whole)\b/.test(vt) ? false : /^(yes|milled|crushed)\b/.test(mv) || /\b(milled|crushed)\b/.test(vt) ? true : null; }
@@ -162,10 +182,11 @@
       return out;
     };
     for (const [kind, list, unit] of kinds) for (const ref of list) {
-      const aliases = S.aliasesFor(ref.name, kind), own = norm(ref.name + ' ' + aliases.join(' ')).split(' ');
+      const aliases = kind === 'Extra' ? ref.aliases.map(norm) : S.aliasesFor(ref.name, kind), own = norm(ref.name + ' ' + aliases.join(' ')).split(' ');
       const allowed = x => {
         const hay = x.t + ' ' + x.type + ' ' + x.tags;
         if (kind === 'Hop') return /\bhops?\b/.test(hay) && !/\b(extract|oil|terpene|tea|hash)\b/.test(x.t);
+        if (kind === 'Extra') return !/\b(test|tester|meter|refill|crusher|dispenser|spray bottle)\b/.test(x.t);
         if (kind === 'Yeast') return /\b(yeast|wyeast|white labs|wlp|safale|saflager|lalbrew|lallemand|omega|imperial|fermentis|wildbrew)\b/.test(hay);
         if (/\bhops?\b|\byeast\b/.test(x.t)) return false;
         if (!ref.extract && /\b(extract|dme|lme|syrup)\b/.test(x.t)) return false;
@@ -173,7 +194,7 @@
         return !MODIFIERS.some(m => x.words.includes(m) && !own.includes(m));
       };
       const origin = HOP_ORIGIN[ref.name] ? new RegExp('\\b(' + HOP_ORIGIN[ref.name] + ')\\b') : null;
-      const score = (x, al) => al.split(' ').length / x.words.length + (new RegExp('\\b(' + (kind === 'Hop' ? 'hop' : kind === 'Yeast' ? 'yeast' : 'grain|malt') + ')', 'i').test(x.type) ? 0.2 : 0) + (origin && origin.test(x.t) ? 0.3 : 0) + (/\borganic\b/.test(x.t) ? -0.15 : 0);
+      const score = (x, al) => al.split(' ').length / x.words.length + (new RegExp('\\b(' + (kind === 'Hop' ? 'hop' : kind === 'Yeast' ? 'yeast' : kind === 'Extra' ? 'additive|chemical|water|clean|sanit|fining' : 'grain|malt') + ')', 'i').test(x.type) ? 0.2 : 0) + (origin && origin.test(x.t) ? 0.3 : 0) + (/\borganic\b/.test(x.t) ? -0.15 : 0);
       let variants = [], titles = [];
       for (const al of aliases) {           // most specific alias first; stop at the first one the shop stocks
         const hits = prods.filter(x => allowed(x) && (kind !== 'Hop' || !(al === 'hallertau' || al === 'hallertauer') || !/\b(blanc|tradition|magnum|taurus|merkur|herkules|hersbrucker|mittelfruh)\b/.test(x.t)) && hasWords(x.words, al))
@@ -207,21 +228,24 @@
      Returns null when the shop has no catalog; otherwise { url, lines: [{item, need, unit, packs, got, cost}], missing: [shopping lines], total }. */
   S.cartFor = function (vendorId, batch, tags, opts) {
     const c = S.CATALOG && S.CATALOG.vendors[vendorId]; if (!c || !c.items) return null;
-    const o = Object.assign({ milled: true }, opts || {}), lines = [], missing = [], bag = {};
+    const o = Object.assign({ milled: true, extras: [], yeastPacks: 1 }, opts || {}), lines = [], missing = [], bag = {};
     const needs = {};   // one line per ingredient and form, amounts added up
-    for (const l of S.shoppingList(batch)) { if (!l.key) { missing.push(l); continue; } const k = l.key + '|' + (l.form || ''); const n = l.unit === 'pack' ? 1 : parseFloat(l.qty) || 0; if (!needs[k]) needs[k] = Object.assign({}, l, { need: 0 }); needs[k].need += n; }
+    for (const l of S.shoppingList(batch, { yeastPacks: o.yeastPacks })) { if (!l.key) { missing.push(l); continue; } const k = l.key + '|' + (l.form || ''); const n = parseFloat(l.qty) || (l.unit === 'pack' ? 1 : 0); if (!needs[k]) needs[k] = Object.assign({}, l, { need: 0 }); needs[k].need += n; }
+    for (const name of o.extras || []) { const e = S.EXTRAS.find(x => x.name === name); if (!e) continue;   // ticked brew day extras: one of each, the smallest pack
+      needs['extra|' + name] = { key: e.use || e.name, item: e.name, group: 'Extras', unit: e.unit || 'each', need: e.need || 1, label: e.name }; }
     for (const k in needs) { const l = needs[k]; let vs = c.items[l.key] || [];
       if (l.group === 'Hops') { const same = vs.filter(v => v.form === l.form); vs = same.length ? same : vs.filter(v => v.form === 'pellet').length ? vs.filter(v => v.form === 'pellet') : vs; }
       if (l.group === 'Fermentables') { const pref = vs.filter(v => v.milled === o.milled || v.milled === null); if (pref.length) vs = pref; }
       const packs = l.need > 0 ? S.pickPacks(vs, l.need) : [];
-      if (!packs.length) { missing.push(l); continue; }
+      if (!packs.length) { missing.push(Object.assign({ term: (l.label || l.key) }, l, { item: l.label || l.item || l.key })); continue; }
       for (const p of packs) bag[p.id] = (bag[p.id] || 0) + p.qty;
-      lines.push({ item: l.key, need: Math.round(l.need * 100) / 100, unit: l.unit, packs, got: Math.round(packs.reduce((s2, p) => s2 + p.qty * p.size, 0) * 100) / 100, cost: packs.every(p => p.price !== null) ? Math.round(packs.reduce((s2, p) => s2 + p.qty * p.price, 0) * 100) / 100 : null });
+      lines.push({ item: l.label || l.key, group: l.group, need: Math.round(l.need * 100) / 100, unit: l.unit, packs, got: Math.round(packs.reduce((s2, p) => s2 + p.qty * p.size, 0) * 100) / 100, cost: packs.every(p => p.price !== null) ? Math.round(packs.reduce((s2, p) => s2 + p.qty * p.price, 0) * 100) / 100 : null });
     }
     if (!lines.length) return { url: null, lines, missing, total: null };
     const dest = `${c.origin.replace(/\/$/, '')}/cart/${Object.keys(bag).map(id => `${id}:${bag[id]}`).join(',')}?storefront=true&ref=brewlog`;
     return { url: S.affiliate(dest, vendorId, tags), lines, missing, total: lines.every(l => l.cost !== null) ? Math.round(lines.reduce((s2, l) => s2 + l.cost, 0) * 100) / 100 : null };
   };
+  S.extraAvailable = (vendorId, name) => { const c = S.CATALOG && S.CATALOG.vendors[vendorId], e = S.EXTRAS.find(x => x.name === name); return !!(c && e && c.items[e.use || e.name] && c.items[e.use || e.name].length); };
   S.useCatalog(null);   // the app fetches catalog.json at start-up and hands it in
 
   S.DISCLOSURE = 'Some shop links may earn a small commission at no cost to you. They never change what the app recommends.';

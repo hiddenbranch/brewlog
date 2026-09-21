@@ -4,7 +4,7 @@
   const B = window.BrewCore, D = window.BrewData, SH = window.BrewShop, RC = window.BrewRecipes;
   B.setHopRef(D.HOPS);
   const OCR_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
-  const APP_VERSION = '1.7.2';
+  const APP_VERSION = '1.8.0';
   const BOOK = { title: 'Homebrewer\'s Brew Log Book', url: '', blurb: 'The paper companion: brew day sheets, fermentation charts and recipe pages built to be photographed into this app.' };
   const CDN = { jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js' };
   const STATUSES = ['Planned', 'Brewing', 'Fermenting', 'Conditioning', 'Packaged', 'Drinking', 'Finished'];
@@ -51,7 +51,7 @@
   $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(b.dataset.tab); });
   $('#gearBtn').addEventListener('click', () => go('settings'));
   async function render() {
-    EQ = await equip(); IBU_MODEL = await S.get('ibuModel', 'smph');
+    EQ = await equip(); IBU_MODEL = await S.get('ibuModel', 'smph'); RECIPE_GAL = num(await S.get('recipeGal', 0)) || EQ.batchGal || 5;
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === state.tab));
     view.innerHTML = '';
     await ({ batches: renderBatches, brewday: renderBrewday, calc: renderCalc, ref: renderRef, shop: renderShop, stock: renderStock, settings: renderSettings }[state.tab])();
@@ -98,6 +98,28 @@
     return h('div', { class: 'chips', role: 'group', 'aria-label': 'Hop the recipes by' }, ['smph', 'tinseth'].map(m => h('button', { class: 'chip' + (current === m ? ' on' : ''), style: 'font-family:inherit', 'aria-pressed': current === m ? 'true' : 'false', onclick: () => { if (current !== m) onpick(m); } }, m === 'smph' ? 'Hopped by SMPH' : 'Hopped by Tinseth')));
   }
   const MODEL_BLURB = 'SMPH predicts the IBUs a lab would measure in the finished beer and runs about a third below Tinseth, the figure most homebrew recipes quote. Switch and the bittering addition is re-sized to suit; the late hops stay as they are. Tinseth sizing is the recipe as the homebrew world would write it; SMPH sizing uses more bittering hops so the finished beer measures in range.';
+  // The size the built-in recipes are shown, shopped and brewed at: the brewer's own batch size unless they pick another
+  let RECIPE_GAL = 5;
+  function recipeToBatch(r, gallons) {
+    const gal = num(gallons) || RECIPE_GAL || r.gallons, rHops = recipeHops(r);
+    const ferm = r.fermentables.map(f => { const ref = D.FERMENTABLES.find(x => x.name === f.name); return { name: f.name, lb: f.lb, pct: f.pct, extract: !!(ref && ref.extract) }; });
+    const sc = B.scaleAmounts(ferm, rHops, r.gallons, gal, r.efficiency, EQ.efficiency);
+    const b = BLANK(); b.name = r.name; b.style = r.name; b.batchGal = gal; b.boilGal = B.round.r2(gal + Math.max(0.5, num(EQ.boilGal) - num(EQ.batchGal))); b.boilMin = r.boilMin; b.efficiency = EQ.efficiency; b.mashF = r.mashF;
+    b.fermentables = sc.fermentables.map(f => ({ name: f.name, lb: f.lb, pct: f.pct })); b.ibuModel = IBU_MODEL;
+    b.hops = sc.hops.filter(hp => hp.use !== 'Dry hop').map(hp => ({ name: hp.name, oz: hp.oz, alpha: hp.alpha, minutes: hp.minutes, type: 'pellet', whirlpool: hp.use === 'Whirlpool', sized: hp.sized, use: hp.use }));
+    b.dryHops = sc.hops.filter(hp => hp.use === 'Dry hop').map(hp => ({ name: hp.name, oz: hp.oz, alpha: hp.alpha, type: 'pellet', day: '', days: hp.dryDays || 4 })); b.extras = [];
+    b.fermF = r.fermF; b.wpTempF = 175; b.wpMin = 20; b.yeast = r.yeast; b.notes = `${r.water}. ${r.notes}`;
+    return b;
+  }
+  // chips plus a box: 2.5, 5, the brewer's own size, 10, 15, or anything typed
+  function sizePicker(onpick) {
+    const sizes = [...new Set([2.5, 5, num(EQ.batchGal) || 5.5, 10, 15])].sort((x, y) => x - y);
+    const box = inp(RECIPE_GAL, 'number', { 'aria-label': 'Batch size in gallons', style: 'width:88px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:8px 12px;font:inherit;font-size:16px;min-height:40px' });
+    const set = async g => { if (!(g > 0) || g > 200) return; RECIPE_GAL = g; await S.set('recipeGal', g); onpick(g); };
+    box.addEventListener('change', () => set(num(box.value)));
+    return h('div', { class: 'chips', style: 'align-items:center' }, h('span', { class: 'muted small', style: 'margin-right:4px' }, 'Batch size'), sizes.map(g => h('button', { class: 'chip' + (RECIPE_GAL === g ? ' on' : ''), style: 'font-family:inherit', onclick: () => set(g) }, `${g} gal`)), box);
+  }
+  const packsFor = (b, est) => B.yeastPacks(num(b.batchGal) || 5, num(b.og) || (est || recipeStats(b)).og || 1.05, (yeastOf(b) || {}).type);
   const yeastOf = b => D.YEAST.find(y => y.name === (b && b.yeast)) || null;
   const hopTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   function recipeStats(b) {
@@ -144,7 +166,7 @@
     function collect() {
       const out = Object.assign({}, r);
       for (const k in f) out[k] = f[k].value;
-      out.fermentables = [...rows.fermentables.children].map(el => ({ name: $('.fname', el).value, lb: $('.flb', el).value })).filter(x => x.name || x.lb);
+      out.fermentables = [...rows.fermentables.children].map(el => Object.assign({ name: $('.fname', el).value, lb: $('.flb', el).value }, el._late ? { late: true } : {})).filter(x => x.name || x.lb);
       out.hops = [...rows.hops.children].map(el => ({ name: $('.hname', el).value, oz: $('.hoz', el).value, alpha: $('.halpha', el).value, minutes: $('.hmin', el).value, type: $('.htype', el).value, whirlpool: $('.hwp', el).checked })).filter(x => x.name || x.oz);
       out.salts = [...rows.salts.children].map(el => ({ salt: $('.sname', el).value, grams: $('.sg', el).value })).filter(x => x.grams);
       out.dryHops = [...rows.dry.children].map(el => Object.assign({}, el._keep || {}, { name: $('.dname', el).value, oz: $('.doz', el).value, alpha: $('.dalpha', el).value, type: $('.dtype', el).value, day: $('.dday', el).value, days: $('.ddays', el).value })).filter(x => x.name || x.oz);
@@ -173,7 +195,7 @@
     function fermRow(v) {
       const name = inp(v.name, 'text', { class: 'fname', list: 'ferms' }), lb = inp(v.lb, 'number', { class: 'flb' });
       const row = h('div', { class: 'row', style: 'grid-template-columns:1fr 90px 44px;align-items:end' }, field('Fermentable', name), field('lb', lb), h('button', { class: 'btn secondary', style: 'min-height:48px;padding:0 12px', onclick: () => { row.remove(); refresh(); } }, '\u00D7'));
-      [name, lb].forEach(i => i.addEventListener('input', refresh));
+      [name, lb].forEach(i => i.addEventListener('input', refresh)); row._late = !!v.late;
       return row;
     }
     function hopRow(v) {
@@ -221,6 +243,14 @@
       h('datalist', { id: 'ferms' }, D.FERMENTABLES.map(x => h('option', { value: x.name }))), h('datalist', { id: 'hops' }, D.HOPS.map(x => h('option', { value: x.name }))),
       mk('name', 'Name'), field('Style', f.style), h('div', { class: 'row' }, mk('brewDate', 'Brew date', 'date'), field('Status', status)),
       h('div', { class: 'row' }, mk('batchGal', 'Batch size (gal)', 'number'), mk('boilGal', 'Pre-boil volume (gal)', 'number')),
+      (() => { const to = inp('', 'number', { placeholder: 'e.g. 10', 'aria-label': 'Scale the recipe to this many gallons' });
+        return h('div', { class: 'row', style: 'grid-template-columns:1fr auto;align-items:end' }, field('Scale the whole recipe to (gal)', to, 'Changing the batch size above only changes the maths. This multiplies every ingredient to suit.'),
+          h('button', { class: 'btn secondary', style: 'margin-bottom:14px', onclick: () => { const g = num(to.value), from = num(f.batchGal.value); if (!(g > 0) || !(from > 0)) return toast('Enter the new size'); const k = g / from;
+            for (const el of rows.fermentables.children) { const i = $('.flb', el); if (num(i.value)) i.value = B.roundLb(num(i.value) * k); }
+            for (const el of rows.hops.children) { const i = $('.hoz', el); if (num(i.value)) i.value = B.roundOz(num(i.value) * k); }
+            for (const el of rows.dry.children) { const i = $('.doz', el); if (num(i.value)) i.value = B.roundOz(num(i.value) * k); }
+            for (const el of rows.salts.children) { const i = $('.sg', el); if (num(i.value)) i.value = Math.round(num(i.value) * k * 10) / 10; }
+            f.boilGal.value = B.round.r2(g + Math.max(0.5, num(f.boilGal.value) - from)); f.batchGal.value = g; to.value = ''; refresh(); toast(`Scaled from ${from} to ${g} gal`); } }, 'Scale')); })(),
       h('div', { class: 'row3' }, mk('boilMin', 'Boil (min)', 'number'), mk('efficiency', 'Efficiency %', 'number'), mk('mashF', 'Mash temp (F)', 'number')),
       stats,
       h('h3', null, 'Fermentables'), rows.fermentables, h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => { rows.fermentables.append(fermRow({})); } }, 'Add fermentable')),
@@ -874,14 +904,15 @@
         const r = RC.RECIPES.find(x => x.name === sub.slice(7)); if (!r) return go('ref', 'recipes');
         view.append(h('button', { class: 'back', onclick: () => go('ref', r.group === 'Historic' ? 'world' : 'styles') }, r.group === 'Historic' ? '\u2039 Beers of the world' : '\u2039 Styles'),
           h('h2', null, h('span', { class: 'swatch', style: 'background:' + B.srmHex(r.srm) }), r.name),
-          h('p', { class: 'muted' }, `${r.region} \u00B7 ${r.group} \u00B7 ${r.gallons} gal, ${r.boilMin} min boil, ${r.efficiency}% efficiency`));
-        view.append(modelToggle(IBU_MODEL, async m => { IBU_MODEL = m; await S.set('ibuModel', m); render(); }));
-        const ri = recipeIbu(r), rHops = recipeHops(r);
+          h('p', { class: 'muted' }, `${r.region} \u00B7 ${r.group} \u00B7 ${RECIPE_GAL} gal, ${r.boilMin} min boil, ${EQ.efficiency}% efficiency`));
+        view.append(modelToggle(IBU_MODEL, async m => { IBU_MODEL = m; await S.set('ibuModel', m); render(); }), sizePicker(() => render()));
+        const sized = recipeToBatch(r, RECIPE_GAL);
+        const ri = recipeIbu(r), rHops = sized.hops.map(hp => Object.assign({}, hp)).concat(sized.dryHops.map(d => Object.assign({ use: 'Dry hop', minutes: 0, dryDays: d.days }, d)));
         const ro = h('div', { class: 'readout' });
         [['OG / FG', `${r.og.toFixed(3)} / ${r.fg.toFixed(3)}`, `style ${r.ranges.og[0].toFixed(3)} to ${r.ranges.og[1].toFixed(3)}`], [`IBU (${ri.label})`, String(ri.v), `style ${r.ranges.ibu[0]} to ${r.ranges.ibu[1]} \u00B7 ${ri.other}${r.ibuDry ? '; dry hops read +' + r.ibuDry + ' on a lab test' : ''}`], ['Colour', `${r.srm} SRM`, `style ${r.ranges.srm[0]} to ${r.ranges.srm[1]}`], ['ABV', `${r.abv}%`, `style ${r.ranges.abv[0]} to ${r.ranges.abv[1]}`]]
           .forEach(([l, v, n]) => ro.append(h('div', { class: 'line' }, h('span', { class: 'l' }, l, h('span', { class: 'n' }, n)), h('span', { class: 'v' }, v))));
         view.append(ro);
-        view.append(h('h3', null, 'Fermentables'), h('div', { class: 'tablewrap' }, h('table', { class: 'ref' }, h('tbody', null, r.fermentables.map(f => h('tr', null, h('td', { class: 'mono', style: 'width:22%' }, `${f.lb} lb`), h('td', null, f.name), h('td', { class: 'mono' }, `${f.pct}%`)))))));
+        view.append(h('h3', null, 'Fermentables'), h('div', { class: 'tablewrap' }, h('table', { class: 'ref' }, h('tbody', null, sized.fermentables.map(f => h('tr', null, h('td', { class: 'mono', style: 'width:22%' }, `${f.lb} lb`), h('td', null, f.name), h('td', { class: 'mono' }, `${f.pct}%`)))))));
         if (rHops.length) view.append(h('h3', null, 'Hops'), h('div', { class: 'tablewrap' }, h('table', { class: 'ref' }, h('tbody', null, rHops.map(hp => h('tr', null, h('td', { class: 'mono', style: 'width:22%' + (hp.sized ? ';color:var(--amber);font-weight:700' : '') }, `${hp.oz} oz`), h('td', null, `${hp.name} (${hp.alpha}%)`, hp.sized ? h('span', { class: 'muted small' }, `  sized by ${ri.label}`) : null), h('td', { class: 'mono' }, hp.use === 'Dry hop' ? `dry hop, ${hp.dryDays} days` : hp.use === 'Whirlpool' ? 'whirlpool' : `${hp.minutes} min`)))))));
         else view.append(h('p', { class: 'muted small' }, 'No hops: see the notes for what bitters it.'));
         view.append(h('h3', null, 'Yeast and process'),
@@ -889,16 +920,11 @@
           h('p', null, h('b', null, 'Mash '), `${r.mashF}F for 60 minutes. `, h('b', null, 'Water: '), r.water),
           h('p', null, r.notes),
           h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => {
-            const b = BLANK(); b.name = r.name; b.style = D.STYLES.find(s => s.name === r.name) ? r.name : (r.group === 'IPA' ? 'American IPA' : ''); b.style = r.name; b.batchGal = r.gallons; b.boilGal = r.boilGallons; b.boilMin = r.boilMin; b.efficiency = r.efficiency; b.mashF = r.mashF;
-            b.fermentables = r.fermentables.map(f => ({ name: f.name, lb: f.lb }));
-            b.ibuModel = IBU_MODEL;
-            b.hops = rHops.filter(hp => hp.use !== 'Dry hop').map(hp => ({ name: hp.name, oz: hp.oz, alpha: hp.alpha, minutes: hp.minutes, type: 'pellet', whirlpool: hp.use === 'Whirlpool' }));
-            b.dryHops = rHops.filter(hp => hp.use === 'Dry hop').map(hp => ({ name: hp.name, oz: hp.oz, alpha: hp.alpha, type: 'pellet', day: '', days: hp.dryDays || 4 })); b.extras = [];
-            b.fermF = r.fermF; b.wpTempF = 175; b.wpMin = 20;
-            b.yeast = r.yeast; b.notes = `${r.water}. ${r.notes}`;
-            const id = await DB.put('batches', b); state.batchId = id; await S.set('lastBatch', id); toast('Batch created from the recipe'); go('batches', 'view:' + id); } }, 'Brew this'),
+            const b = recipeToBatch(r, RECIPE_GAL); b.fermentables.forEach(f => delete f.pct); b.hops.forEach(hp => { delete hp.sized; delete hp.use; });
+            const id = await DB.put('batches', b); state.batchId = id; await S.set('lastBatch', id); toast('Batch created from the recipe'); go('batches', 'view:' + id); } }, `Brew this at ${RECIPE_GAL} gal`),
+            h('button', { class: 'btn secondary', onclick: () => { state.shopRecipe = r.name; go('shop'); } }, 'Shop for it'),
             h('button', { class: 'btn secondary', onclick: () => go('ref', r.group === 'Historic' ? 'world' : 'styles') }, 'Back')),
-          h('p', { class: 'muted small' }, 'A generic, sensible version of the style sized to 5 gallons at 72% efficiency and checked against the style ranges. Scale the batch size on the recipe form after "Brew this" and everything recalculates.'),
+          h('p', { class: 'muted small' }, `A generic, sensible version of the style, checked against the style ranges. Written for 5 gallons at 72% efficiency and shown here scaled to ${RECIPE_GAL} gallons at the ${EQ.efficiency}% mash efficiency in your equipment profile: grain follows both, hops and sugars follow the volume. Bigger batches take longer to chill, and hops keep bittering until the wort is below 140F: if yours does, raise "Minutes to chill below 140F" in Settings and every IBU figure follows.`),
           h('p', { class: 'muted small' }, MODEL_BLURB),
           (() => { const c = D.carbFor(r.name); return c ? h('p', { class: 'muted small' }, `Carbonation: ${c.low} to ${c.high} volumes.${c.note ? ' ' + c.note + '.' : ''}`) : null; })());
         return;
@@ -1076,13 +1102,24 @@
   }
   async function renderShop() {
     await loadCatalog();
-    const list = await batchList(); const b = await currentBatch(list);
+    const list = await batchList();
     const tags = await S.get('affTags', {});
     const region = await S.get('region', 'US');
     view.append(h('h2', null, 'Shopping list'));
-    if (!b) return view.append(h('div', { class: 'empty' }, 'Create a batch and the shopping list builds itself from the recipe.'), h('button', { class: 'btn block', onclick: () => go('batches', 'new') }, 'New batch'));
-    view.append(h('div', { class: 'chips' }, list.slice(0, 8).map(x => h('button', { class: 'chip' + (x.id === b.id ? ' on' : ''), style: 'font-family:inherit', onclick: async () => { state.batchId = x.id; await S.set('lastBatch', x.id); render(); } }, x.name || 'batch'))));
-    const shopping = SH.shoppingList(b);
+    // shop for one of your batches, or straight from a style with no batch made yet
+    const styleRecipe = state.shopRecipe ? RC.RECIPES.find(r => r.name === state.shopRecipe) : null;
+    const b = styleRecipe ? Object.assign(recipeToBatch(styleRecipe, RECIPE_GAL), { id: 'style:' + styleRecipe.name }) : await currentBatch(list);
+    if (list.length) view.append(h('div', { class: 'chips' }, list.slice(0, 8).map(x => h('button', { class: 'chip' + (!styleRecipe && b && x.id === b.id ? ' on' : ''), style: 'font-family:inherit', onclick: async () => { state.shopRecipe = null; state.batchId = x.id; await S.set('lastBatch', x.id); render(); } }, x.name || 'batch'))));
+    const styleSel = sel([{ v: '', t: list.length ? 'Or start from a style\u2026' : 'Start from a style\u2026' }].concat(RC.RECIPES.filter(r => r.group !== 'Historic').map(r => ({ v: r.name, t: `${r.name}  (${r.region})` }))), styleRecipe ? styleRecipe.name : '');
+    styleSel.addEventListener('change', () => { state.shopRecipe = styleSel.value || null; render(); });
+    view.append(field(list.length ? '' : 'No batch yet? Pick a style and shop for its base recipe', styleSel));
+    if (styleRecipe) view.append(sizePicker(() => render()), modelToggle(IBU_MODEL, async m => { IBU_MODEL = m; await S.set('ibuModel', m); render(); }),
+      h('p', { class: 'muted small', style: 'margin-top:-4px' }, `The base ${styleRecipe.name} recipe at ${RECIPE_GAL} gal and your ${EQ.efficiency}% efficiency: OG ${styleRecipe.og.toFixed(3)}, ${recipeIbu(styleRecipe).v} IBU, ${styleRecipe.abv}%. A starting point: change anything once it is a batch.`),
+      h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: async () => { const nb = recipeToBatch(styleRecipe, RECIPE_GAL); nb.fermentables.forEach(f => delete f.pct); nb.hops.forEach(hp => { delete hp.sized; delete hp.use; }); const id = await DB.put('batches', nb); state.shopRecipe = null; state.batchId = id; await S.set('lastBatch', id); toast('Saved as a batch'); go('batches', 'view:' + id); } }, 'Save it as a batch'),
+        h('button', { class: 'btn secondary', onclick: () => go('ref', 'recipe:' + styleRecipe.name) }, 'See the full recipe')));
+    if (!b) return view.append(h('div', { class: 'empty' }, 'Pick a style above for a ready-made shopping list, or create a batch and the list builds itself from your recipe.'), h('button', { class: 'btn block', onclick: () => go('batches', 'new') }, 'New batch'));
+    const packs = packsFor(b);
+    const shopping = SH.shoppingList(b, { yeastPacks: packs });
     if (!shopping.length) return view.append(h('div', { class: 'empty' }, 'This batch has no ingredients yet.'));
     const vendors = SH.VENDORS.filter(v => v.region === region).sort((x, y) => (SH.hasCart(y.id) ? 1 : 0) - (SH.hasCart(x.id) ? 1 : 0));   // shops that can take a whole cart come first
     const lastVendor = await S.get('shopVendor', null);
@@ -1093,17 +1130,27 @@
     let milled = await S.get('grainMilled', true);
     const listEl = h('div');
     const cart = (await S.get('cart:' + b.id, {})) || {};
+    const extrasKey = 'extras:' + b.id; let ticked = (await S.get(extrasKey, [])) || [];
     const drawCart = () => { cartBox.innerHTML = '';
-      const c = SH.cartFor(vendorSel.value, b, tags, { milled }); const vname = (SH.vendor(vendorSel.value) || {}).name || 'the shop';
+      const avail = SH.extrasFor(b).filter(e => SH.extraAvailable(vendorSel.value, e.name)); ticked = ticked.filter(n => avail.some(e => e.name === n));
+      const c = SH.cartFor(vendorSel.value, b, tags, { milled, extras: ticked, yeastPacks: packs }); const vname = (SH.vendor(vendorSel.value) || {}).name || 'the shop';
       if (!c) { const can = SH.VENDORS.filter(v => v.region === region && SH.hasCart(v.id)).map(v => v.name); if (can.length) cartBox.append(h('p', { class: 'muted small' }, `${vname} cannot take a whole cart from outside. ${can.join(' and ')} can: pick ${can.length > 1 ? 'one of them' : 'it'} above for one tap.`)); return; }
       if (!c.url) return cartBox.append(h('p', { class: 'muted small' }, `Nothing on this list matched ${vname}'s catalog. Use Find on each line below.`));
-      const mill = h('input', { type: 'checkbox', style: 'width:24px;height:24px;min-height:24px;flex:none;padding:0' }); mill.checked = milled; mill.addEventListener('change', async () => { milled = mill.checked; await S.set('grainMilled', milled); drawCart(); });
-      cartBox.append(h('a', { class: 'btn block', style: 'font-size:18px;min-height:56px;text-align:center;padding:10px 18px;line-height:1.25', href: c.url, target: '_blank', rel: 'noopener' }, `Add all to cart at ${vname}${c.total !== null ? '  \u00B7  about $' + c.total.toFixed(2) : ''}`),
-        h('label', { class: 'field', style: 'display:flex;align-items:center;gap:10px;margin:8px 0' }, mill, h('span', { style: 'margin:0' }, 'Grain milled (untick if you have your own mill)')),
-        h('details', { class: 'plat' }, h('summary', null, `What goes in: ${c.lines.length} item${c.lines.length === 1 ? '' : 's'}${c.missing.length ? `, ${c.missing.length} to find yourself` : ''}`), h('div', { class: 'body' },
-          h('ul', null, c.lines.map(l => h('li', { class: 'small' }, `${l.item}: ${l.packs.map(p => `${p.qty} \u00D7 ${p.size} ${l.unit}`).join(' + ')}${l.got > l.need ? ` (you need ${l.need} ${l.unit})` : ''}${l.cost !== null ? `, $${l.cost.toFixed(2)}` : ''}`))),
+      const hasGrain = c.lines.some(l => l.group === 'Fermentables' && l.packs.some(p => /mill|crush/i.test(p.title || '')));
+      const millPick = h('div', { class: 'chips', role: 'group', 'aria-label': 'Grain' }, h('span', { class: 'muted small', style: 'margin-right:4px' }, 'Grain'), [[true, 'Milled'], [false, 'Unmilled (I have a mill)']].map(([val, label]) => h('button', { class: 'chip' + (milled === val ? ' on' : ''), style: 'font-family:inherit', 'aria-pressed': String(milled === val), onclick: async () => { milled = val; await S.set('grainMilled', val); drawCart(); } }, label)));
+      cartBox.append(h('a', { class: 'btn block', style: 'font-size:18px;min-height:56px;text-align:center;padding:10px 18px;line-height:1.25', href: c.url, target: '_blank', rel: 'noopener' }, `Add all to cart at ${vname}${c.total !== null ? '  \u00B7  about $' + c.total.toFixed(2) : ''}`));
+      if (hasGrain) cartBox.append(millPick);
+      if (avail.length) { const xd = h('details', { class: 'plat' }, h('summary', null, `Brew day extras${ticked.length ? `: ${ticked.length} added` : ''}`), h('div', { class: 'body' },
+        h('p', { class: 'muted small' }, 'Nothing here is added unless you tick it. Most of these last many batches, so tick only what you are out of.'),
+        avail.map(e => { const box = h('input', { type: 'checkbox', style: 'width:24px;height:24px;min-height:24px;flex:none;padding:0;margin-top:2px' }); box.checked = ticked.includes(e.name);
+          box.addEventListener('change', async () => { ticked = box.checked ? ticked.concat([e.name]) : ticked.filter(n => n !== e.name); await S.set(extrasKey, ticked); drawCart(); });
+          return h('label', { style: 'display:flex;gap:12px;align-items:flex-start;padding:8px 0;cursor:pointer' }, box, h('span', null, h('b', null, e.name), e.inRecipe ? h('span', { class: 'badge', style: 'margin-left:8px' }, 'in this recipe\'s water') : null, h('span', { class: 'muted small', style: 'display:block' }, e.note))); })));
+        xd.open = ticked.length > 0; cartBox.append(xd); }
+      cartBox.append(h('details', { class: 'plat' }, h('summary', null, `What goes in: ${c.lines.length} item${c.lines.length === 1 ? '' : 's'}${c.missing.length ? `, ${c.missing.length} to find yourself` : ''}`), h('div', { class: 'body' },
+          h('ul', null, c.lines.map(l => h('li', { class: 'small' }, `${l.item}: ${l.packs.map(p => l.unit === 'each' ? `${p.qty}` : `${p.qty} \u00D7 ${p.size} ${l.unit}`).join(' + ')}${l.unit !== 'each' && l.unit !== 'pack' && l.got > l.need ? ` (you need ${l.need} ${l.unit})` : ''}${l.cost !== null ? `, $${l.cost.toFixed(2)}` : ''}`))),
           c.missing.length ? h('p', { class: 'small' }, h('b', null, 'Not in the cart: '), c.missing.map(m => m.item).join(', '), '. Use Find on those lines below.') : null,
-          h('p', { class: 'muted small' }, `Opens ${vname} with the cart filled; you check it and pay there. Prices and stock are from ${SH.CATALOG.built || 'the last catalog build'} and may have moved. The cheapest combination of pack sizes is chosen, so you may get a little more than the recipe needs.`))));
+          packs > 1 ? h('p', { class: 'small' }, `${packs} packs of yeast: one per six gallons, doubled for lagers and for anything over 1.065. A starter from one pack does the same job.`) : null,
+          h('p', { class: 'muted small' }, `Opens ${vname} with the cart filled; you check it and pay there. Prices and stock are from ${SH.CATALOG.built || 'the last catalog build'} and may have moved. The cheapest combination of pack sizes is chosen, so you may get a little more than the recipe needs; on big batches that is often a whole sack.`))));
     };
     vendorSel.addEventListener('change', drawCart); drawCart();
     const draw = () => { listEl.innerHTML = '';

@@ -1,9 +1,9 @@
-# Brew Log (PWA) v1.7.2
+# Brew Log (PWA) v1.8
 
 Batches with live recipe stats, a brew day list built from the recipe with a boil timer, fermentation tracking, thirteen calculators, a reference library, and a shopping list that links to homebrew retailers. Installs to a phone, works offline, no accounts, nothing leaves the phone.
 
 ## Deploy
-Same as the other apps: new repository, upload `index.html`, `data.js`, `shop.js`, `core.js`, `app.js`, `sw.js`, `manifest.webmanifest` and `icons/`, then Settings > Pages > main branch, root. Upload `recipes.js`, `beerxml.js`, `catalog-build.mjs` and the `.github` folder too. Run `node bump.mjs 1.7.3` (the next number) before any later upload so no cache serves a stale file.
+Same as the other apps: new repository, upload `index.html`, `data.js`, `shop.js`, `core.js`, `app.js`, `sw.js`, `manifest.webmanifest` and `icons/`, then Settings > Pages > main branch, root. Upload `recipes.js`, `beerxml.js`, `catalog-build.mjs` and the `.github` folder too. Run `node bump.mjs 1.8.1` (the next number) before any later upload so no cache serves a stale file.
 
 ## What it does
 - **Batches**: recipe with fermentables, hops, yeast and water salts. As you type it shows estimated OG, IBU (SMPH model, with the Tinseth figure alongside), colour, and expected FG and ABV from the chosen yeast's attenuation, each marked against the style's published range. Alpha acid fills itself from the hop table. After brewing it shows measured OG and FG, ABV, calories, BU:GU and the mash efficiency you actually achieved.
@@ -35,12 +35,22 @@ Credit shown in the app: "IBU calculations optimized using the SMPH Model by J. 
 ## SMPH or Tinseth, the brewer's choice
 "Hopped by SMPH / Hopped by Tinseth" sits on the Styles and recipes list and on every recipe card. It re-sizes the one bittering addition (shown in amber) and swaps which IBU figure leads; late hops never change. SMPH sizing lands a quarter of the way up the style range by SMPH; Tinseth sizing lands mid-range by Tinseth, which is the recipe as the homebrew world would write it. "Brew this" carries the choice onto the batch, where "IBU figure to lead with" can be changed per batch; Settings holds the default. `recipes.json` carries both sizings (`hops[].sized` with `oz`, and `tinseth.oz`), so the book can print either or both.
 
+## Batch size, and shopping from a style
+- The built-in recipes are written for 5 gallons at 72% efficiency and **shown, shopped and brewed at the brewer's own size**: the batch size and mash efficiency in the equipment profile by default, or 2.5, 5, 10, 15 or any typed figure from the size picker on the recipe card and the Shop screen. Grain follows volume and efficiency; hops, sugar and extract follow volume (`B.scaleAmounts`). The choice is remembered.
+- The recipe form has **Scale the whole recipe to (gal)**, which multiplies every fermentable, hop, dry hop and salt and moves the volumes. Changing "Batch size" alone still only changes the maths, as before.
+- **Shop from a style**: the Shop screen has "Start from a style": pick one and the shopping list and the cart are built from the base recipe at your size, with no batch needed. "Save it as a batch" turns it into one; the recipe card has "Shop for it".
+- **Yeast packs** follow the batch (`B.yeastPacks`): one per six gallons, doubled for lagers and for anything over 1.065, kveik excepted. The cart says why when it is more than one.
+- Big batches are where the pack picker earns its keep: 33 lb of base malt becomes one sack when that is cheaper than tens and ones.
+
+## Brew day extras in the cart
+A short fixed list (`S.EXTRAS` in `shop.js`): Campden tablets, lactic acid, Whirlfloc, yeast nutrient, gypsum, calcium chloride, priming sugar, sanitizer, plus Epsom salt when the recipe's water calls for it. Offered under the cart button, **never added unless ticked**, ticks kept per shopping list, and only those the chosen shop stocks are shown. Salts in the recipe are flagged "in this recipe's water". The smallest pack of each is chosen. Add to the list sparingly: it is short on purpose.
+
 ## One-tap carts
 Shopify shops accept a link that fills the cart: `/cart/<variant>:<qty>,...?storefront=true`. The app builds that link from `catalog.json`, which maps the app's ingredients to each shop's products and pack sizes.
 - **Nothing to install.** `.github/workflows/catalog.yml` has GitHub run `catalog-build.mjs` on its own machines: on the 3rd of each month, whenever `shop.js`, `data.js` or the builder change, and on demand (Actions tab > Build shop catalog > Run workflow). It commits `catalog.json` and `catalog-report.txt` to the repo. If the Actions tab says workflows are disabled, enable them there once. `catalog-build.mjs` must be uploaded to the repo for this to work; it is not served to anyone.
 - The builder reads each shop's public `/products.json`, matches ingredients, and writes the two files. Shops that are not on Shopify, or have the feed switched off, are skipped and the report says why. To try another Shopify homebrew shop, add it to `VENDORS` in `shop.js`.
 - The app fetches `catalog.json` fresh at start-up (network first, last good copy kept for offline), so a rebuilt catalog needs no version bump. **Release zips never contain `catalog.json`**, so uploading a new version cannot overwrite it.
-- With a catalog present the Shop screen lists those shops first and shows **Add all to cart at <shop>**, the estimated total, exactly which packs go in (cheapest combination that covers the recipe, milled or unmilled grain), and what the cart could not cover (salts, anything unmatched), which keeps its Find link. Without one the button simply does not appear.
+- With a catalog present the Shop screen lists those shops first and shows **Add all to cart at <shop>**, the estimated total, a Milled / Unmilled choice for the grain, exactly which packs go in (cheapest combination that covers the recipe), and what the cart could not cover (salts, anything unmatched), which keeps its Find link. Without one the button simply does not appear.
 - First real build (21 Sept 2026): MoreBeer (6,640 products, 137 of 165 ingredients matched), Northern Brewer (127) and Adventures in Homebrewing (123) all publish a feed, so all three can take a filled cart. Ritebrew, Yeast Market, The Malt Miller and Get Er Brewed do not, and stay search-per-item.
 - The matcher is covered by regression tests built from those shops' real titles (wheat malt is not flaked or midnight wheat, honey is not honey malt, the sachet and never the 500 g brick, sizes written as "Ten pounds", milling as a Yes/No option, the classic origin when a hop is sold from two countries). `catalog-report.txt` lists near misses for anything unmatched, which is where the next round of tuning comes from; the alias table is at the top of the cart section in `shop.js`.
 
