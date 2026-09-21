@@ -1,6 +1,6 @@
 /* Generates recipes.js: one sized, verified 5-gallon recipe per style and per world beer.
    I author the shape (grist percentages, hop schedule, yeast, mash, process); the app's math sizes it to the
-   style midpoint and asserts OG, IBU and SRM land in range. Run: node recipes-gen.js */
+   style midpoint (bitterness by the SMPH model) and asserts OG, IBU and SRM land in range. Run: node recipes-gen.js */
 const B = require('./core.js'), D = require('./data.js');
 B.setHopRef(D.HOPS);
 const GAL = 5, EFF = 0.72, BOIL_GAL = 6.5;
@@ -130,21 +130,28 @@ function size(t) {
   const boilG = B.ogFromGrain(ferms, BOIL_GAL, EFF);
   // hops: fixed additions first
   const fixed = hops.filter(h => h[2] !== 'B').map(h => ({ name: h[0], minutes: h[1] === 'dry' ? 0 : h[1], oz: h[2], type: 'pellet', whirlpool: h[3] === 'wp', dry: h[1] === 'dry' }));
-  const boilFixed = fixed.filter(h => !h.dry).map(h => ({ oz: h.oz, alpha: (Hp(h.name).alphaLow + Hp(h.name).alphaHigh) / 2, minutes: h.minutes, type: 'pellet', whirlpool: h.whirlpool }));
-  const fixedIbu = B.ibuTinseth(boilFixed, GAL, boilG);
-  const target = mid(ibu);
+  const alphaOf = n => (Hp(n).alphaLow + Hp(n).alphaHigh) / 2;
+  const boilFixed = fixed.filter(h => !h.dry).map(h => ({ oz: h.oz, alpha: alphaOf(h.name), minutes: h.minutes, type: 'pellet', whirlpool: h.whirlpool }));
+  const dryFixed = fixed.filter(h => h.dry).map(h => ({ oz: h.oz, alpha: alphaOf(h.name), type: 'pellet' }));
+  // SMPH conditions for a generic batch: the app's defaults, this yeast's flocculation. The style range is judged on kettle IBUs;
+  // what dry hops add to a lab reading is reported separately, as the app does.
+  const smph = { gallons: GAL, og: OG, boilMin: 60, floc: yeast.floc };
+  // Bitterness target: a quarter of the way up the style range, by SMPH. SMPH predicts finished-beer IBUs and runs about a third
+  // below Tinseth, so this point is in range by SMPH and near the top of the range by Tinseth: to style whichever way a brewer counts.
+  const target = ibu[0] + 0.25 * (ibu[1] - ibu[0]);
   const bitter = hops.find(h => h[2] === 'B');
   let bitterOz = 0, bitterHop = null;
   if (bitter) {
     bitterHop = Hp(bitter[0]);
-    const alpha = (bitterHop.alphaLow + bitterHop.alphaHigh) / 2;
-    const per = B.ibuTinseth([{ oz: 1, alpha, minutes: bitter[1], type: 'pellet' }], GAL, boilG);
-    bitterOz = Math.max(0, Math.round((target - fixedIbu) / per * 10) / 10);
+    const oz = B.hopsForIbuSmph(target, { alpha: alphaOf(bitter[0]), minutes: bitter[1], type: 'pellet' }, boilFixed, smph, 6);
+    bitterOz = oz === null ? 6 : Math.round(oz * 10) / 10;
   }
   const schedule = [];
-  if (bitter && bitterOz > 0) schedule.push({ name: bitter[0], oz: bitterOz, alpha: r1((bitterHop.alphaLow + bitterHop.alphaHigh) / 2), minutes: bitter[1], form: 'pellet', use: 'Boil' });
-  for (const h of fixed) schedule.push({ name: h.name, oz: h.oz, alpha: r1((Hp(h.name).alphaLow + Hp(h.name).alphaHigh) / 2), minutes: h.dry ? 0 : h.minutes, form: 'pellet', use: h.dry ? 'Dry hop' : h.whirlpool ? 'Whirlpool' : 'Boil', dryDays: h.dry ? 4 : undefined });
-  const IBU = B.ibuTinseth(schedule.filter(h => h.use !== 'Dry hop').map(h => ({ oz: h.oz, alpha: h.alpha, minutes: h.minutes, type: 'pellet', whirlpool: h.use === 'Whirlpool' })), GAL, boilG);
+  if (bitter && bitterOz > 0) schedule.push({ name: bitter[0], oz: bitterOz, alpha: r1(alphaOf(bitter[0])), minutes: bitter[1], form: 'pellet', use: 'Boil' });
+  for (const h of fixed) schedule.push({ name: h.name, oz: h.oz, alpha: r1(alphaOf(h.name)), minutes: h.dry ? 0 : h.minutes, form: 'pellet', use: h.dry ? 'Dry hop' : h.whirlpool ? 'Whirlpool' : 'Boil', dryDays: h.dry ? 4 : undefined });
+  const kettle = schedule.filter(h => h.use !== 'Dry hop').map(h => ({ oz: h.oz, alpha: h.alpha, minutes: h.minutes, type: 'pellet', whirlpool: h.use === 'Whirlpool' }));
+  const res = B.ibuSmph(kettle, Object.assign({ dryHops: dryFixed }, smph));
+  const IBU = Math.round(res.kettle), IBU_DRY = Math.round(res.dry), IBU_TINSETH = B.ibuTinseth(kettle, GAL, boilG);
   const SRM = B.srm(ferms, GAL);
   const att = (yeast.attLow + yeast.attHigh) / 2 / 100;
   const FG = B.fromPoints(Math.round(B.points(OG) * (1 - att)));
@@ -156,7 +163,7 @@ function size(t) {
   if (!within(SRM, srm, 1)) problems.push(`SRM ${SRM} outside ${srm}`);
   if (!within(ABV, abv, 0.5)) problems.push(`ABV ${ABV} outside ${abv} (FG ${FG.toFixed(3)})`);
   return { name, region, group, gallons: GAL, boilGallons: BOIL_GAL, efficiency: Math.round(EFF * 100), ranges: { og, fg, ibu, srm, abv },
-    og: r2(OG * 1000) / 1000, fg: r2(FG * 1000) / 1000, ibu: IBU, srm: r1(SRM), abv: ABV, fermentables: ferms.map(f => ({ name: f.name, lb: f.lb, pct: f.pct })),
+    og: r2(OG * 1000) / 1000, fg: r2(FG * 1000) / 1000, ibu: IBU, ibuDry: IBU_DRY, ibuTinseth: IBU_TINSETH, srm: r1(SRM), abv: ABV, fermentables: ferms.map(f => ({ name: f.name, lb: f.lb, pct: f.pct })),
     hops: schedule, yeast: yeastName, yeastRange: [yeast.tempLow, yeast.tempHigh], mashF, fermF, boilMin: 60, water, notes, problems };
 }
 const recipes = T.map(size);

@@ -9,6 +9,7 @@
   const cToF = c => Math.round((c * 9 / 5 + 32) * 10) / 10;
   const tag = (name, value) => `<${name}>${esc(value)}</${name}>`;
 
+  const formOf = t => (t === 'leaf' || t === 'wet') ? 'Leaf' : 'Pellet';   // BeerXML 1.0 knows Pellet, Plug and Leaf only
   /* batch: the app's batch object; refs: { fermentables, hops, yeast } reference tables for ppg/colour/attenuation. */
   X.exportRecipe = function (batch, refs) {
     const gal = num(batch.batchGal) || 5.5, boilGal = num(batch.boilGal) || gal * 1.25, boilMin = num(batch.boilMin) || 60;
@@ -24,8 +25,12 @@
       const alpha = num(hp.alpha) || (ref.alphaLow ? (ref.alphaLow + ref.alphaHigh) / 2 : 5);
       const minutes = num(hp.minutes);
       const use = hp.whirlpool ? 'Aroma' : (minutes === 0 ? 'Aroma' : 'Boil');
-      return `<HOP>${tag('NAME', hp.name)}${tag('VERSION', 1)}${tag('ALPHA', alpha)}${tag('AMOUNT', (num(hp.oz) * KG_PER_OZ).toFixed(4))}${tag('USE', use)}${tag('TIME', minutes)}${tag('FORM', hp.type === 'leaf' ? 'Leaf' : 'Pellet')}</HOP>`;
-    });
+      return `<HOP>${tag('NAME', hp.name)}${tag('VERSION', 1)}${tag('ALPHA', alpha)}${tag('AMOUNT', (num(hp.oz) * KG_PER_OZ).toFixed(4))}${tag('USE', use)}${tag('TIME', minutes)}${tag('FORM', formOf(hp.type))}${hp.type && hp.type !== 'pellet' && hp.type !== 'leaf' ? tag('NOTES', 'Form: ' + hp.type) : ''}</HOP>`;
+    }).concat((Array.isArray(batch.dryHops) ? batch.dryHops : []).filter(d => d.name).map(d => {
+      const ref = (refs.hops || []).find(x => x.name === d.name) || {};
+      const alpha = num(d.alpha) || (ref.alphaLow ? (ref.alphaLow + ref.alphaHigh) / 2 : 5);
+      return `<HOP>${tag('NAME', d.name)}${tag('VERSION', 1)}${tag('ALPHA', alpha)}${tag('AMOUNT', (num(d.oz) * KG_PER_OZ).toFixed(4))}${tag('USE', 'Dry Hop')}${tag('TIME', (num(d.days) || 4) * 1440)}${tag('FORM', formOf(d.type))}</HOP>`;
+    }));
     let yeast = '';
     if (batch.yeast) {
       const ref = (refs.yeast || []).find(x => x.name === batch.yeast) || {};
@@ -63,13 +68,13 @@ ${batch.og ? tag('OG', num(batch.og).toFixed(3)) : ''}${batch.fg ? tag('FG', num
         name: t(r, 'NAME') || 'Imported recipe', style: (() => { const s = r.getElementsByTagName('STYLE')[0]; return s ? t(s, 'NAME') : ''; })(),
         brewDate: t(r, 'DATE') || '', batchGal: Math.round(gal * 100) / 100 || 5.5, boilGal: Math.round(boilGal * 100) / 100 || 7, boilMin: num(t(r, 'BOIL_TIME')) || 60,
         efficiency: num(t(r, 'EFFICIENCY')) || 72, og: t(r, 'OG') ? num(t(r, 'OG')) : '', fg: t(r, 'FG') ? num(t(r, 'FG')) : '', notes: t(r, 'NOTES') || '', status: 'Planned',
-        fermentables: [], hops: [], yeast: '', salts: [], extras: [], mashF: 152
+        fermentables: [], hops: [], dryHops: [], yeast: '', salts: [], extras: [], mashF: 152
       };
       const fermsEl = r.getElementsByTagName('FERMENTABLES')[0];
       for (const f of children(fermsEl, 'FERMENTABLE')) b.fermentables.push({ name: snap(t(f, 'NAME'), (refs.fermentables || []).map(x => x.name)), lb: Math.round(num(t(f, 'AMOUNT')) / KG_PER_LB * 100) / 100, lovibond: num(t(f, 'COLOR')), ppg: Math.round(num(t(f, 'YIELD')) / 100 * 46.21) });
       const hopsEl = r.getElementsByTagName('HOPS')[0];
       for (const hp of children(hopsEl, 'HOP')) {
-        const use = t(hp, 'USE'); if (/dry hop/i.test(use)) { b.extras.push(`Dry hop: ${t(hp, 'NAME')} ${Math.round(num(t(hp, 'AMOUNT')) / KG_PER_OZ * 100) / 100} oz`); continue; }
+        const use = t(hp, 'USE'); if (/dry hop/i.test(use)) { const mins = num(t(hp, 'TIME')); b.dryHops.push({ name: snap(t(hp, 'NAME'), (refs.hops || []).map(x => x.name)), oz: Math.round(num(t(hp, 'AMOUNT')) / KG_PER_OZ * 100) / 100, alpha: num(t(hp, 'ALPHA')), type: /leaf|plug/i.test(t(hp, 'FORM')) ? 'leaf' : 'pellet', day: '', days: mins >= 1440 ? Math.round(mins / 1440) : (mins > 0 && mins <= 30 ? mins : 4) }); continue; }
         b.hops.push({ name: snap(t(hp, 'NAME'), (refs.hops || []).map(x => x.name)), oz: Math.round(num(t(hp, 'AMOUNT')) / KG_PER_OZ * 100) / 100, alpha: num(t(hp, 'ALPHA')), minutes: num(t(hp, 'TIME')), type: /leaf|plug/i.test(t(hp, 'FORM')) ? 'leaf' : 'pellet', whirlpool: /aroma|whirlpool/i.test(use) && num(t(hp, 'TIME')) > 0 });
       }
       const y = r.getElementsByTagName('YEAST')[0]; if (y) b.yeast = snap(t(y, 'NAME'), (refs.yeast || []).map(x => x.name));

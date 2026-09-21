@@ -1,8 +1,8 @@
-/* Reptile Log service worker.
+/* Brew Log service worker.
    index.html: network first (a reload always gets the newest page when online), cache fallback offline.
    Other shell files: cache first with background refresh. Wikimedia and CDN assets: network first, cached after. */
-const VERSION = 'blog-1.5.0';
-const SHELL = ['./', './index.html', './recipes.js?v=1.5.0', './beerxml.js?v=1.5.0', './data.js?v=1.5.0', './shop.js?v=1.5.0', './core.js?v=1.5.0', './app.js?v=1.5.0', './manifest.webmanifest?v=1.5.0', './icons/icon-192.png', './icons/icon-512.png'];
+const VERSION = 'blog-1.6.0';
+const SHELL = ['./', './index.html', './recipes.js?v=1.6.0', './beerxml.js?v=1.6.0', './data.js?v=1.6.0', './shop.js?v=1.6.0', './core.js?v=1.6.0', './app.js?v=1.6.0', './manifest.webmanifest?v=1.6.0', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => Promise.all(SHELL.map(u => fetch(u, { cache: 'reload' }).then(r => { if (r.ok) return c.put(u, r); }).catch(() => {})))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION && k !== VERSION + '-lib').map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('message', e => { if (e.data === 'skipWaiting') self.skipWaiting(); });

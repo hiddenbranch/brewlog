@@ -31,20 +31,36 @@
   // Build a shopping list from a recipe: one line per ingredient, with a sensible search term.
   S.shoppingList = function (batch) {
     const out = [];
-    (batch.fermentables || []).forEach(f => { if (f.name) out.push({ qty: f.lb ? `${f.lb} lb` : '', item: f.name, term: f.name.replace(/\s*\/.*$/, ''), group: 'Fermentables' }); });
-    (batch.hops || []).forEach(hp => { if (hp.name) out.push({ qty: hp.oz ? `${hp.oz} oz` : '', item: `${hp.name}${hp.minutes !== undefined && hp.minutes !== '' ? ' (' + hp.minutes + ' min)' : ''}`, term: hp.name + ' hops', group: 'Hops' }); });
+    (batch.fermentables || []).forEach(f => { if (f.name && !f.late) out.push({ qty: f.lb ? `${f.lb} lb` : '', item: f.name, term: f.name.replace(/\s*\/.*$/, ''), group: 'Fermentables' }); });
+    (batch.hops || []).forEach(hp => { if (hp.name) out.push({ qty: hp.oz ? `${hp.oz} oz` : '', item: `${hp.name}${hp.minutes !== undefined && hp.minutes !== '' ? ' (' + hp.minutes + ' min)' : ''}`, term: hp.name + ' hops' + formTerm(hp.type), group: 'Hops' }); });
+    const dry = Array.isArray(batch.dryHops) ? batch.dryHops : [];
+    dry.forEach(d => { if (d.name && !d.extra) out.push({ qty: d.oz ? `${d.oz} oz` : '', item: `${d.name} (dry hop)`, term: d.name + ' hops' + formTerm(d.type), group: 'Hops' }); });
     if (batch.yeast) out.push({ qty: '1', item: batch.yeast, term: batch.yeast.split('/')[0].trim() + ' yeast', group: 'Yeast' });
     (batch.salts || []).forEach(s => { if (s.salt && s.grams) out.push({ qty: `${s.grams} g`, item: s.salt, term: s.salt.replace(/\s*\(.*\)/, ''), group: 'Water' }); });
-    (batch.extras || []).forEach(e => { if (e) out.push({ qty: '', item: e, term: e, group: 'Other' }); });
+    (batch.extras || []).forEach(e => { if (!e) return; const m = /^dry hop:\s*(.*)$/i.exec(e);
+      if (m && !dry.length) { const name = m[1].replace(/(\d+(?:\.\d+)?)\s*oz/i, '').replace(/,?\s*\d+\s*days?/i, '').replace(/^[\s,]+|[\s,]+$/g, ''); const oz = (m[1].match(/(\d+(?:\.\d+)?)\s*oz/i) || [])[1]; out.push({ qty: oz ? `${oz} oz` : '', item: `${name} (dry hop)`, term: name + ' hops', group: 'Hops' }); }
+      else if (!m) out.push({ qty: '', item: e, term: e, group: 'Other' }); });
     // merge duplicate ingredients (two hop additions of the same variety)
     const merged = [];
     for (const line of out) {
       const hit = merged.find(m => m.group === line.group && m.term === line.term);
-      if (hit && line.group === 'Hops') { hit.qty = addQty(hit.qty, line.qty); hit.item = hit.term.replace(/ hops$/, '') + ' (multiple additions)'; }
+      if (hit && line.group === 'Hops') { hit.qty = addQty(hit.qty, line.qty); hit.item = hit.term.replace(/ hops.*$/, '') + ' (multiple additions)'; }
       else merged.push(Object.assign({}, line));
     }
+    merged.forEach(l => { l.buy = S.buyQty(l); });
     return merged;
   };
+  const formTerm = t => t === 'cryo' ? ' cryo' : t === 'leaf' ? ' whole leaf' : t === 'extract' ? ' extract' : '';
+  /* What you actually put in the basket: shops sell grain by the pound, hops by the ounce and yeast by the pack.
+     Salts are left alone; a jar lasts years. */
+  S.buyQty = function (line) {
+    const n = parseFloat(line.qty); if (!isFinite(n) || n <= 0) return '';
+    if (line.group === 'Fermentables') { const lb = Math.ceil(n - 1e-9); return lb === n ? '' : `buy ${lb} lb`; }
+    if (line.group === 'Hops') { const oz = Math.ceil(n - 1e-9); return oz === n ? '' : `buy ${oz} oz`; }
+    return '';
+  };
+  // Most retailers sell all-grain and extract kits for the common styles: one product instead of a dozen.
+  S.kitTerm = batch => batch && batch.style ? `${String(batch.style).replace(/\s*\(.*\)/, '').replace(/\s*\/.*$/, '')} recipe kit` : '';
   function addQty(a, b) {
     const na = parseFloat(a) || 0, nb = parseFloat(b) || 0, unit = (String(a).match(/[a-z]+/) || [''])[0];
     const sum = Math.round((na + nb) * 100) / 100;
@@ -52,7 +68,7 @@
   }
   S.listAsText = function (list) {
     const groups = [...new Set(list.map(l => l.group))];
-    return groups.map(g => g.toUpperCase() + '\n' + list.filter(l => l.group === g).map(l => `- ${l.qty ? l.qty + '  ' : ''}${l.item}`).join('\n')).join('\n\n');
+    return groups.map(g => g.toUpperCase() + '\n' + list.filter(l => l.group === g).map(l => `- ${l.qty ? l.qty + '  ' : ''}${l.item}${l.buy ? '  (' + l.buy + ')' : ''}`).join('\n')).join('\n\n');
   };
   S.DISCLOSURE = 'Some shop links may earn a small commission at no cost to you. They never change what the app recommends.';
   if (typeof module !== 'undefined' && module.exports) module.exports = S; else root.BrewShop = S;
