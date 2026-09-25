@@ -1,8 +1,9 @@
 /* Brew Log service worker.
    index.html: network first (a reload always gets the newest page when online), cache fallback offline.
+   tags.js and catalog.json: network first too, since both change without a version bump.
    Other shell files: cache first with background refresh. Wikimedia and CDN assets: network first, cached after. */
-const VERSION = 'blog-1.8.0';
-const SHELL = ['./', './index.html', './recipes.js?v=1.8.0', './beerxml.js?v=1.8.0', './data.js?v=1.8.0', './shop.js?v=1.8.0', './core.js?v=1.8.0', './app.js?v=1.8.0', './manifest.webmanifest?v=1.8.0', './icons/icon-192.png', './icons/icon-512.png'];
+const VERSION = 'blog-1.8.1';
+const SHELL = ['./', './index.html', './recipes.js?v=1.8.1', './beerxml.js?v=1.8.1', './data.js?v=1.8.1', './tags.js?v=1.8.1', './shop.js?v=1.8.1', './core.js?v=1.8.1', './app.js?v=1.8.1', './manifest.webmanifest?v=1.8.1', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => Promise.all(SHELL.map(u => fetch(u, { cache: 'reload' }).then(r => { if (r.ok) return c.put(u, r); }).catch(() => {})))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('blog-') && k !== VERSION && k !== VERSION + '-lib').map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('message', e => { if (e.data === 'skipWaiting') self.skipWaiting(); });
@@ -11,7 +12,9 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   if (url.origin === location.origin) {
     const isPage = e.request.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('index.html') || url.pathname.endsWith('catalog.json');   // network first: the catalog changes without a version bump
-    if (isPage) {
+    if (url.pathname.endsWith('/tags.js')) {   // affiliate tags, edited on GitHub: newest when online, last copy offline
+      e.respondWith(fetch(e.request).then(res => { if (res.ok) caches.open(VERSION).then(c => c.put(e.request, res.clone())); return res; }).catch(() => caches.match(e.request)));
+    } else if (isPage) {
       e.respondWith(fetch(e.request).then(res => { if (res.ok) caches.open(VERSION).then(c => c.put(e.request, res.clone())); return res; }).catch(() => caches.match(e.request).then(hit => hit || caches.match('./index.html'))));
     } else {
       e.respondWith(caches.match(e.request).then(hit => {

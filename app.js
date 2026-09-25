@@ -4,7 +4,7 @@
   const B = window.BrewCore, D = window.BrewData, SH = window.BrewShop, RC = window.BrewRecipes;
   B.setHopRef(D.HOPS);
   const OCR_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
-  const APP_VERSION = '1.8.0';
+  const APP_VERSION = '1.8.1';
   const BOOK = { title: 'Homebrewer\'s Brew Log Book', url: '', blurb: 'The paper companion: brew day sheets, fermentation charts and recipe pages built to be photographed into this app.' };
   const CDN = { jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js' };
   const STATUSES = ['Planned', 'Brewing', 'Fermenting', 'Conditioning', 'Packaged', 'Drinking', 'Finished'];
@@ -43,7 +43,8 @@
   S.get = async (k, d) => { if (k in S.cache) return S.cache[k]; const r = await DB.get('kv', k); S.cache[k] = r ? r.value : d; return S.cache[k]; };
   S.set = async (k, v) => { S.cache[k] = v; await DB.put('kv', { key: k, value: v }); };
 
-  const state = { tab: 'batches', sub: null, batchId: null };
+  const TAG_CHECK = /[?&]tags(=|&|$)/.test(location.search);   // brewlog/?tags opens Settings with the tag check at the top
+  const state = { tab: TAG_CHECK ? 'settings' : 'batches', sub: null, batchId: null };
   const view = $('#view');
   // DOM append does not flatten arrays, so anything built with .map() must go through this
   const add = (...kids) => { kids.flat(Infinity).forEach(k => { if (k !== null && k !== undefined && k !== false) view.append(k.nodeType ? k : document.createTextNode(String(k))); }); };
@@ -1100,10 +1101,22 @@
     })();
     return catalogReady;
   }
+  // Affiliate tags ship with the app in tags.js (edited on GitHub), so every copy carries the same ones. Blank means no tag.
+  function affTags() { const t = window.BREWLOG_TAGS || {}, out = {}; for (const k in t) if (typeof t[k] === 'string' && t[k].trim()) out[k] = t[k].trim(); return out; }
+  function tagCheck() {
+    const tags = affTags();
+    const rows = SH.VENDORS.map(v => { const t = tags[v.id], problem = t ? SH.tagProblem(v.id, t) : '';
+      return h('li', { style: 'margin:6px 0' }, h('b', null, v.name), ': ', !t ? h('span', { class: 'muted' }, 'no tag') : problem ? h('span', { style: 'color:var(--warn)' }, problem)
+        : h('span', null, 'tag set. ', h('a', { href: SH.searchUrl(v.id, 'pale malt', tags), target: '_blank', rel: 'noopener' }, 'Test it with a search'))); });
+    if (!window.BREWLOG_TAGS) return h('div', { class: 'lock' }, h('b', null, 'Tag check'), h('p', { class: 'small', style: 'margin-top:6px;color:var(--warn)' }, 'tags.js did not load, so no shop link carries a tag. Open it on GitHub and look for a missing quote or comma.'));
+    return h('div', { class: 'lock' }, h('b', null, 'Tag check'),
+      h('p', { class: 'muted small', style: 'margin-top:6px' }, 'Tags come from tags.js in the brewlog repository. Edit that file on GitHub to add or change one; the app picks it up within about ten minutes. This box only shows when the address ends in ?tags.'),
+      h('ul', { class: 'small', style: 'padding-left:18px;margin:8px 0 0' }, rows));
+  }
   async function renderShop() {
     await loadCatalog();
     const list = await batchList();
-    const tags = await S.get('affTags', {});
+    const tags = affTags();
     const region = await S.get('region', 'US');
     view.append(h('h2', null, 'Shopping list'));
     // shop for one of your batches, or straight from a style with no batch made yet
@@ -1184,11 +1197,9 @@
 
   // ---------- settings ----------
   async function renderSettings() {
-    const tags = await S.get('affTags', {});
     const region = await S.get('region', 'US');
     const regionSel = sel(['US', 'UK'], region);
     regionSel.addEventListener('change', async () => { await S.set('region', regionSel.value); toast('Saved'); });
-    const tagInputs = SH.VENDORS.map(v => { const i = inp(tags[v.id] || ''); i.dataset.vendor = v.id; const warn = h('span', { class: 'small', style: 'color:var(--warn);display:block' }, SH.tagProblem(v.id, tags[v.id])); i.addEventListener('input', () => { warn.textContent = SH.tagProblem(v.id, i.value); }); const f = field(`${v.name} (${v.region})${SH.hasCart(v.id) ? ' \u2013 one-tap cart' : ''}`, i, v.note); f.append(warn); return f; });
     const eq = await equip(); const ef = {};
     const mkE = (k, label, hint) => { ef[k] = inp(eq[k], k === 'name' ? 'text' : 'number'); return field(label, ef[k], hint); };
     view.append(h('h2', null, 'Settings'),
@@ -1211,13 +1222,6 @@
       await (async () => { const mine = await S.get('procChips', []); if (!mine.length) return null;
         return h('div', null, h('h3', null, 'Your process note buttons'), h('div', { class: 'chips' }, mine.map(m => h('button', { class: 'chip', style: 'font-family:inherit', onclick: async () => { await S.set('procChips', mine.filter(x => x !== m)); toast('Removed'); render(); } }, m + '  \u00D7'))), h('p', { class: 'muted small' }, 'Tap one to remove it from the brew day buttons. Past log entries are untouched.')); })(),
       field('Shop region', regionSel),
-      h('h3', null, 'Affiliate tags'),
-      h('p', { class: 'muted small' }, 'Leave these blank and shop links are plain links with no tracking. Otherwise paste what the programme gives you, in whichever shape it comes:'),
-      h('ul', { class: 'muted small', style: 'padding-left:18px;margin:0 0 12px' }, h('li', null, 'an affiliate network deep link, with {url} where the destination goes: https://network.example/click?id=123&url={url}'), h('li', null, 'a parameter the shop adds to its own links: a_aid=abc123'), h('li', null, 'for Amazon, just your tag: mysite-20')),
-      h('p', { class: 'muted small' }, 'Every search and every filled cart the app opens at that shop then goes through it. Apply to each programme yourself; most want to see traffic before approving.'),
-      h('div', null, tagInputs),
-      h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { const out = {}; view.querySelectorAll('input[data-vendor]').forEach(i => { if (i.value.trim()) out[i.dataset.vendor] = i.value.trim(); }); await S.set('affTags', out); toast('Saved'); } }, 'Save tags')),
-      h('p', { class: 'muted small' }, SH.DISCLOSURE),
       h('h3', null, 'Export'),
       h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: async () => {
         const batches = await DB.all('batches'), entries = await DB.all('entries');
@@ -1233,6 +1237,7 @@
       h('p', { class: 'muted small' }, `This page is Brew Log ${APP_VERSION}.`), h('p', { class: 'muted small' }, B.SMPH_CREDIT),
       h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: async () => { toast('Fetching the latest files'); try { const keys = await caches.keys(); for (const k of keys) if (k.startsWith('blog-')) await caches.delete(k); if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); } } catch (e) { /* ignore */ } location.replace(location.pathname + '?r=' + Date.now()); } }, 'Check for updates and reload')),
       bookCard());
+    if (TAG_CHECK) view.querySelector('h2').after(tagCheck());
   }
 
   let deferredPrompt = null;
