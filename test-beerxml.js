@@ -34,8 +34,11 @@ assert.strictEqual(f.fermentables[0].name, '2-row pale malt', 'snapped: ' + f.fe
 assert.strictEqual(f.fermentables[1].name, 'Corn sugar (dextrose)', 'snapped sugar: ' + f.fermentables[1].name);
 assert.strictEqual(f.hops[0].name, 'Columbus / CTZ', 'snapped hop: ' + f.hops[0].name);
 assert.strictEqual(f.hops.length, 1, 'dry hop moved out of the boil list');
-assert(f.extras[0].startsWith('Dry hop: Simcoe'), 'dry hop kept as an extra: ' + f.extras[0]);
+assert.strictEqual(f.dryHops.length, 1, 'and kept as a dry hop'); assert.strictEqual(f.dryHops[0].name, 'Simcoe'); assert.strictEqual(f.dryHops[0].oz, 2.01); assert.strictEqual(f.dryHops[0].days, 7, 'days in, from the minutes BeerXML counts in');
 assert.strictEqual(f.mashF, 149);
 assert.throws(() => X.importRecipes('<not xml', {}, null), /valid XML/);
 assert.throws(() => X.importRecipes('<RECIPES></RECIPES>', {}, null), /No recipes/);
+// the mash length goes out and comes back, so an overnight mash survives the trip
+const long = X.importRecipes(X.exportRecipe(Object.assign({}, batch, { mashMin: 90, dryHops: [{ name: 'Mosaic', oz: 2, alpha: 12, type: 'pellet', days: 3, day: '' }] }), { fermentables: D.FERMENTABLES, hops: D.HOPS, yeast: D.YEAST }), { fermentables: D.FERMENTABLES, hops: D.HOPS, yeast: D.YEAST }, B.matchVocab)[0];
+assert.strictEqual(long.mashMin, 90); assert.strictEqual(r.mashMin, undefined, 'a plain hour is left to the default'); assert.strictEqual(long.dryHops[0].name, 'Mosaic'); assert.strictEqual(long.dryHops[0].days, 3);
 console.log('beerxml tests passed');

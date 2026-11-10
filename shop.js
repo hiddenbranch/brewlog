@@ -137,13 +137,18 @@
     'CaraPils / Carafoam': ['carapils', 'carafoam', 'dextrin malt', 'dextrine malt'], 'Carafa Special II': ['carafa special ii', 'carafa ii special', 'carafa special 2', 'carafa 2 special', 'dehusked carafa ii'], 'Victory malt': ['victory'],
     'Belgian candi syrup D-45': ['candi syrup d 45', 'd 45 candi', 'd 45', 'd45'], 'Belgian candi syrup D-180': ['candi syrup d 180', 'd 180 candi', 'd 180', 'd180'],
     'Columbus / CTZ': ['columbus', 'ctz', 'tomahawk', 'zeus'], 'Hallertau Mittelfrüh': ['hallertau mittelfruh', 'hallertau mittelfrueh', 'hallertauer mittelfruh', 'hallertauer mittelfrueh', 'mittelfruh', 'hallertau', 'hallertauer'],
-    'East Kent Golding': ['east kent golding', 'kent golding', 'ekg'], Tettnang: ['tettnang', 'tettnanger'], Spalt: ['spalt', 'spalter'], 'Huell Melon': ['huell melon', 'hull melon'], 'Styrian Golding': ['styrian golding', 'celeia']
+    'East Kent Golding': ['east kent golding', 'kent golding', 'ekg'], Tettnang: ['tettnang', 'tettnanger'], Spalt: ['spalt', 'spalter'], 'Huell Melon': ['huell melon', 'hull melon'], 'Styrian Golding': ['styrian golding', 'celeia'],
+    Krush: ['krush', 'hbc 586'], Talus: ['talus', 'hbc 692'], Ekuanot: ['ekuanot', 'hbc 366'], Lemondrop: ['lemondrop', 'lemon drop'],
+    'Extra light DME': ['extra light dme', 'dme extra light', 'extra light dry malt extract', 'pilsen light dme'], 'Amber DME': ['amber dme', 'dme amber', 'amber dry malt extract', 'sparkling amber dme', 'sparkling amber dry malt extract'],
+    'Dark DME': ['dark dme', 'dme dark', 'dark dry malt extract', 'traditional dark dme', 'traditional dark dry malt extract'], 'Amber LME': ['amber lme', 'lme amber', 'amber liquid malt extract', 'sparkling amber lme', 'amber malt syrup'],
+    'Dark LME': ['dark lme', 'lme dark', 'dark liquid malt extract', 'traditional dark lme', 'dark malt syrup'], 'Wheat LME': ['wheat lme', 'lme wheat', 'wheat liquid malt extract', 'bavarian wheat lme', 'wheat malt syrup'],
+    'Munich LME': ['munich lme', 'lme munich', 'munich liquid malt extract', 'munich malt syrup'], 'Rice syrup solids': ['rice syrup solids', 'rice solids'], 'Pale ale malt': ['pale ale malt'], 'Golden Promise': ['golden promise']
   };
   // A word in the shop's title that makes it a different ingredient, unless our ingredient has the word too
-  const MODIFIERS = ['flaked', 'torrified', 'unmalted', 'raw', 'smoked', 'oak', 'cherrywood', 'peated', 'midnight', 'chocolate', 'roasted', 'black', 'dark', 'caramel', 'crystal', 'honey', 'candi', 'rye', 'wheat', 'oat', 'oats', 'spelt', 'toasted', 'red', 'acidulated', 'melanoidin', 'special'];
+  const MODIFIERS = ['flaked', 'torrified', 'unmalted', 'raw', 'smoked', 'oak', 'cherrywood', 'peated', 'midnight', 'chocolate', 'roasted', 'black', 'dark', 'caramel', 'crystal', 'honey', 'candi', 'rye', 'wheat', 'oat', 'oats', 'spelt', 'toasted', 'red', 'acidulated', 'melanoidin', 'special', 'extra'];
   // Where the classic version of a hop grows: breaks the tie when a shop sells the same name from two countries
   const UK = 'uk|english|british|england', DE = 'german|germany';
-  const HOP_ORIGIN = { Fuggle: UK, 'East Kent Golding': UK, Challenger: UK, Target: UK, 'Bramling Cross': UK, Progress: UK, Saaz: 'czech', Tettnang: DE, Spalt: DE, Perle: DE, Hersbrucker: DE, Magnum: DE, 'Northern Brewer': DE, 'Hallertau Mittelfrüh': DE, 'Styrian Golding': 'slovenia|slovenian' };
+  const HOP_ORIGIN = { Fuggle: UK, 'East Kent Golding': UK, Challenger: UK, Target: UK, 'Bramling Cross': UK, Progress: UK, Saaz: 'czech', Tettnang: DE, Spalt: DE, Perle: DE, Hersbrucker: DE, Magnum: DE, 'Northern Brewer': DE, 'Hallertau Mittelfrüh': DE, 'Styrian Golding': 'slovenia|slovenian', Herkules: DE, 'First Gold': UK };
   const BULK_YEAST = /\b(100|250|500)\s*(g|grams?)\b|\b1\s*kg\b|\bbrick\b|\bbulk\b/;
   S.aliasesFor = function (name, kind) {
     if (ALIASES[name]) return ALIASES[name].map(norm);

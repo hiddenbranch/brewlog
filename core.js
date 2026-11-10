@@ -26,12 +26,14 @@
   };
   B.attenuationApparent = (og, fg) => r1((og - fg) / (og - 1) * 100);
   B.attenuationReal = (og, fg) => r1(0.8192 * B.attenuationApparent(og, fg));
-  // 12 oz (355 ml) calories, Palmer/standard
+  // Calories in a 12 oz (355 ml) pour, the ASBC way: alcohol by weight carries 6.9 kcal a gram, the real extract left behind 4.0.
+  // A 1.050 to 1.010 pale ale comes out near 165, which is what the label on a commercial one says.
   B.calories = function (og, fg) {
-    const abw = (og - fg) * 105.5 / 0.794 / 100 * 0.794;
-    const cal_a = 6.9 * ((og - fg) * 131.25 * 0.795 * fg / 100) * 3.55 * 10;
-    const cal_c = 4.0 * ((0.8114 * B.sgToPlato(fg) / 100) * fg * 1000 - 0.44) * 3.55;
-    return Math.round(cal_a + cal_c);
+    if (!(og > 1) || !(fg > 0) || fg > og) return null;
+    const plato = sg => 259 - 259 / sg;
+    const abw = 76.08 * (og - fg) / (1.775 - og);                 // alcohol, % by weight
+    const realExtract = 0.1808 * plato(og) + 0.8192 * plato(fg);  // what is still in the glass, in Plato
+    return Math.round((6.9 * abw + 4.0 * (realExtract - 0.1)) * fg * 3.55);
   };
   // hydrometer calibrated at 60F; correction for sample temperature (F)
   B.hydrometerCorrect = function (reading, tempF, calF) {
@@ -41,12 +43,13 @@
   };
   // refractometer: Brix -> SG. wcf = wort correction factor (1.02 to 1.06, default 1.04)
   B.brixToSgUnfermented = function (brix, wcf) { return B.platoToSg(brix / (wcf || 1.04)); };
-  // Terrill cubic for fermenting/finished wort
+  // Fermenting or finished beer on a refractometer: alcohol bends the light too, so the reading is corrected with the original one.
+  // Petr Novotny's linear correlation (Zymurgy, July/August 2017). It holds at any point in the fermentation, which a log of readings
+  // needs: Terrill's cubic is fitted to finished beer only and reads many points low in mid-ferment, and the older ProMash cubic reads
+  // about a point lower than this throughout.
   B.refractoFg = function (obBrix, fbBrix, wcf) {
-    const ob = obBrix / (wcf || 1.04), ab = fbBrix / (wcf || 1.04);
-    const sg = 1.001843 - 0.002318474 * ob - 0.000007775 * ob * ob - 0.000000034 * ob * ob * ob
-      + 0.00574 * ab + 0.00003344 * ab * ab + 0.000000086 * ab * ab * ab;
-    return r4(sg);
+    const i = obBrix / (wcf || 1.04), f = fbBrix / (wcf || 1.04);
+    return r4(1 - 0.002349 * i + 0.006276 * f);
   };
 
   // ---- recipe ----
@@ -326,11 +329,12 @@
   // viability of a liquid pack, roughly 21% loss per month from manufacture
   B.yeastViability = function (cellsBillion, monthsOld) { return Math.round(cellsBillion * Math.pow(0.79, Math.max(0, monthsOld))); };
   B.starterGrowth = function (cellsBillion, starterL) {
-    // simple stir-plate model: growth falls as inoculation rate rises
+    // White and Zainasheff's starter data ("Yeast", 2010) as the curve the usual calculators fit to it: the lighter the inoculation, the more
+    // new cells each cell makes, up to about six. 100 billion in 1 L ends near 150, in 2 L near 205, in 4 L near 280.
     if (!starterL || !cellsBillion) return cellsBillion;
-    const rate = cellsBillion / starterL;                       // billion per litre
-    const factor = Math.max(1, Math.min(6, 12.54793776 * Math.pow(rate, -0.4594858324) - 0.9994994906));
-    return Math.round(cellsBillion * factor);
+    const rate = cellsBillion / starterL;                       // billion per litre, the same number as million per ml
+    const newPerCell = Math.max(0, Math.min(6, 12.54793776 * Math.pow(rate, -0.4594858324) - 0.9994994906));
+    return Math.round(cellsBillion * (1 + newPerCell));
   };
   B.starterDme = starterL => r1(starterL * 100);                // 10% w/v, about 1.036
 
@@ -509,18 +513,31 @@
 
   // ---- fermentation tracking ----
   B.fermentationStatus = function (readings, og) {
-    const r = (readings || []).filter(x => x.sg > 0).sort((a, b) => a.date < b.date ? -1 : 1);
+    const r = (readings || []).filter(x => x.sg > 0).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);   // same-day readings keep the order they were logged in
     if (!r.length) return { state: 'no readings' };
     const last = r[r.length - 1], prev = r.length > 1 ? r[r.length - 2] : null;
     const att = B.attenuationApparent(og, last.sg);
     let state = 'fermenting';
     if (prev && Math.abs(last.sg - prev.sg) <= 0.001) state = 'stable';
     if (att < 40) state = prev ? 'slow' : 'early';
-    return { state, sg: last.sg, attenuation: att, abv: B.abv(og, last.sg), readings: r.length, stableFor: prev && Math.abs(last.sg - prev.sg) <= 0.001 ? B.daysBetween(prev.date, last.date) : 0 };
+    const stableFor = prev && Math.abs(last.sg - prev.sg) <= 0.001 ? B.daysBetween(prev.date, last.date) : 0;
+    // two matching readings at least two days apart, and the yeast has plainly done its work: safe to package
+    return { state, sg: last.sg, attenuation: att, abv: B.abv(og, last.sg), readings: r.length, stableFor, ready: state === 'stable' && stableFor >= 2 && att >= 55 };
   };
-  B.daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
-  B.addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
-  B.today = () => new Date().toISOString().slice(0, 10);
+  /* Dates are plain YYYY-MM-DD strings in the brewer's own time zone. "Today" must be the local day: toISOString() is UTC, which is
+     already tomorrow on an American evening. Day arithmetic is done in UTC so a daylight-saving change cannot drop or repeat a day. */
+  const utcDay = d => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : NaN; };
+  B.isoDay = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  B.daysBetween = (a, b) => Math.round((utcDay(b) - utcDay(a)) / 86400000);
+  B.addDays = (d, n) => { const t = utcDay(d); return isFinite(t) ? new Date(t + Math.round(Number(n) || 0) * 86400000).toISOString().slice(0, 10) : ''; };
+  B.today = () => B.isoDay(new Date());
+  /* "Nov 10" in America, "10 Nov" in Britain: dates the way the phone's owner writes them, with the year only when it is not
+     this one. Anything that is not a date comes back empty rather than as whatever was typed. */
+  B.niceDate = function (d) {
+    const t = utcDay(d); if (!isFinite(t)) return '';
+    const opts = { month: 'short', day: 'numeric', timeZone: 'UTC' }; if (String(d).slice(0, 4) !== B.today().slice(0, 4)) opts.year = 'numeric';
+    try { return new Date(t).toLocaleDateString(undefined, opts); } catch (e) { return String(d).slice(0, 10); }
+  };
 
 
   // ---- inventory and "what can I brew" ----
@@ -628,9 +645,14 @@
   B.brewTargets = function (batch, eq, grainLb, yeast) {
     const n = v => Number(v) || 0;
     const mashF = n(batch.mashF) || 152, boilMin = n(batch.boilMin) || eq.boilMin || 60, preBoil = n(batch.boilGal) || eq.boilGal;
-    const strikeGal = B.strikeWaterVolume(grainLb, eq.qtPerLb);
+    /* Brew in a bag and most no-sparge all-in-one brews put all the water in with the grain: the strike volume is then the
+       pre-boil volume plus what the grain keeps, and the mash ratio is whatever that works out to. */
+    const noSparge = !!eq.noSparge && grainLb > 0, grainF = n(eq.grainTempF) || 65;
+    const strikeGal = noSparge ? r2(preBoil + B.grainAbsorption(grainLb, eq.absorbGalLb)) : B.strikeWaterVolume(grainLb, eq.qtPerLb);
+    const qtPerLb = noSparge ? r2(strikeGal * 4 / grainLb) : eq.qtPerLb;
+    const spargeGal = noSparge ? 0 : Math.max(0, B.spargeVolume(preBoil, strikeGal, grainLb, eq.absorbGalLb));
     const pitchF = n(batch.fermF) || (yeast ? yeast.tempLow + Math.round((yeast.tempHigh - yeast.tempLow) / 3) : 66);
-    return { mashF, boilMin, preBoil, strikeGal, strikeF: B.strikeTemp(eq.qtPerLb, 65, mashF, eq.tunLossF), spargeGal: B.spargeVolume(preBoil, strikeGal, grainLb, eq.absorbGalLb),
+    return { mashF, boilMin, preBoil, strikeGal, noSparge, qtPerLb, grainF, strikeF: B.strikeTemp(qtPerLb, grainF, mashF, eq.tunLossF), spargeGal, totalWaterGal: r2(strikeGal + spargeGal),
       mashMin: n(batch.mashMin) || 60, pitchF, boilF: eq.elevationFt ? Math.round(212 - eq.elevationFt / 500) : 212, wpTempF: n(batch.wpTempF) || 175, wpMin: n(batch.wpMin) || 20,
       pitchRange: yeast ? [yeast.tempLow, yeast.tempHigh] : null };
   };
@@ -647,7 +669,7 @@
   B.brewSteps = function (batch, eq, grainLb, yeast) {
     const n = v => Number(v) || 0, T = B.brewTargets(batch, eq, grainLb, yeast);
     const steps = [];
-    if (grainLb > 0) steps.push({ id: 'strike', t: 'Strike water heated' }, { id: 'mashin', t: 'Mash in' }, { id: 'mashout', t: 'Mash out' }, { id: 'sparge', t: 'Sparge' });
+    if (grainLb > 0) steps.push({ id: 'strike', t: 'Strike water heated' }, { id: 'mashin', t: 'Mash in' }, { id: 'mashout', t: 'Mash out' }, T.noSparge ? { id: 'drain', t: 'Bag or basket lifted and drained' } : { id: 'sparge', t: 'Sparge' });
     steps.push({ id: 'boil', t: 'Boil starts' });
     (batch.hops || []).filter(hp => hp.name && hp.minutes !== '' && !hp.whirlpool).sort((x, y) => n(y.minutes) - n(x.minutes)).forEach((hp, i) => steps.push({ id: `hop:${hp.name}:${hp.minutes}:${i}`, t: `${hp.oz} oz ${hp.name}`, at: Math.max(0, T.boilMin - n(hp.minutes)), hop: true }));
     steps.push({ id: 'flameout', t: 'Flameout', at: T.boilMin });
@@ -663,6 +685,7 @@
   B.brewPlan = function (batch, eq, grainLb, boilG, yeast) {
     const n = v => Number(v) || 0, T = B.brewTargets(batch, eq, grainLb, yeast);
     const boilMin = T.boilMin, mashF = T.mashF, mashMin = T.mashMin, strikeGal = T.strikeGal, strikeF = T.strikeF, preBoil = T.preBoil, spargeGal = T.spargeGal;
+    const mashWords = mashMin >= 100 ? B.fmtDuration(mashMin) : `${mashMin} minutes`;
     const hops = (batch.hops || []).filter(h => h.name);
     const boilHops = hops.filter(h => !h.whirlpool && h.minutes !== '' && n(h.minutes) <= boilMin).map(h => ({ at: boilMin - n(h.minutes), label: `Add ${h.oz} oz ${h.name}` })).sort((a, b) => a.at - b.at);
     const wp = hops.filter(h => h.whirlpool);
@@ -671,10 +694,11 @@
     const steps = [];
     const yeastNote = batch.yeast ? `Yeast: ${batch.yeast}` : 'Yeast: as planned';
     if (grainLb > 0) {
-      steps.push({ id: 'strike', kind: 'action', title: 'Heat strike water', detail: [`${strikeGal} gal at ${eq.qtPerLb} qt per lb`, `Target ${strikeF}F (grain at 65F, ${eq.tunLossF}F lost to the vessel)`, salts.length ? `Salts in now: ${salts.map(s => `${s.grams} g ${String(s.salt).replace(/\s*\(.*\)/, '')}`).join(', ')}` : 'Salts and any Campden tablet go in the water now'], done: 'Water is at temperature' });
-      steps.push({ id: 'mashin', kind: 'timer', minutes: mashMin, title: 'Mash in', detail: [`Stir the grain in, break every dough ball, check the bed reads ${mashF}F`, `Hold ${mashMin} minutes, or as long as you like: an overnight mash is fine, just note it`, 'Recirculating system: pump on once the bed settles'], alarms: [{ at: Math.round(mashMin / 2), label: 'Halfway: check the mash temperature and stir if it has stratified' }, { at: mashMin, label: 'Mash complete' }], done: 'Mash finished' });
+      steps.push({ id: 'strike', kind: 'action', title: 'Heat strike water', detail: [T.noSparge ? `${strikeGal} gal: all the water, no sparge (${T.qtPerLb} qt per lb)` : `${strikeGal} gal at ${eq.qtPerLb} qt per lb`, `Target ${strikeF}F (grain at ${T.grainF}F, ${eq.tunLossF}F lost to the vessel)`, salts.length ? `Salts in now: ${salts.map(s => `${s.grams} g ${String(s.salt).replace(/\s*\(.*\)/, '')}`).join(', ')}` : 'Salts and any Campden tablet go in the water now'], done: 'Water is at temperature' });
+      steps.push({ id: 'mashin', kind: 'timer', minutes: mashMin, title: 'Mash in', detail: [`Stir the grain in, break every dough ball, check the bed reads ${mashF}F`, `Hold ${mashWords}, or as long as you like: an overnight mash is fine, just note it`, 'Recirculating system: pump on once the bed settles'], alarms: [{ at: Math.round(mashMin / 2), label: 'Halfway: check the mash temperature and stir if it has stratified' }, { at: mashMin, label: 'Mash complete' }], done: 'Mash finished' });
       steps.push({ id: 'mashout', kind: 'timer', minutes: 10, title: 'Mash out', detail: ['Raise to 168F and hold 10 minutes; stops conversion and thins the sugars for the sparge', 'Skip on a single-infusion no-sparge system if you prefer', 'The total mash time below is counted from when you started the mash timer; correct it if it sat longer'], alarms: [{ at: 10, label: 'Mash out done' }], done: 'At 168F for 10 minutes', optional: true });
-      steps.push({ id: 'sparge', kind: 'action', title: 'Sparge and collect', detail: [`Sparge with about ${spargeGal} gal at 168F`, `Collect ${preBoil} gal pre-boil`, 'Stop when runnings drop below 1.010 or the collected volume is reached'], done: `Collected ${preBoil} gal` });
+      if (T.noSparge) steps.push({ id: 'drain', kind: 'action', title: 'Lift and drain', detail: ['Lift the bag or the malt pipe and let it drain; squeeze the bag if you like, it does no harm', `You should have about ${preBoil} gal in the kettle`, 'Short on volume? Rinse the grain with a little hot water, or top up'], done: `Drained: ${preBoil} gal in the kettle` });
+      else steps.push({ id: 'sparge', kind: 'action', title: 'Sparge and collect', detail: [`Sparge with about ${spargeGal} gal at 168F`, `Collect ${preBoil} gal pre-boil`, 'Stop when runnings drop below 1.010 or the collected volume is reached'], done: `Collected ${preBoil} gal` });
       steps.push({ id: 'preboil', kind: 'input', title: 'Pre-boil gravity', detail: [boilG ? `Expected about ${boilG.toFixed(3)} at ${preBoil} gal` : 'Take a reading and note the volume', 'Cool the sample; write the temperature next to the reading'], input: 'gravity', done: 'Reading taken' });
     } else {
       steps.push({ id: 'water', kind: 'action', title: 'Heat the water', detail: [`Bring ${preBoil} gal to a boil`, 'Extract batch: add extract off the heat, stir until dissolved, then return to the boil'], done: 'Extract dissolved, back on the heat' });
@@ -694,6 +718,79 @@
     steps.forEach(s => { s.fields = B.stepFields(s.id, T).concat((s.extraFields || []).flatMap(x => B.stepFields(x, T))); });
     return steps;
   };
+
+  // ---- what a batch pours ----
+  // batchGal is the cooled wort; trub stays in the kettle and about a quart is lost to yeast and hops in the fermenter
+  B.packagedGal = (batchGal, trubGal) => Math.max(0, r2((Number(batchGal) || 0) - (Number(trubGal) || 0) - 0.3));
+  B.servings = gal => ({ pints: Math.floor((Number(gal) || 0) * 8), bottles: Math.floor((Number(gal) || 0) * 128 / 12) });
+  B.costPerServing = function (total, gal) {
+    const s = B.servings(gal); if (!(total > 0) || !s.pints) return null;
+    return { pints: s.pints, bottles: s.bottles, perPint: r2(total / s.pints), perBottle: r2(total / s.bottles) };
+  };
+  B.money = v => v < 1 ? `${Math.round(v * 100)}¢` : `$${v.toFixed(2)}`;
+
+  // ---- brewhouse stats ----
+  /* rows: one per batch, prepared by the app: { brewDate, batchGal, brewed (it has been pitched), sample, abv, eff }.
+     Totals for the calendar year, and the average of the last five measured mash efficiencies: enough to say whether the
+     equipment profile still tells the truth. */
+  B.brewStats = function (rows, year) {
+    const y = String(year || B.today().slice(0, 4));
+    const brewed = (rows || []).filter(r => r && !r.sample && r.brewed);
+    const inYear = brewed.filter(r => String(r.brewDate || '').slice(0, 4) === y);
+    const avg = xs => xs.reduce((s, x) => s + x, 0) / xs.length;
+    const effs = brewed.filter(r => r.eff > 30 && r.eff < 100).sort((a, b) => String(b.brewDate || '').localeCompare(String(a.brewDate || ''))).slice(0, 5).map(r => r.eff);
+    const abvs = brewed.map(r => Number(r.abv)).filter(v => v > 0);
+    return { year: y, batches: brewed.length, batchesYear: inYear.length, gallons: r1(brewed.reduce((s, r) => s + (Number(r.batchGal) || 0), 0)),
+      gallonsYear: r1(inYear.reduce((s, r) => s + (Number(r.batchGal) || 0), 0)), avgAbv: abvs.length ? r1(avg(abvs)) : null, effCount: effs.length, avgEff: effs.length ? Math.round(avg(effs)) : null };
+  };
+  // "Citra Pale Ale" -> "Citra Pale Ale #2" -> "Citra Pale Ale #3"
+  B.nextBrewName = function (name) {
+    const m = /^(.*?)\s*#(\d+)\s*$/.exec(String(name || '').trim());
+    return m ? `${m[1]} #${Number(m[2]) + 1}` : `${String(name || 'Batch').trim()} #2`;
+  };
+
+  // ---- registration: where a sign-up is sent ----
+  /* register.js holds one link. Whatever shape it has, this works out where to post and what each field is called there.
+       Google Form: the "pre-filled link", made with EMAIL, NAME and SYSTEM typed in as the answers, so the entry numbers can be read off it.
+       Kit, Mailchimp, Buttondown: the form's own address; their field names are known.
+       Anything else: posted as email, name, system and source.
+     fields (optional) overrides any name: { email: 'EMAIL', name: 'FNAME' }.
+     Returns { kind, url, map, problem }. problem is a sentence for the person setting it up, or ''. */
+  B.signupTarget = function (link, fields) {
+    const raw = String(link || '').trim(), out = { kind: '', url: '', map: {}, problem: '' };
+    if (!raw) { out.problem = 'No sign-up link yet, so registration is switched off.'; return out; }
+    let u; try { u = new URL(raw); } catch (e) { u = null; }
+    if (!u || u.protocol !== 'https:') { out.problem = 'That does not look like a link. It should start with https://'; return out; }
+    const host = u.hostname.toLowerCase();
+    if (host === 'forms.gle' || (host === 'docs.google.com' && /\/forms\//.test(u.pathname))) {
+      out.kind = 'Google Form';
+      if (host === 'forms.gle') { out.problem = 'That is the short link. Use the pre-filled link instead: the three dots at the top of the form editor, then "Get pre-filled link".'; return out; }
+      if (!/\/forms\/(u\/\d+\/)?d\/e\/[^/]+\/(viewform|formResponse)\/?$/.test(u.pathname)) { out.problem = 'That is the address of the form editor. Use the pre-filled link instead: the three dots at the top of the form editor, then "Get pre-filled link".'; return out; }
+      u.searchParams.forEach((v, k) => { if (!/^entry\.\d+$/.test(k)) return; const t = String(v).toUpperCase();
+        const key = /E-?MAIL/.test(t) ? 'email' : /SYSTEM|RIG/.test(t) ? 'system' : /SOURCE|APP/.test(t) ? 'source' : /NAME/.test(t) ? 'name' : ''; if (key && !out.map[key]) out.map[key] = k; });
+      out.url = u.origin + u.pathname.replace(/\/(viewform|formResponse)\/?$/, '/formResponse');
+      if (!out.map.email) out.problem = 'The link has no answer marked EMAIL. Open the pre-filled form again, type EMAIL as the answer to the email question (and NAME and SYSTEM for the other two), press "Get link" and paste the new one.';
+    } else if (/(^|\.)(kit|convertkit)\.com$/.test(host)) {
+      out.kind = 'Kit'; const id = (u.pathname.match(/\/forms\/(\d+)/) || [])[1];
+      if (!id) { out.problem = 'That Kit link has no form number in it. In Kit open the form, choose Embed, then HTML, and copy the address after action=.'; return out; }
+      out.url = `https://app.kit.com/forms/${id}/subscriptions`; out.map = { email: 'email_address', name: 'fields[first_name]', system: 'fields[brewing_system]' };
+    } else if (/(^|\.)list-manage\.com$/.test(host)) {
+      out.kind = 'Mailchimp'; out.url = u.origin + u.pathname.replace(/post-json$/, 'post') + u.search; out.map = { email: 'EMAIL', name: 'FNAME' };
+      if (!u.searchParams.get('u') || !u.searchParams.get('id')) out.problem = 'That Mailchimp link is missing its u= and id= parts. Copy the whole address after action= in the embedded form code.';
+    } else if (/(^|\.)buttondown\.(com|email)$/.test(host)) {
+      out.kind = 'Buttondown'; out.url = u.toString(); out.map = { email: 'email', name: 'metadata__first_name', system: 'metadata__system' };
+    } else { out.kind = 'Form'; out.url = u.toString(); out.map = { email: 'email', name: 'name', system: 'system', source: 'source' }; }
+    if (fields && typeof fields === 'object') for (const k in fields) if (typeof fields[k] === 'string' && fields[k]) out.map[k] = fields[k];
+    return out;
+  };
+  // the name/value pairs to post: only what was given, under the names the target uses
+  B.signupPairs = function (target, data, extra) {
+    const pairs = [], d = data || {};
+    for (const k of ['email', 'name', 'system', 'source']) { const v = String(d[k] === undefined || d[k] === null ? '' : d[k]).trim(); if (v && target && target.map && target.map[k]) pairs.push([target.map[k], v.slice(0, 200)]); }
+    if (extra && typeof extra === 'object') for (const k in extra) pairs.push([k, String(extra[k])]);
+    return pairs;
+  };
+  B.validEmail = s => /^[^\s@]+@[^\s@]+\.[^\s@.]{2,}$/.test(String(s || '').trim());
 
   B.csvEscape = v => { const s = v === null || v === undefined ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   B.toCsv = (rows, cols) => [cols.map(c => B.csvEscape(c.label)).join(',')].concat(rows.map(r => cols.map(c => B.csvEscape(typeof c.key === 'function' ? c.key(r) : r[c.key])).join(','))).join('\n');

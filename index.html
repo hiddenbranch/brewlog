@@ -4,30 +4,49 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2A1B10">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Brew Log">
-<meta name="description" content="Brew day, fermentation and packaging logs, brewing calculators and reference for homebrewers. Works offline, nothing leaves your phone.">
-<link rel="manifest" href="manifest.webmanifest?v=1.8.1">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="description" content="A free homebrewing app: 96 recipes sized to your system, a guided brew day with hop alarms, fermentation tracking, 13 calculators and a shopping list that fills the cart for you. Works offline, and your brews stay on your phone.">
+<link rel="canonical" href="https://hiddenbranch.github.io/brewlog/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Brew Log">
+<meta property="og:title" content="Brew Log: the free homebrew log">
+<meta property="og:description" content="96 recipes sized to your system, a guided brew day with hop alarms, fermentation tracking and one-tap ingredient carts. Free, works offline, and your brews stay on your phone.">
+<meta property="og:url" content="https://hiddenbranch.github.io/brewlog/">
+<meta property="og:image" content="https://hiddenbranch.github.io/brewlog/icons/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest?v=1.9.0">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-192.png">
-<title>Brew Log</title>
+<title>Brew Log: a free homebrew log, recipes and brew day timer</title>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Brew Log","applicationCategory":"LifestyleApplication","operatingSystem":"Any (installable web app)","url":"https://hiddenbranch.github.io/brewlog/","description":"A free homebrewing log with recipes, a guided brew day, fermentation tracking, brewing calculators and one-tap ingredient carts.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <style>
 :root{
-  --ink:#2A1B10; --panel:#3A2716; --panel2:#47301C; --line:#5C4026; --text:#F3F6FA; --muted:#A3B4CE;
+  --ink:#2A1B10; --panel:#3A2716; --panel2:#47301C; --line:#5C4026; --text:#FBF4EA; --muted:#C9B79F;
   --amber:#F2A03D; --amberInk:#1B1407; --ok:#5BC98F; --bad:#EF7B7B; --warn:#F2C94C;
   --sans:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --radius:6px; --nav:64px;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
 body{margin:0;min-height:100vh;padding-bottom:calc(var(--nav) + env(safe-area-inset-bottom))}
 a{color:var(--amber)}
-header.top{position:sticky;top:0;z-index:5;background:var(--ink);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:12px}
-header.top h1{font-size:17px;font-weight:600;margin:0;letter-spacing:.01em}
+header.top{position:sticky;top:0;z-index:5;background:var(--ink);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
+header.top h1{font-size:17px;font-weight:600;margin:0;letter-spacing:.01em;white-space:nowrap}
+#homeBtn{display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;flex:none}
 header.top .spacer{flex:1}
-header.top .chip{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px;max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header.top .chip{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px;max-width:34vw;min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default}
+#timerPill{font-family:var(--mono);font-size:12px;border:1px solid var(--amber);color:var(--amber);background:none;border-radius:999px;padding:5px 10px;cursor:pointer;white-space:nowrap;flex:none}
+#timerPill.ring{background:var(--amber);color:var(--amberInk);animation:pulse 1s infinite}
+#timerPill:not([hidden]) ~ #jobChip{display:none}
+@keyframes pulse{50%{opacity:.55}}
+@media (max-width:440px){header.top:has(#installBtn:not([hidden])) #jobChip{display:none}}
 main{max-width:720px;margin:0 auto;padding:16px 16px 24px}
 h2{font-size:22px;font-weight:600;margin:4px 0 12px;line-height:1.2}
 h3{font-size:16px;font-weight:600;margin:20px 0 8px}
@@ -48,9 +67,10 @@ p{margin:0 0 12px}
 .field input,.field select,.field textarea{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);padding:12px;font:inherit;font-size:17px;min-height:48px}
 .field input.mono,.field textarea.mono{font-family:var(--mono);font-size:16px}
 .field textarea{min-height:88px;resize:vertical}
+.field input:disabled{opacity:.6}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .readout{background:var(--amber);color:var(--amberInk);border-radius:var(--radius);padding:14px 16px;margin:8px 0 16px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
 .readout .line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.12)}
 .readout .line:last-child{border-bottom:0}
@@ -63,11 +83,17 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid v
 .btn.secondary{background:transparent;color:var(--text);border-color:var(--line)}
 .btn.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
 .btn.block{width:100%;margin:6px 0}
+.btn.sm{min-height:40px;padding:0 13px;font-size:15px}
 .btn:disabled{opacity:.5;cursor:default}
 .btns{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.btns.tight{gap:8px;margin:10px 0;align-items:center}
+.btns.tight .lead{flex:0 0 100%;margin-bottom:-2px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
 .chip{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;padding:8px 12px;font:inherit;font-size:14px;cursor:pointer;font-family:var(--mono)}
 .chip.on{background:var(--amber);color:var(--amberInk);border-color:var(--amber)}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;margin:6px -16px 14px;padding:0 16px 2px;scrollbar-width:none}
+.chips.scroll::-webkit-scrollbar{display:none}
+.chips.scroll .chip{flex:none}
 .tablewrap{overflow-x:auto;margin:0 -16px 16px;padding:0 16px}
 table.ref{border-collapse:collapse;width:100%;font-size:14px;min-width:480px}
 table.ref th,table.ref td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
@@ -84,7 +110,11 @@ details.plat .body ol,details.plat .body ul{margin:0;padding-left:20px}
 details.plat .body li{margin:0 0 6px}
 details.plat .fault b{display:block}
 .note{border-left:3px solid var(--amber);padding:8px 12px;margin:12px 0;color:var(--muted);font-size:14px}
+.statline{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin:8px 0 14px;font-size:15px;color:var(--muted)}
+.statline b{color:var(--text)}
 .empty{border:1px dashed var(--line);border-radius:var(--radius);padding:20px 16px;color:var(--muted);text-align:center;margin:12px 0}
+.hero{display:flex;gap:14px;align-items:flex-start;margin:4px 0 14px}
+.glass{flex:none;display:inline-flex}
 .preview{width:100%;border-radius:var(--radius);border:1px solid var(--line);display:block;margin:8px 0}
 .progress{height:6px;background:var(--panel);border-radius:3px;overflow:hidden;margin:8px 0 12px}
 .progress i{display:block;height:100%;background:var(--amber);width:0;transition:width .2s}
@@ -92,7 +122,7 @@ details.plat .fault b{display:block}
 .thumb.sm{width:40px;height:40px}
 .photo{width:100%;max-width:420px;aspect-ratio:4/3;object-fit:cover;border-radius:var(--radius);border:1px solid var(--line);display:block;margin:4px 0 6px}
 .photo-slot{display:inline-block}
-.swatch{display:inline-block;width:16px;height:16px;border-radius:3px;border:1px solid rgba(0,0,0,.35);vertical-align:-3px;margin-right:8px}
+.swatch{display:inline-block;width:16px;height:16px;border-radius:3px;border:1px solid rgba(0,0,0,.35);vertical-align:-3px;margin-right:8px;flex:none}
 .bar{height:8px;border-radius:4px;background:var(--panel2);position:relative;margin:6px 0 2px;overflow:hidden}
 .bar i{position:absolute;top:0;bottom:0;background:var(--amber);border-radius:4px}
 .bar b{position:absolute;top:-3px;width:2px;height:14px;background:var(--text)}
@@ -102,6 +132,8 @@ details.plat .fault b{display:block}
 .step .tm{font-family:var(--mono);font-size:13px;color:var(--muted);min-width:56px}
 .step.done .t{color:var(--muted)}
 .step.done .ttl{text-decoration:line-through}
+.step.ringing{background:rgba(242,160,61,.16);box-shadow:inset 3px 0 0 var(--amber);padding-left:8px}
+.step.ringing .tm{color:var(--amber);font-weight:700}
 .step .ins{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .step .ins label{flex:1 1 130px;min-width:0}
 .step .ins label span{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
@@ -116,6 +148,8 @@ details.plat .fault b{display:block}
 .rec .t .mono{color:var(--muted);font-size:13px;word-break:break-all}
 .rec .t .meta{color:var(--muted);font-size:13px}
 .rec .act{background:none;border:0;color:var(--amber);font:inherit;padding:8px;cursor:pointer;min-height:44px}
+.rec .act.quiet{color:var(--muted);font-size:13px}
+.rec .rowbtn{background:none;border:0;color:var(--text);font:inherit;text-align:left;padding:0;cursor:pointer}
 .badge{display:inline-block;font-size:12px;border-radius:4px;padding:2px 6px;background:var(--panel2);color:var(--text);margin-right:6px;font-weight:600}
 .badge.overdue{background:var(--bad);color:#2A0808}
 .badge.due{background:var(--warn);color:#2A2005}
@@ -126,8 +160,12 @@ nav.tabs{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav) + env(saf
 nav.tabs button{flex:1;background:none;border:0;color:var(--muted);font:inherit;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:6px 0}
 nav.tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav.tabs button.on{color:var(--amber)}
-.toast{position:fixed;left:50%;bottom:calc(var(--nav) + 16px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--ink);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;z-index:9;box-shadow:0 4px 16px rgba(0,0,0,.3)}
-.lock{border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin:12px 0}
+.toast{position:fixed;left:50%;bottom:calc(var(--nav) + 16px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--ink);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;z-index:40;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:calc(100vw - 32px);text-align:center}
+.lock{border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin:12px 0;overflow-wrap:anywhere}
+main{overflow-wrap:break-word}
+.sheet{position:fixed;inset:0;z-index:30;background:rgba(20,12,6,.88);display:flex;align-items:flex-end;justify-content:center}
+.sheet-card{background:var(--ink);border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:94vh;overflow:auto;padding:22px 18px calc(22px + env(safe-area-inset-bottom))}
+@media (min-width:600px){.sheet{align-items:center}.sheet-card{border-bottom:1px solid var(--line);border-radius:16px}}
 .zoomable{cursor:zoom-in}
 .lightbox{position:fixed;inset:0;z-index:20;background:rgba(20,12,6,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
 .lightbox-frame{max-width:100%;max-height:78vh;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;align-items:center;justify-content:center}
@@ -137,21 +175,31 @@ nav.tabs button.on{color:var(--amber)}
 .lightbox-cap{color:var(--text);max-width:720px;text-align:center;margin-top:10px;font-size:14px}
 .lightbox-cap p{margin:4px 0}
 .lightbox-close{position:absolute;top:calc(8px + env(safe-area-inset-top));right:12px;width:44px;height:44px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:26px;line-height:1;cursor:pointer}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media (min-width:720px){main{padding:24px}}
+@media print{header.top,nav.tabs,.btns,.back,.toast{display:none!important}html,body{background:#fff;color:#000}}
 </style>
 </head>
 <body>
 <header class="top">
-  <h1>Brew Log</h1>
+  <a id="homeBtn" href="#batches" aria-label="Brew Log: your batches">
+    <svg viewBox="0 0 64 80" width="20" height="25" aria-hidden="true"><path d="M13 18h38l-4.200 53.500a5 5 0 0 1-5 4.500H22.200a5 5 0 0 1-5-4.500z" fill="#F2A03D"/><g fill="#FFF8EC"><rect x="10" y="13" width="44" height="10" rx="5"/><circle cx="19" cy="13" r="6.500"/><circle cx="29" cy="10" r="7.500"/><circle cx="40" cy="11" r="7"/><circle cx="48" cy="14" r="5.500"/></g></svg>
+    <h1>Brew Log</h1>
+  </a>
   <span class="spacer"></span>
+  <button id="timerPill" hidden aria-label="Brew day timer: open the brew day"></button>
   <span class="chip" id="jobChip" hidden></span>
   <button class="btn secondary" id="installBtn" hidden style="min-height:36px;padding:0 12px;font-size:14px">Install</button>
   <button class="btn secondary" id="gearBtn" aria-label="Settings" style="min-height:36px;padding:0 10px">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
   </button>
 </header>
-<main id="view"></main>
+<main id="view">
+  <h2>Brew Log</h2>
+  <p>A free homebrewing log that runs on your phone. Pick one of 96 recipes sized to your own system or bring your own, follow a guided brew day with hop alarms, track the fermentation, and send the whole shopping list to a homebrew shop's cart in one tap.</p>
+  <p class="muted">Thirteen brewing calculators, hop, malt and yeast references, water chemistry that tells you what to add, and nothing to sign in to. It works with no signal, and your brews stay on your phone.</p>
+  <noscript><p>Brew Log is an app that runs in the browser, so it needs JavaScript switched on.</p></noscript>
+</main>
 <nav class="tabs" id="tabs">
   <button data-tab="batches"><svg viewBox="0 0 24 24"><path d="M9 3h6v5l4 9a3 3 0 0 1-2.8 4H7.8A3 3 0 0 1 5 17l4-9z"/><path d="M8 14h8"/></svg>Batches</button>
   <button data-tab="brewday"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 9v4l3 2M9 2h6"/></svg>Brew day</button>
@@ -160,12 +208,14 @@ nav.tabs button.on{color:var(--amber)}
   <button data-tab="stock"><svg viewBox="0 0 24 24"><path d="M3 7h18v13H3z"/><path d="M3 7l2-4h14l2 4M9 11h6"/></svg>Stock</button>
   <button data-tab="shop"><svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 2H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg>Shop</button>
 </nav>
-<script src="recipes.js?v=1.8.1"></script>
-<script src="beerxml.js?v=1.8.1"></script>
-<script src="data.js?v=1.8.1"></script>
-<script src="tags.js?v=1.8.1"></script>
-<script src="shop.js?v=1.8.1"></script>
-<script src="core.js?v=1.8.1"></script>
-<script src="app.js?v=1.8.1"></script>
+<script src="recipes.js?v=1.9.0"></script>
+<script src="beerxml.js?v=1.9.0"></script>
+<script src="data.js?v=1.9.0"></script>
+<script src="tags.js?v=1.9.0"></script>
+<script src="register.js?v=1.9.0"></script>
+<script src="shop.js?v=1.9.0"></script>
+<script src="core.js?v=1.9.0"></script>
+<script src="recipetext.js?v=1.9.0"></script>
+<script src="app.js?v=1.9.0"></script>
 </body>
 </html>

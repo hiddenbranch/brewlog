@@ -45,7 +45,7 @@
 ${tag('BREWER', batch.brewer || '')}${tag('BATCH_SIZE', (gal * L_PER_GAL).toFixed(3))}${tag('BOIL_SIZE', (boilGal * L_PER_GAL).toFixed(3))}${tag('BOIL_TIME', boilMin)}${tag('EFFICIENCY', eff)}
 ${batch.og ? tag('OG', num(batch.og).toFixed(3)) : ''}${batch.fg ? tag('FG', num(batch.fg).toFixed(3)) : ''}${batch.brewDate ? tag('DATE', batch.brewDate) : ''}${tag('NOTES', batch.notes || '')}
 <HOPS>${hops.join('')}</HOPS><FERMENTABLES>${ferms.join('')}</FERMENTABLES><MISCS>${salts.join('')}</MISCS><YEASTS>${yeast}</YEASTS><WATERS></WATERS>
-<MASH>${tag('NAME', 'Single infusion')}${tag('VERSION', 1)}${tag('GRAIN_TEMP', 20)}<MASH_STEPS><MASH_STEP>${tag('NAME', 'Saccharification')}${tag('VERSION', 1)}${tag('TYPE', 'Infusion')}${tag('STEP_TEMP', fToC(mashF))}${tag('STEP_TIME', 60)}</MASH_STEP></MASH_STEPS></MASH>
+<MASH>${tag('NAME', 'Single infusion')}${tag('VERSION', 1)}${tag('GRAIN_TEMP', 20)}<MASH_STEPS><MASH_STEP>${tag('NAME', 'Saccharification')}${tag('VERSION', 1)}${tag('TYPE', 'Infusion')}${tag('STEP_TEMP', fToC(mashF))}${tag('STEP_TIME', num(batch.mashMin) || 60)}</MASH_STEP></MASH_STEPS></MASH>
 </RECIPE></RECIPES>`;
     return xml;
   };
@@ -80,7 +80,7 @@ ${batch.og ? tag('OG', num(batch.og).toFixed(3)) : ''}${batch.fg ? tag('FG', num
       const y = r.getElementsByTagName('YEAST')[0]; if (y) b.yeast = snap(t(y, 'NAME'), (refs.yeast || []).map(x => x.name));
       const miscs = r.getElementsByTagName('MISCS')[0];
       for (const m of children(miscs, 'MISC')) { const name = t(m, 'NAME'); const g = num(t(m, 'AMOUNT')) * 1000; if (/gypsum|calcium chloride|epsom|salt|baking soda|chalk/i.test(name) && g) { const key = /gypsum/i.test(name) ? 'Gypsum (CaSO4)' : /calcium chloride/i.test(name) ? 'Calcium chloride (CaCl2)' : /epsom/i.test(name) ? 'Epsom salt (MgSO4)' : /baking/i.test(name) ? 'Baking soda (NaHCO3)' : /chalk/i.test(name) ? 'Chalk (CaCO3)' : 'Table salt (NaCl)'; b.salts.push({ salt: key, grams: Math.round(g * 10) / 10 }); } else if (name) b.extras.push(name); }
-      const step = r.getElementsByTagName('MASH_STEP')[0]; if (step && t(step, 'STEP_TEMP')) b.mashF = Math.round(cToF(num(t(step, 'STEP_TEMP'))));
+      const step = r.getElementsByTagName('MASH_STEP')[0]; if (step && t(step, 'STEP_TEMP')) b.mashF = Math.round(cToF(num(t(step, 'STEP_TEMP')))); if (step && num(t(step, 'STEP_TIME')) > 0 && Math.round(num(t(step, 'STEP_TIME'))) !== 60) b.mashMin = Math.round(num(t(step, 'STEP_TIME')));
       out.push(b);
     }
     if (!out.length) throw new Error('No recipes found in that file');

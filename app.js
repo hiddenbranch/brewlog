@@ -1,14 +1,15 @@
 /* Brew Log - app UI. Depends on core.js (BrewCore), data.js (BrewData), shop.js (BrewShop). */
 (function () {
   'use strict';
-  const B = window.BrewCore, D = window.BrewData, SH = window.BrewShop, RC = window.BrewRecipes;
+  const B = window.BrewCore, D = window.BrewData, SH = window.BrewShop, RC = window.BrewRecipes, RT = window.RecipeText;
   B.setHopRef(D.HOPS);
   const OCR_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
-  const APP_VERSION = '1.8.1';
+  const APP_VERSION = '1.9.0';
   const BOOK = { title: 'Homebrewer\'s Brew Log Book', url: '', blurb: 'The paper companion: brew day sheets, fermentation charts and recipe pages built to be photographed into this app.' };
   const CDN = { jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js' };
   const STATUSES = ['Planned', 'Brewing', 'Fermenting', 'Conditioning', 'Packaged', 'Drinking', 'Finished'];
-  const EQUIP_DEFAULT = { name: 'My system', batchGal: 5.5, boilGal: 7, boilMin: 60, efficiency: 72, qtPerLb: 1.25, tunLossF: 2, boilOffGalHr: 1.2, trubGal: 0.5, absorbGalLb: 0.125, wcf: 1.04, hydroCalF: 60, elevationFt: 0, chillMin: 10, wortPh: 5.5, clarity: 1.0, krausen: 1.0, ageWeeks: 3 };
+  const EQUIP_DEFAULT = { name: 'My system', batchGal: 5.5, boilGal: 7, boilMin: 60, efficiency: 72, qtPerLb: 1.25, tunLossF: 2, grainTempF: 65, noSparge: false, boilOffGalHr: 1.2, trubGal: 0.5, absorbGalLb: 0.125, wcf: 1.04, hydroCalF: 60, elevationFt: 0, chillMin: 10, wortPh: 5.5, clarity: 1.0, krausen: 1.0, ageWeeks: 3 };
+  const APP_URL = location.origin + location.pathname.replace(/index\.html$/, '');
   async function equip() { return Object.assign({}, EQUIP_DEFAULT, await S.get('equip', {})); }
 
   const $ = (s, r) => (r || document).querySelector(s);
@@ -44,21 +45,46 @@
   S.set = async (k, v) => { S.cache[k] = v; await DB.put('kv', { key: k, value: v }); };
 
   const TAG_CHECK = /[?&]tags(=|&|$)/.test(location.search);   // brewlog/?tags opens Settings with the tag check at the top
-  const state = { tab: TAG_CHECK ? 'settings' : 'batches', sub: null, batchId: null };
+  const REG_CHECK = /[?&]register(=|&|$)/.test(location.search);   // brewlog/?register opens Settings with the registration check
+  const state = { tab: TAG_CHECK || REG_CHECK ? 'settings' : 'batches', sub: null, batchId: null, shared: null, sharedCode: '', draft: null, importText: '' };
   const view = $('#view');
   // DOM append does not flatten arrays, so anything built with .map() must go through this
   const add = (...kids) => { kids.flat(Infinity).forEach(k => { if (k !== null && k !== undefined && k !== false) view.append(k.nodeType ? k : document.createTextNode(String(k))); }); };
-  function go(tab, sub) { state.tab = tab; state.sub = sub || null; render(); window.scrollTo(0, 0); }
+  /* Every screen has an address after the #, so the phone's own back button goes back a screen instead of closing the app,
+     a reload stays where it was, and a calculator or a recipe can be sent to someone as a link. A shared recipe keeps its
+     whole self in the address: #r=<the recipe>. */
+  const TABS = ['batches', 'brewday', 'calc', 'ref', 'shop', 'stock', 'settings'];
+  const routeOf = (tab, sub) => tab === 'ref' && sub === 'shared' && state.sharedCode ? 'r=' + state.sharedCode : tab + (sub ? '/' + encodeURIComponent(sub) : '');
+  function readRoute() {
+    const hash = location.hash.replace(/^#/, ''); if (!hash) return null;
+    if (hash.startsWith('r=')) { const code = hash.slice(2), b = RT.decodeShare(code); if (!b) { setTimeout(() => toast('That recipe link is damaged or cut short'), 400); return null; } state.shared = b; state.sharedCode = code; return { tab: 'ref', sub: 'shared' }; }
+    const i = hash.indexOf('/'), tab = i < 0 ? hash : hash.slice(0, i); if (!TABS.includes(tab)) return null;
+    let sub = null; if (i >= 0) { try { sub = decodeURIComponent(hash.slice(i + 1)) || null; } catch (e) { sub = null; } }
+    return { tab, sub };
+  }
+  function go(tab, sub, opts) {
+    const from = routeOf(state.tab, state.sub); state.tab = tab; state.sub = sub || null; const to = routeOf(tab, state.sub);
+    try { if ((opts && opts.replace) || to === from) history.replaceState({ r: to, prev: (history.state || {}).prev }, '', '#' + to);
+      else { history.replaceState(Object.assign({}, history.state, { y: window.scrollY }), ''); history.pushState({ r: to, prev: from }, '', '#' + to); } } catch (e) { /* no history here (a file opened from disk): the app still works */ }
+    render(); window.scrollTo(0, 0);
+  }
+  // an on-screen back button really goes back when the screen it names is the one we came from, so a long list is where you left it
+  function goBack(tab, sub) { const want = routeOf(tab, sub || null); try { if (history.state && history.state.prev === want && history.length > 1) return history.back(); } catch (e) { /* fall through */ } go(tab, sub); }
+  window.addEventListener('popstate', async e => { closeSheets(); const r = readRoute() || { tab: 'batches', sub: null }; state.tab = r.tab; state.sub = r.sub; await render(); window.scrollTo(0, (e.state && e.state.y) || 0); });
   $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(b.dataset.tab); });
   $('#gearBtn').addEventListener('click', () => go('settings'));
+  const homeBtn = $('#homeBtn'); if (homeBtn) homeBtn.addEventListener('click', e => { e.preventDefault(); go('batches'); });
   async function render() {
     EQ = await equip(); IBU_MODEL = await S.get('ibuModel', 'smph'); RECIPE_GAL = num(await S.get('recipeGal', 0)) || EQ.batchGal || 5;
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === state.tab));
-    view.innerHTML = '';
+    clearInterval(timer); goView = null;
+    const token = ++renderToken; view.innerHTML = '';
     await ({ batches: renderBatches, brewday: renderBrewday, calc: renderCalc, ref: renderRef, shop: renderShop, stock: renderStock, settings: renderSettings }[state.tab])();
+    if (token !== renderToken) return;
     const chip = $('#jobChip'); const b = state.batchId ? await DB.get('batches', state.batchId) : null;
     chip.hidden = !b; if (b) chip.textContent = b.name || ('batch ' + b.id);
   }
+  let renderToken = 0;
   const today = B.today;
   const field = (label, input, hint) => h('label', { class: 'field' }, h('span', null, label), input, hint ? h('span', { class: 'muted small' }, hint) : null);
   const sel = (opts, cur) => h('select', null, opts.map(o => h('option', { value: typeof o === 'object' ? o.v : o, selected: (typeof o === 'object' ? o.v : o) === cur ? true : false }, typeof o === 'object' ? o.t : o)));
@@ -71,23 +97,113 @@
   const BLANK = () => ({ name: '', style: '', brewDate: today(), batchGal: EQ.batchGal, boilGal: EQ.boilGal, boilMin: EQ.boilMin, efficiency: EQ.efficiency, og: '', fg: '', fermentables: [{ name: '', lb: '' }], hops: [{ name: '', oz: '', alpha: '', minutes: '', type: 'pellet' }], yeast: '', mashF: 152, fermF: '', wpTempF: 175, wpMin: 20, salts: [], dryHops: [], extras: [], notes: '', status: 'Planned', ibuModel: IBU_MODEL });
   async function renderBatches() {
     const list = await batchList();
-    if (state.sub === 'new' || (state.sub && state.sub.startsWith('edit:'))) return batchForm(state.sub === 'new' ? null : await DB.get('batches', Number(state.sub.split(':')[1])));
+    if (state.sub === 'new') { const draft = state.draft; state.draft = null; return batchForm(null, draft); }
+    if (state.sub && state.sub.startsWith('edit:')) return batchForm(await DB.get('batches', Number(state.sub.split(':')[1])));
     if (state.sub && state.sub.startsWith('view:')) return batchView(await DB.get('batches', Number(state.sub.split(':')[1])));
+    if (state.sub && state.sub.startsWith('log:')) { const [, id, type] = state.sub.split(':'), lb = await DB.get('batches', Number(id)); return lb && ENTRY_TITLES[type] ? entryForm(lb, type) : go('batches', null, { replace: true }); }
+    if (state.sub === 'import') return renderImport();
     const xmlIn = h('input', { type: 'file', accept: '.xml,.beerxml,text/xml,application/xml', hidden: true, onchange: async e => { const f = e.target.files[0]; if (!f) return; e.target.value = '';
       try { const recipes = window.BeerXML.importRecipes(await f.text(), { fermentables: D.FERMENTABLES, hops: D.HOPS, yeast: D.YEAST }, B.matchVocab);
-        let lastId = null; for (const r of recipes) { r.status = 'Planned'; lastId = await DB.put('batches', r); }
+        if (!(await needReg('save'))) return;
+        let lastId = null; for (const r of recipes) { r.status = 'Planned'; lastId = await DB.put('batches', r); } keepStorage();
         toast(`${recipes.length} recipe${recipes.length === 1 ? '' : 's'} imported`); state.batchId = lastId; go('batches', 'edit:' + lastId); }
       catch (err) { toast(err.message); } } });
-    view.append(h('h2', null, 'Batches'), xmlIn, h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: () => go('batches', 'new') }, 'New batch'), h('button', { class: 'btn secondary', onclick: () => xmlIn.click() }, 'Import BeerXML')));
-    if (!list.length) return view.append(h('div', { class: 'empty' }, 'No batches yet. A batch holds the recipe, the brew day log and the fermentation readings.'));
+    if (!list.length) return view.append(xmlIn, welcome(() => xmlIn.click()));
+    view.append(h('h2', null, 'Batches'), xmlIn, h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: () => go('batches', 'new') }, 'New batch'), h('button', { class: 'btn secondary', onclick: () => go('ref', 'styles') }, 'Pick a recipe'), h('button', { class: 'btn secondary', onclick: () => go('batches', 'import') }, 'Bring a recipe in')));
+    const card = await statsCard(list); if (card) view.append(card);
     for (const b of list) {
-      const est = recipeStats(b), fi = fermentInfo(b);
+      const est = recipeStats(b), fi = fermentInfo(b), og = num(b.og) || est.og, fg = num(b.fg) || num(b.lastSg), abv = og && fg && fg < og ? B.abv(og, fg) : null;
       view.append(h('div', { class: 'rec' }, h('span', { class: 'swatch', style: `background:${B.srmHex(est.srm || 0)}` }),
-        h('div', { class: 't' }, h('b', null, b.name || 'untitled'), h('div', { class: 'meta' }, [b.style, b.brewDate, est.og ? 'OG ' + est.og.toFixed(3) : null, batchIbu(b, est).v ? batchIbu(b, est).v + ' IBU' : null, b.fg ? 'ABV ' + B.abv(num(b.og) || est.og, num(b.fg)) + '%' : null].filter(Boolean).join(' \u00B7 ')), h('div', { class: 'meta' }, b.status, fi.pitched && b.status === 'Fermenting' ? ` \u00B7 day ${fi.day} of ${fi.plan.text}` : '', fi.due.length ? h('span', { class: 'badge ' + (fi.overdue.length ? 'overdue' : 'due'), style: 'margin-left:8px' }, 'dry hop due') : null)),
-        h('button', { class: 'act', onclick: () => go('batches', 'view:' + b.id) }, 'Open'),
-        h('button', { class: 'act', style: 'color:var(--bad)', 'aria-label': 'Delete ' + (b.name || 'batch'), onclick: async () => { if (await deleteBatch(b)) render(); } }, 'Delete')));
+        h('button', { class: 't rowbtn', 'aria-label': 'Open ' + (b.name || 'batch'), onclick: () => go('batches', 'view:' + b.id) }, h('b', null, b.name || 'untitled', b.sample ? h('span', { class: 'badge', style: 'margin-left:8px' }, 'example') : null),
+          h('div', { class: 'meta' }, [b.style && b.style !== b.name ? b.style : null, B.niceDate(b.brewDate), og ? 'OG ' + og.toFixed(3) : null, batchIbu(b, est).v ? batchIbu(b, est).v + ' IBU' : null, abv ? abv + '%' : null].filter(Boolean).join(' \u00B7 ')),
+          h('div', { class: 'meta' }, b.status, fi.pitched && b.status === 'Fermenting' ? ` \u00B7 day ${fi.day} of ${fi.plan.text}` : '', fi.due.length ? h('span', { class: 'badge ' + (fi.overdue.length ? 'overdue' : 'due'), style: 'margin-left:8px' }, 'dry hop due') : null)),
+        h('button', { class: 'act', onclick: () => go('batches', 'view:' + b.id) }, 'Open')));
     }
+    const hint = await installHint(true); if (hint) view.append(hint);
   }
+
+  // ---------- first open ----------
+  /* A pint the colour of the beer. The same shape is drawn on the batch card image. */
+  function glass(srm, size) {
+    const c = B.srmHex(srm === undefined || srm === null ? 6 : srm), w = size || 40;
+    return h('span', { class: 'glass', 'aria-hidden': 'true', html: `<svg viewBox="0 0 64 80" width="${w}" height="${Math.round(w * 1.25)}"><path d="M13 18h38l-4.200 53.500a5 5 0 0 1-5 4.500H22.200a5 5 0 0 1-5-4.500z" fill="${c}"/><path d="M19.500 27l2.400 37" stroke="rgba(255,255,255,.35)" stroke-width="3" stroke-linecap="round" fill="none"/><g fill="#FFF8EC"><rect x="10" y="13" width="44" height="10" rx="5"/><circle cx="19" cy="13" r="6.500"/><circle cx="29" cy="10" r="7.500"/><circle cx="40" cy="11" r="7"/><circle cx="48" cy="14" r="5.500"/></g></svg>` });
+  }
+  const isStandalone = () => { try { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } };
+  const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  /* How to put the app on the home screen. Installed, it opens full screen and offline, and the browser stops treating the brews as
+     website data it may clear. compact: the one-line version shown under the batch list until it is dismissed. */
+  async function installHint(compact) {
+    if (isStandalone()) return null;
+    if (compact && await S.get('installHintOff', false)) return null;
+    const how = deferredPrompt ? h('button', { class: 'btn' + (compact ? ' secondary' : ''), onclick: installApp }, 'Install Brew Log')
+      : h('p', { class: 'small', style: 'margin:6px 0 0' }, isIos() ? 'On an iPhone or iPad: tap the Share button (the square with the arrow), then "Add to Home Screen".' : 'In your browser\'s menu choose "Install" or "Add to Home Screen". On a Mac in Safari: File, then "Add to Dock".');
+    return h('div', { class: 'note' }, h('b', { style: 'color:var(--text)' }, 'Put it on your home screen'),
+      h('div', null, 'It then opens like any other app and works with no signal in the garage. ', isIos() ? 'It matters on an iPhone: Safari can clear a website\'s saved data after a few weeks unused, and it never does that to an installed app.' : 'Your brews are kept with the app instead of with the browser\'s website data.'),
+      how, compact ? h('div', { class: 'btns', style: 'margin:8px 0 0' }, h('button', { class: 'btn secondary sm', onclick: async () => { await S.set('installHintOff', true); render(); } }, 'Not now')) : null);
+  }
+  function welcome(pickXml) {
+    const count = RC.RECIPES.filter(r => r.group !== 'Historic').length;
+    const row = (t, sub, fn) => h('li', null, h('button', { onclick: fn }, h('span', { class: 't' }, h('b', null, t), h('span', null, sub)), h('span', { class: 'k' }, '\u203A')));
+    const box = h('div', null, h('div', { class: 'hero' }, glass(8, 56), h('div', null, h('h2', { style: 'margin:0 0 6px' }, 'Welcome to Brew Log'),
+      h('p', { class: 'muted', style: 'margin:0' }, 'Your recipes, your brew day and your fermentation readings in one place. Free, works with no signal, and your brews stay on this phone.'))),
+      h('h3', null, 'Start here'),
+      h('ul', { class: 'list' },
+        row('Pick a recipe', `${count} styles, each one sized to your system, with a shopping list that fills the cart for you`, () => go('ref', 'styles')),
+        row('Bring your own recipe', 'Paste it from anywhere, photograph it, or import BeerXML from Brewfather or BeerSmith', () => go('batches', 'import')),
+        row('Start from a blank batch', 'Type the grain, hops and yeast and watch the numbers follow', () => go('batches', 'new')),
+        row('Look at a finished batch first', 'An example brew with its whole log, so you can see what you end up with', loadSample)));
+    systemPicker().then(el => { if (el) box.append(el); return installHint(false); }).then(el => { if (el) box.append(el); });
+    return box;
+  }
+  // "What do you brew on?": one tap puts typical numbers for that kind of system into the equipment profile
+  // S.get remembers the default it was first asked with, so "has the profile been saved?" is asked of the profile itself
+  const hasEquip = async () => Object.keys((await S.get('equip', {})) || {}).length > 0;
+  async function systemPicker() {
+    if (await hasEquip()) return null;
+    return h('div', null, h('h3', null, 'What do you brew on?'), h('p', { class: 'muted small' }, 'One tap sets the water volumes and boil-off for that kind of system, so the first brew day sheet makes sense. Fine-tune any number later under Settings.'),
+      h('div', { class: 'chips' }, D.SYSTEMS.map(sys => h('button', { class: 'chip', style: 'font-family:inherit', title: sys.eg, onclick: async () => { await S.set('equip', Object.assign({}, EQUIP_DEFAULT, sys.eq, { name: sys.name })); toast(`Set up for ${sys.name.toLowerCase()}`); render(); } }, sys.name))));
+  }
+  /* The example batch: a pale ale brewed three and a half weeks ago, logged the way a real one would be. */
+  async function loadSample() {
+    const day = n => B.addDays(today(), n - 24), t0 = Date.now() - 24 * 86400000;
+    const b = Object.assign(BLANK(), { name: 'Example: Citra pale ale', style: 'American pale ale', sample: true, brewDate: day(0), pitchDate: day(0), status: 'Drinking', og: 1.052, fg: 1.01, lastSg: 1.01, mashF: 152, fermF: 66, yeast: 'US-05 / WLP001 / Wyeast 1056',
+      fermentables: [{ name: '2-row pale malt', lb: 9.5 }, { name: 'Munich malt', lb: 1 }, { name: 'Crystal / Caramel 40L', lb: 0.5 }],
+      hops: [{ name: 'Magnum', oz: 0.5, alpha: 13.5, minutes: 60, type: 'pellet' }, { name: 'Citra', oz: 1, alpha: 12, minutes: 10, type: 'pellet' }, { name: 'Citra', oz: 1, alpha: 12, minutes: 0, type: 'pellet', whirlpool: true }],
+      dryHops: [{ name: 'Citra', oz: 2, alpha: 12, type: 'pellet', day: 7, days: 4, added: day(7) }], salts: [{ salt: 'Gypsum (CaSO4)', grams: 4 }, { salt: 'Calcium chloride (CaCl2)', grams: 2 }],
+      actuals: { strikeF: 163, mashInF: 152, mashTotal: 62, boilTotal: 60, chilledToF: 68, pitchF: 66 }, process: ['Whirlfloc or Irish moss', 'Recirculated the mash'],
+      notes: 'Soft water with gypsum and a little calcium chloride. A clean, bright pale ale: the hops do the talking.' });
+    const id = await DB.put('batches', b);
+    const e = (n, type, o) => DB.put('entries', Object.assign({ batchId: id, type, date: day(n), created: t0 + n * 86400000 }, o));
+    await e(0, 'step', { text: 'Mash in at 9:10 AM: 152F' }); await e(0, 'step', { text: 'Flameout at 11:42 AM: 60 min' }); await e(0, 'gravity', { sg: 1.052, raw: 1.052, instrument: 'sg', og: true, note: 'OG, 5.5 gal' }); await e(0, 'step', { text: 'Pitched at 12:30 PM: 66F' });
+    for (const [n, sg, f] of [[2, 1.038, 67], [4, 1.021, 68], [7, 1.012, 68], [10, 1.01, 67], [13, 1.01, 66]]) await e(n, 'gravity', { sg, raw: sg, instrument: 'sg', fermTempF: f });
+    await e(7, 'dryhop', { hop: 'Citra', oz: 2, form: 'pellet', text: '2 oz Citra (pellet (t-90))' });
+    await e(14, 'package', { method: 'Keg', volumes: 2.5, tempF: 38, gal: 5, psi: 12, text: 'Keg, 2.5 vol, 12 psi at 38F' });
+    await e(24, 'tasting', { score: '4', text: 'appearance: gold, slight haze, white head; aroma: grapefruit and lime; flavour: bright citrus, soft bitterness; mouthfeel: medium-light (4/5)', note: 'Yes. More whirlpool hops next time, and mash a degree lower.' });
+    state.batchId = id; await S.set('lastBatch', id); toast('An example batch: remove it whenever you like'); go('batches', 'view:' + id);
+  }
+  /* The year so far, and whether the equipment profile still tells the truth about mash efficiency. */
+  async function statsCard(list) {
+    const rows = list.map(b => { const est = recipeStats(b), og = num(b.og) || est.og, fg = num(b.fg) || num(b.lastSg);
+      return { brewDate: b.brewDate, batchGal: num(b.batchGal), sample: !!b.sample, brewed: !['Planned', 'Brewing'].includes(b.status) || !!b.pitchDate, abv: og && fg && fg < og ? B.abv(og, fg) : null, eff: num(b.og) ? batchEfficiency(b) : null }; });
+    const st = B.brewStats(rows); if (!st.batches) return null;
+    const bits = [`${st.batchesYear} batch${st.batchesYear === 1 ? '' : 'es'}`, st.gallonsYear ? `${st.gallonsYear} gal` : null, st.avgAbv ? `average ${st.avgAbv}%` : null, st.avgEff ? `mash efficiency ${st.avgEff}%` : null].filter(Boolean);
+    const box = h('div', { class: 'statline' }, h('b', null, st.batchesYear ? `${st.year} so far: ` : `${st.batches} brewed: `), st.batchesYear ? bits.join(' \u00B7 ') : bits.slice(1).join(' \u00B7 ') || 'nothing yet this year');
+    if (st.gallonsYear >= 100 && await S.get('region', 'US') === 'US') box.append(h('div', { class: 'muted small' }, `That is ${st.gallonsYear} of the 200 gallons a household with two adults may brew in a year under US federal law (100 for one).`));
+    const off = await S.get('effNag', null);
+    if (st.effCount >= 3 && st.avgEff && Math.abs(st.avgEff - num(EQ.efficiency)) >= 3 && off !== st.avgEff) box.append(h('div', { class: 'note', style: 'margin:10px 0 0' },
+      h('b', { style: 'color:var(--text)' }, `Your last ${st.effCount} measured brews averaged ${st.avgEff}% mash efficiency. `), `Your equipment profile says ${EQ.efficiency}%, so recipes are being sized ${st.avgEff < num(EQ.efficiency) ? 'a little light and your gravities come in low' : 'a little heavy and your gravities come in high'}.`,
+      h('div', { class: 'btns', style: 'margin:8px 0 0' }, h('button', { class: 'btn sm', onclick: async () => { await S.set('equip', Object.assign({}, await S.get('equip', {}), { efficiency: st.avgEff })); toast(`Profile set to ${st.avgEff}%`); render(); } }, `Use ${st.avgEff}%`),
+        h('button', { class: 'btn secondary sm', onclick: async () => { await S.set('effNag', st.avgEff); render(); } }, 'Leave it'))));
+    const real = list.filter(b => !b.sample).length, last = await S.get('lastBackup', 0), nag = await S.get('backupNag', 0);
+    if (real >= 2 && Date.now() - last > 30 * 86400000 && Date.now() - nag > 30 * 86400000) box.append(h('div', { class: 'note', style: 'margin:10px 0 0' }, h('b', { style: 'color:var(--text)' }, last ? 'It has been over a month since your last backup. ' : 'Your brews live only on this phone. '), 'A backup is one file you can keep anywhere and restore on a new phone.',
+      h('div', { class: 'btns', style: 'margin:8px 0 0' }, h('button', { class: 'btn sm', onclick: backupNow }, 'Back up now'), h('button', { class: 'btn secondary sm', onclick: async () => { await S.set('backupNag', Date.now()); render(); } }, 'Later'))));
+    return box;
+  }
+  const batchEfficiency = b => B.efficiency((b.fermentables || []).filter(f => !f.late).map(f => { const ref = D.FERMENTABLES.find(x => x.name === f.name); return { lb: ref && ref.extract ? 0 : num(f.lb), ppg: ref ? ref.ppg : 0 }; }), num(b.batchGal), B.fromPoints(Math.max(0, B.points(num(b.og)) - sugarPoints(b))));
+  // gravity points that came from extract and sugar, which need no mash and so say nothing about its efficiency
+  const sugarPoints = b => { const gal = num(b.batchGal); if (!gal) return 0; return (b.fermentables || []).reduce((sum, f) => { const ref = D.FERMENTABLES.find(x => x.name === f.name); return sum + (ref && ref.extract ? num(f.lb) * ref.ppg / gal : 0); }, 0); };
+  // ask the browser not to clear the brews when the phone runs short of space
+  function keepStorage() { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) { /* not available */ } }
   // Which IBU figure leads. SMPH predicts the finished beer; Tinseth is the number most homebrew recipes quote. Both are always shown.
   let IBU_MODEL = 'smph';
   const MODEL_NAME = { smph: 'SMPH', tinseth: 'Tinseth' };
@@ -156,8 +272,8 @@
     const file = new File([text], name, { type });
     const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.append(a); a.click(); a.remove();
   }
-  function batchForm(b) {
-    const r = b || BLANK();
+  function batchForm(b, draft) {
+    const r = b || draft || BLANK();
     const f = {};
     const mk = (k, label, type, extra, hint) => { f[k] = inp(r[k], type, extra); return field(label, f[k], hint); };
     const styleList = h('datalist', { id: 'styles' }, RC.RECIPES.map(s => h('option', { value: s.name })));
@@ -176,20 +292,22 @@
     }
     function refresh() {
       const cur = collect(); const est = recipeStats(cur); stats.innerHTML = '';
+      yeastHint.textContent = B.pitchAdvice(D.YEAST.find(y => y.name === cur.yeast) || null, num(cur.fermF));
+      if (!cur.fermentables.some(x => num(x.lb) > 0) && !cur.hops.some(x => num(x.oz) > 0)) { stats.append(h('div', { class: 'line' }, h('span', { class: 'l' }, 'Recipe numbers', h('span', { class: 'n' }, 'Add the grain and hops below. Gravity, bitterness, colour and strength fill in as you type, each checked against the style.')), h('span', { class: 'v' }, '-'))); return; }
       const styleRec = RC.RECIPES.find(r => r.name === cur.style); const style = styleRec ? { ogLow: styleRec.ranges.og[0], ogHigh: styleRec.ranges.og[1], ibuLow: styleRec.ranges.ibu[0], ibuHigh: styleRec.ranges.ibu[1], srmLow: styleRec.ranges.srm[0], srmHigh: styleRec.ranges.srm[1] } : D.STYLES.find(s => s.name === cur.style);
       const line = (l, v, inRange, n) => stats.append(h('div', { class: 'line ' + (inRange === true ? 'ok' : inRange === false ? 'bad' : '') }, h('span', { class: 'l' }, l, n ? h('span', { class: 'n' }, n) : null), h('span', { class: 'v' }, v)));
       const within = (v, lo, hi) => style && v ? (v >= lo && v <= hi) : null;
-      line('Estimated OG', est.og ? est.og.toFixed(3) : '-', within(est.og, style && style.ogLow, style && style.ogHigh), style ? `style ${style.ogLow.toFixed(3)} to ${style.ogHigh.toFixed(3)}` : null);
+      line('Estimated OG', est.og > 1 ? est.og.toFixed(3) : '-', est.og > 1 ? within(est.og, style && style.ogLow, style && style.ogHigh) : null, style ? `style ${style.ogLow.toFixed(3)} to ${style.ogHigh.toFixed(3)}` : null);
+      if (draft && draft._said) line('The recipe as written', draft._said, null, 'what it claims; the figures here are these ingredients on your system');
       const bi = batchIbu(cur, est);
       line(`IBU (${bi.label})`, bi.v || '-', within(bi.v, style && style.ibuLow, style && style.ibuHigh), [style ? `style ${style.ibuLow} to ${style.ibuHigh}` : null, bi.other].filter(Boolean).join(' \u00B7 ') || null);
       if (est.smph.dissolved < 0.97) line('Alpha acids that dissolve', Math.round(est.smph.dissolved * 100) + '%', false, 'wort holds about 200 ppm freely and never more than 580: past that, more hops add little bitterness');
       if (est.ibuDry > 0) line('Dry hops add', '+' + est.ibuDry, null, 'on a lab IBU test; it tastes less bitter than kettle IBUs');
       line('Colour (SRM)', est.srm || '-', within(est.srm, style && style.srmLow, style && style.srmHigh), style ? `style ${style.srmLow} to ${style.srmHigh}` : null);
-      if (est.og) { const yeastRef = D.YEAST.find(y => y.name === cur.yeast); const att = yeastRef ? (yeastRef.attLow + yeastRef.attHigh) / 2 : 75;
+      if (est.og > 1) { const yeastRef = D.YEAST.find(y => y.name === cur.yeast); const att = yeastRef ? (yeastRef.attLow + yeastRef.attHigh) / 2 : 75;
         const fgEst = B.fromPoints(B.points(est.og) * (1 - att / 100));
         line('Expected FG and ABV', `${fgEst.toFixed(3)}  /  ${B.abv(est.og, fgEst)}%`, null, yeastRef ? `${yeastRef.name.split('/')[0].trim()} attenuates ${yeastRef.attLow} to ${yeastRef.attHigh}%` : 'assuming 75% attenuation');
         const fp = B.fermentPlan(yeastRef || null, est.og); line('In the fermenter', fp.text.split(',')[0], null, (yeastRef ? `pitch and ferment at ${yeastRef.tempLow} to ${yeastRef.tempHigh}F` : 'pick a yeast from the list for its range') + (fp.lagerWeeks ? `, then ${fp.lagerWeeks[0]} to ${fp.lagerWeeks[1]} weeks cold` : '')); }
-      yeastHint.textContent = B.pitchAdvice(D.YEAST.find(y => y.name === cur.yeast) || null, num(cur.fermF));
       const salts = B.waterAdditions({}, collect().salts.map(s => ({ salt: s.salt, grams: num(s.grams) })), num(cur.batchGal) + 1.5);
       if (collect().salts.length) line('Sulfate : chloride', salts.ratio === null ? '-' : salts.ratio, null, B.ratioVerdict(salts.ratio));
     }
@@ -240,7 +358,9 @@
     f.yeast = inp(r.yeast, 'text', { list: 'yeasts' }); f.yeast.addEventListener('input', () => refresh()); f.yeast.addEventListener('change', () => refresh());
     const status = sel(STATUSES, r.status || 'Planned');
     f.ibuModel = sel([{ v: 'smph', t: 'SMPH: the finished beer, as a lab would measure it' }, { v: 'tinseth', t: 'Tinseth: the usual homebrew figure' }], r.ibuModel || IBU_MODEL); f.ibuModel.addEventListener('change', () => refresh());
-    view.append(h('button', { class: 'back', onclick: () => go('batches') }, '\u2039 Batches'), h('h2', null, b ? 'Edit batch' : 'New batch'), styleList, yeastList,
+    f.notes = h('textarea', { rows: 3 }); f.notes.value = r.notes || '';
+    add(h('button', { class: 'back', onclick: () => b ? goBack('batches', 'view:' + b.id) : goBack('batches') }, b ? '\u2039 ' + (b.name || 'Batch') : '\u2039 Batches'), h('h2', null, b ? 'Edit batch' : draft ? 'Check the recipe' : 'New batch'),
+      draft ? h('p', { class: 'muted small' }, 'Nothing is saved until you press Create batch. Change anything that looks wrong: names come from the app\'s ingredient lists, so pick the closest if one was not recognised.') : null, styleList, yeastList,
       h('datalist', { id: 'ferms' }, D.FERMENTABLES.map(x => h('option', { value: x.name }))), h('datalist', { id: 'hops' }, D.HOPS.map(x => h('option', { value: x.name }))),
       mk('name', 'Name'), field('Style', f.style), h('div', { class: 'row' }, mk('brewDate', 'Brew date', 'date'), field('Status', status)),
       h('div', { class: 'row' }, mk('batchGal', 'Batch size (gal)', 'number'), mk('boilGal', 'Pre-boil volume (gal)', 'number')),
@@ -252,7 +372,8 @@
             for (const el of rows.dry.children) { const i = $('.doz', el); if (num(i.value)) i.value = B.roundOz(num(i.value) * k); }
             for (const el of rows.salts.children) { const i = $('.sg', el); if (num(i.value)) i.value = Math.round(num(i.value) * k * 10) / 10; }
             f.boilGal.value = B.round.r2(g + Math.max(0.5, num(f.boilGal.value) - from)); f.batchGal.value = g; to.value = ''; refresh(); toast(`Scaled from ${from} to ${g} gal`); } }, 'Scale')); })(),
-      h('div', { class: 'row3' }, mk('boilMin', 'Boil (min)', 'number'), mk('efficiency', 'Efficiency %', 'number'), mk('mashF', 'Mash temp (F)', 'number')),
+      h('div', { class: 'row' }, mk('boilMin', 'Boil (min)', 'number'), mk('efficiency', 'Mash efficiency %', 'number')),
+      h('div', { class: 'row' }, mk('mashF', 'Mash temp (F)', 'number'), mk('mashMin', 'Mash time (min)', 'number', { placeholder: '60' })),
       stats,
       h('h3', null, 'Fermentables'), rows.fermentables, h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => { rows.fermentables.append(fermRow({})); } }, 'Add fermentable')),
       h('h3', null, 'Hops'), field('IBU figure to lead with, and to check against the style', f.ibuModel, 'The other one is always shown beside it'), rows.hops, h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => { rows.hops.append(hopRow({})); } }, 'Add hop')),
@@ -262,88 +383,186 @@
       h('p', { class: 'muted small', style: 'margin:-4px 0 4px' }, 'Leave "Add on day" blank and the app picks the window from the yeast: after the ferment has slowed, a few days before packaging. Put 2 for a hazy IPA charge during active fermentation.'),
       h('h3', null, 'Yeast'), h('div', { class: 'row', style: 'grid-template-columns:1fr 130px' }, field('Yeast', f.yeast), mk('fermF', 'Pitch at (F)', 'number', { placeholder: 'auto' })), yeastHint,
       h('h3', null, 'Water salts (optional)'), rows.salts, h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => { rows.salts.append(saltRow({})); } }, 'Add salt')),
-      mk('notes', 'Notes'),
-      h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { const out = collect(); out.status = status.value; if (!out.name) return toast('Give the batch a name'); const id = await DB.put('batches', out); state.batchId = out.id || id; await S.set('lastBatch', state.batchId); toast(b ? 'Saved' : 'Batch created'); go('batches', 'view:' + state.batchId); } }, b ? 'Save' : 'Create batch'),
-        b ? h('button', { class: 'btn danger', onclick: async () => { if (await deleteBatch(b)) go('batches'); } }, 'Delete') : null));
+      b ? h('h3', null, 'Measured, once it is brewed') : null,
+      b ? h('div', { class: 'row' }, mk('og', 'Original gravity', 'number', { placeholder: 'e.g. 1.052' }), mk('fg', 'Final gravity', 'number', { placeholder: 'e.g. 1.011' })) : null,
+      b ? h('p', { class: 'muted small', style: 'margin:-6px 0 12px' }, 'Logging a gravity reading fills these in for you. Correct them here if one went in wrong.') : null,
+      field('Notes', f.notes),
+      h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { const out = collect(); out.status = status.value; delete out._said; if (!out.name) return toast('Give the batch a name');
+        if (!b && !(await needReg('save'))) return;
+        const id = await DB.put('batches', out); state.batchId = out.id || id; await S.set('lastBatch', state.batchId); keepStorage(); toast(b ? 'Saved' : 'Batch created');
+        if (b) goBack('batches', 'view:' + state.batchId); else go('batches', 'view:' + state.batchId, { replace: true }); } }, b ? 'Save' : 'Create batch'),
+        b ? h('button', { class: 'btn danger', onclick: async () => { if (await deleteBatch(b)) go('batches'); } }, 'Delete') : h('button', { class: 'btn secondary', onclick: () => goBack('batches') }, 'Cancel')));
     ['batchGal', 'boilGal', 'boilMin', 'efficiency', 'wpTempF', 'wpMin', 'fermF'].forEach(k => f[k] && f[k].addEventListener('input', refresh));
+    for (const el of view.querySelectorAll('.btn.secondary')) if (/^Add (fermentable|hop|dry hop|salt)$/.test(el.textContent)) el.addEventListener('click', () => { const rowsEl = el.parentElement.previousElementSibling, last = rowsEl && rowsEl.lastElementChild, first = last && last.querySelector('input'); if (first) first.focus(); });
     f.style.addEventListener('input', refresh);
     refresh();
   }
+  /* "brewed Nov 10" once it has been; "brew day Nov 10" while it is still a plan. */
+  const brewedLine = b => { const d = B.niceDate(b.brewDate); return d ? (b.status === 'Planned' && !b.pitchDate ? 'brew day ' : 'brewed ') + d : null; };
+  const isPreboil = e => e.kind === 'preboil' || /^pre-?boil/i.test(e.note || '');
+  const isOg = e => e.og === true || e.kind === 'og' || /^OG\b/.test(e.note || '');
+  // keep the batch's own record of where the gravity stands in step with its log
+  async function syncGravity(b) {
+    const rs = (await DB.byBatch('entries', b.id)).filter(e => e.type === 'gravity' && !isPreboil(e) && !isOg(e)).sort((x, y) => (x.date || '').localeCompare(y.date || '') || x.id - y.id);
+    b.lastSg = rs.length ? num(rs[rs.length - 1].sg) : ''; await DB.put('batches', b);
+  }
+  const expectedFg = (b, est) => { const y = yeastOf(b), og = num(b.og) || est.og; return og > 1 ? B.fromPoints(B.points(og) * (1 - (y && y.attHigh ? (y.attLow + y.attHigh) / 2 : 75) / 100)) : null; };
   async function batchView(b) {
-    if (!b) return go('batches');
+    if (!b) return go('batches', null, { replace: true });
     state.batchId = b.id; await S.set('lastBatch', b.id);
     const entries = (await DB.byBatch('entries', b.id)).sort((x, y) => (x.date || '').localeCompare(y.date || '') || x.id - y.id);
     const est = recipeStats(b);
-    const gravity = entries.filter(e => e.type === 'gravity');
-    const ferm = B.fermentationStatus(gravity.map(g => ({ date: g.date, sg: num(g.sg) })), num(b.og) || est.og || 1.05);
-    view.append(h('button', { class: 'back', onclick: () => go('batches') }, '\u2039 Batches'),
-      h('h2', null, h('span', { class: 'swatch', style: `background:${B.srmHex(est.srm || 0)}` }), b.name || 'untitled'),
-      h('p', { class: 'muted' }, [b.style, b.brewDate, b.status].filter(Boolean).join(' \u00B7 ')));
+    const readings = entries.filter(e => e.type === 'gravity' && !isPreboil(e));   // a pre-boil reading belongs to brew day, not to the fermentation
+    const ferm = B.fermentationStatus(readings.filter(e => !isOg(e)).map(g => ({ date: g.date, sg: num(g.sg) })), num(b.og) || est.og || 1.05);
+    const open = type => go('batches', `log:${b.id}:${type}`);
+    view.append(h('button', { class: 'back', onclick: () => goBack('batches') }, '\u2039 Batches'),
+      h('div', { class: 'hero', style: 'align-items:center;margin-bottom:6px' }, glass(est.srm || 4, 34), h('div', null, h('h2', { style: 'margin:0' }, b.name || 'untitled'), h('p', { class: 'muted', style: 'margin:2px 0 0' }, [b.style && b.style !== b.name ? b.style : null, brewedLine(b), `${b.batchGal} gal`].filter(Boolean).join(' \u00B7 ')))),
+      h('div', { class: 'chips scroll', role: 'group', 'aria-label': 'Status' }, STATUSES.map(st => h('button', { class: 'chip' + (b.status === st ? ' on' : ''), style: 'font-family:inherit', 'aria-pressed': String(b.status === st), onclick: async () => { if (b.status === st) return; b.status = st; if (st === 'Fermenting' && !b.pitchDate) b.pitchDate = today(); await DB.put('batches', b); toast(st); render(); } }, st))));
+    { const on = view.querySelector('.chips.scroll .chip.on'); if (on) { const box = on.parentNode, r = on.getBoundingClientRect(), br = box.getBoundingClientRect(); box.scrollLeft += r.left - br.left - (br.width - r.width) / 2; } }   // the status it is at, in view: seven chips do not fit a phone
+    if (b.sample) view.append(h('div', { class: 'note' }, 'This is an example, so you can see what a brewed and logged batch looks like. ', h('button', { class: 'act', style: 'background:none;border:0;color:var(--amber);font:inherit;padding:0;cursor:pointer;text-decoration:underline', onclick: async () => { for (const e of entries) await DB.del('entries', e.id); await DB.del('batches', b.id); state.batchId = null; toast('Example removed'); go('batches'); } }, 'Remove the example')));
     const readout = h('div', { class: 'readout' });
-    const line = (l, v, n) => readout.append(h('div', { class: 'line' }, h('span', { class: 'l' }, l, n ? h('span', { class: 'n' }, n) : null), h('span', { class: 'v' }, v)));
-    const og = num(b.og) || est.og, fg = num(b.fg) || (ferm.sg || 0);
-    line('OG', b.og ? Number(b.og).toFixed(3) : (est.og ? est.og.toFixed(3) + ' est' : '-'), b.og && est.og ? `estimated ${est.og.toFixed(3)}` : null);
-    line('FG', fg ? Number(fg).toFixed(3) : '-', ferm.state !== 'no readings' ? `${ferm.state}, ${ferm.attenuation}% attenuation` : null);
-    if (og && fg) line('ABV', B.abv(og, fg) + '%', `${B.calories(og, fg)} calories per 12 oz`);
+    const line = (l, v, n, tone) => readout.append(h('div', { class: 'line ' + (tone || '') }, h('span', { class: 'l' }, l, n ? h('span', { class: 'n' }, n) : null), h('span', { class: 'v' }, v)));
+    const og = num(b.og) || est.og, fg = num(b.fg) || (ferm.sg || 0), fgEst = expectedFg(b, est);
+    line('OG', num(b.og) ? num(b.og).toFixed(3) : (est.og > 1 ? est.og.toFixed(3) + ' est' : '-'), num(b.og) && est.og > 1 ? `the recipe estimated ${est.og.toFixed(3)}` : 'log a gravity reading before you pitch and it goes here');
+    const packed = ['Packaged', 'Drinking', 'Finished'].includes(b.status);
+    line('FG', fg ? Number(fg).toFixed(3) : '-', ferm.state !== 'no readings' ? `${packed ? 'final' : ferm.ready ? `stable ${ferm.stableFor} days: ready to package` : ferm.state}, ${ferm.attenuation}% attenuation` : fgEst ? `expect about ${fgEst.toFixed(3)}` : null, ferm.ready && !packed ? 'ok' : '');
+    if (og > 1 && fg && fg < og) line('ABV', B.abv(og, fg) + '%', `${B.calories(og, fg)} calories per 12 oz`);
     const bi = batchIbu(b, est);
-    line('IBU / SRM', `${bi.v || '-'} / ${est.srm || '-'}`, [og ? `BU:GU ${B.bitternessRatio(bi.v, og)}` : null, bi.label, bi.other, est.ibuDry ? `dry hops +${est.ibuDry} on a lab test` : null].filter(Boolean).join(' \u00B7 '));
-    if (b.og && est.og) { const eff = B.efficiency((b.fermentables || []).map(f => { const ref = D.FERMENTABLES.find(x => x.name === f.name); return { lb: num(f.lb), ppg: ref ? ref.ppg : 0 }; }), num(b.batchGal), num(b.og)); if (eff) line('Efficiency achieved', eff + '%', `planned ${b.efficiency}%`); }
+    line('IBU / SRM', `${bi.v || '-'} / ${est.srm || '-'}`, [og > 1 && bi.v ? `BU:GU ${B.bitternessRatio(bi.v, og)}` : null, bi.label, bi.other, est.ibuDry ? `dry hops +${est.ibuDry} on a lab test` : null].filter(Boolean).join(' \u00B7 '));
+    if (num(b.og)) { const eff = batchEfficiency(b); if (eff) line('Mash efficiency', eff + '%', `planned ${b.efficiency}%`); }
     view.append(readout);
+    // A first reading logged before the app asked which one was the OG (anything from 1.8), or with the box left unticked: offer it, never guess.
+    const fresh = readings.filter(e => !isOg(e)), cand = !num(b.og) && fresh.length ? fresh[0] : null;
+    if (cand && num(cand.sg) > 1.02 && fresh.every(e => num(e.sg) <= num(cand.sg)) && (!b.brewDate || Math.abs(B.daysBetween(b.brewDate, cand.date)) <= 1))
+      view.append(h('div', { class: 'note' }, `Was ${num(cand.sg).toFixed(3)} on ${B.niceDate(cand.date)} your original gravity? `, h('button', { class: 'btn sm', style: 'margin:6px 0 0', onclick: async () => { cand.og = true; await DB.put('entries', cand); b.og = num(cand.sg); await syncGravity(b); toast('OG set'); render(); } }, 'Yes, use it as the OG')));
     // what actually happened on brew day, against the plan
     const act = b.actuals || {}, actKeys = Object.keys(B.ACTUAL_LABELS).filter(k => act[k] !== undefined && act[k] !== '');
     if (actKeys.length) { const target = { mashInF: b.mashF ? `target ${b.mashF}F` : null, boilTotal: b.boilMin ? `planned ${b.boilMin} min` : null, pitchF: yeastOf(b) ? `range ${yeastOf(b).tempLow} to ${yeastOf(b).tempHigh}F` : null };
       view.append(h('h3', null, 'Brew day, as it happened'), h('div', { class: 'tablewrap' }, h('table', { class: 'ref', style: 'min-width:0' }, h('tbody', null, actKeys.map(k => h('tr', null, h('th', { style: 'width:42%' }, B.ACTUAL_LABELS[k]), h('td', { class: 'mono' }, B.fmtActual(k, act[k])), h('td', { class: 'muted small' }, target[k] || ''))))))); }
     if ((b.process || []).length) view.append(h('p', { class: 'muted small' }, 'Process: ' + b.process.join(' \u00B7 ')));
     // how long it sits, and when the dry hops go in
-    const fi = fermentInfo(b);
-    if (!['Packaged', 'Drinking', 'Finished'].includes(b.status)) {
+    const fi = fermentInfo(b), done = ['Packaged', 'Drinking', 'Finished'].includes(b.status);
+    if (!done) {
       const box = h('div', { class: 'note' }, h('b', { style: 'color:var(--text)' }, `In the fermenter: ${fi.plan.text}`),
-        h('div', null, fi.pitched ? `Pitched ${fi.pitched}: day ${fi.day}. First gravity check about ${B.addDays(fi.pitched, fi.plan.checkDay)}, earliest packaging about ${B.addDays(fi.pitched, fi.plan.low)}.` : 'Counted from the day you pitch. '),
+        h('div', null, fi.pitched ? `Pitched ${B.niceDate(fi.pitched)}: day ${fi.day}. First gravity check about ${B.niceDate(B.addDays(fi.pitched, fi.plan.checkDay))}, earliest packaging about ${B.niceDate(B.addDays(fi.pitched, fi.plan.low))}.` : 'Counted from the day you pitch. '),
         h('div', null, fi.plan.note, ' An estimate: gravity decides, not the calendar.'));
-      for (const hp of fi.sched) box.append(h('div', { style: 'margin-top:6px' }, hp.added ? h('span', { class: 'badge ok' }, 'added ' + hp.added) : fi.due.includes(hp) ? h('span', { class: 'badge ' + (fi.overdue.includes(hp) ? 'overdue' : 'due') }, fi.overdue.includes(hp) ? 'overdue' : 'due now') : h('span', { class: 'badge' }, 'dry hop'),
-        `${hp.oz ? hp.oz + ' oz ' : ''}${hp.name}: ${hp.fromDate ? `${hp.fromDate} to ${hp.toDate}` : `day ${hp.fromDay} to ${hp.toDay}`}, ${hp.days} days in`));
+      for (const hp of fi.sched) box.append(h('div', { style: 'margin-top:6px' }, hp.added ? h('span', { class: 'badge ok' }, 'added ' + B.niceDate(hp.added)) : fi.due.includes(hp) ? h('span', { class: 'badge ' + (fi.overdue.includes(hp) ? 'overdue' : 'due') }, fi.overdue.includes(hp) ? 'overdue' : 'due now') : h('span', { class: 'badge' }, 'dry hop'),
+        `${hp.oz ? hp.oz + ' oz ' : ''}${hp.name}: ${hp.fromDate ? `${B.niceDate(hp.fromDate)} to ${B.niceDate(hp.toDate)}` : `day ${hp.fromDay} to ${hp.toDay}`}, ${hp.days} days in`));
       view.append(box);
     }
-    view.append(h('div', { class: 'btns' },
-      h('button', { class: 'btn', onclick: async () => { b.onBrewday = true; await DB.put('batches', b); state.batchId = b.id; go('brewday'); } }, 'Brew day'),
-      h('button', { class: 'btn secondary', onclick: () => entryForm(b, 'gravity') }, 'Log gravity'),
-      h('button', { class: 'btn secondary', onclick: () => entryForm(b, 'dryhop') }, 'Log dry hop'),
-      h('button', { class: 'btn secondary', onclick: () => entryForm(b, 'note') }, 'Log note'),
-      fi.pitched ? h('button', { class: 'btn secondary', onclick: () => { downloadText(B.icsFor(b.name || 'Batch', fi.pitched, fi.plan, fi.sched.filter(x => !x.added)), `${(b.name || 'batch').replace(/[^\w-]/g, '_')}-reminders.ics`, 'text/calendar'); toast('Open the file to add the reminders to your calendar'); } }, 'Reminders to calendar') : null,
-      h('button', { class: 'btn secondary', onclick: () => go('batches', 'edit:' + b.id) }, 'Edit recipe'),
-      h('button', { class: 'btn secondary', onclick: () => { state.batchId = b.id; go('shop'); } }, 'Shopping list'),
-      h('button', { class: 'btn secondary', onclick: () => entryForm(b, 'package') }, 'Log packaging'),
-      h('button', { class: 'btn secondary', onclick: () => entryForm(b, 'tasting') }, 'Log tasting'),
-      h('button', { class: 'btn secondary', onclick: async () => { const xml = window.BeerXML.exportRecipe(b, { fermentables: D.FERMENTABLES, hops: D.HOPS, yeast: D.YEAST }); const file = new File([xml], `${(b.name || 'recipe').replace(/[^\w-]/g, '_')}.xml`, { type: 'application/xml' });
-        if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) { try { await navigator.share({ title: b.name, files: [file] }); return; } catch (e) { if (e.name === 'AbortError') return; } }
-        const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.append(a); a.click(); a.remove(); toast('BeerXML saved; import it in Brewfather, BeerSmith or Brewer\'s Friend'); } }, 'Export BeerXML')));
-    if (gravity.length > 1) view.append(gravityChart(gravity, og));
+    // the one thing most likely wanted next, then everything else in two quiet rows
+    const brewing = ['Planned', 'Brewing'].includes(b.status);
+    view.append(brewing ? h('button', { class: 'btn block', style: 'min-height:54px;font-size:17px', onclick: async () => { b.onBrewday = true; await DB.put('batches', b); state.batchId = b.id; go('brewday'); } }, 'Brew day')
+      : done ? h('button', { class: 'btn block', style: 'min-height:54px;font-size:17px', onclick: () => open('tasting') }, 'Log tasting')
+        : h('button', { class: 'btn block', style: 'min-height:54px;font-size:17px', onclick: () => open('gravity') }, 'Log gravity'));
+    const sm = (label, fn) => h('button', { class: 'btn secondary sm', onclick: fn }, label);
+    view.append(h('div', { class: 'btns tight' }, h('span', { class: 'muted small lead' }, 'Log'),
+        brewing || done ? sm('Log gravity', () => open('gravity')) : null, sm('Log dry hop', () => open('dryhop')), sm('Log packaging', () => open('package')), done ? null : sm('Log tasting', () => open('tasting')), sm('Log note', () => open('note')),
+        fi.pitched && !done ? sm('Reminders to calendar', () => { downloadText(B.icsFor(b.name || 'Batch', fi.pitched, fi.plan, fi.sched.filter(x => !x.added)), `${(b.name || 'batch').replace(/[^\w-]/g, '_')}-reminders.ics`, 'text/calendar'); toast('Open the file to add the reminders to your calendar'); }) : null),
+      h('div', { class: 'btns tight' }, h('span', { class: 'muted small lead' }, 'Recipe'),
+        brewing ? null : sm('Brew day', async () => { b.onBrewday = true; await DB.put('batches', b); state.batchId = b.id; go('brewday'); }),
+        sm('Edit recipe', () => go('batches', 'edit:' + b.id)), sm('Shopping list', () => { state.batchId = b.id; go('shop'); }), sm('Brew it again', () => rebrew(b, entries)),
+        sm('Share recipe', () => shareRecipe(b, est)), sm('Batch card', () => batchCard(b, est, og, fg)),
+        sm('Export BeerXML', async () => { const xml = window.BeerXML.exportRecipe(b, { fermentables: D.FERMENTABLES, hops: D.HOPS, yeast: D.YEAST }); const file = new File([xml], `${(b.name || 'recipe').replace(/[^\w-]/g, '_')}.xml`, { type: 'application/xml' });
+          if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) { try { await navigator.share({ title: b.name, files: [file] }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+          const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.append(a); a.click(); a.remove(); toast('BeerXML saved; import it in Brewfather, BeerSmith or Brewer\'s Friend'); })));
+    if (readings.length > 1) view.append(gravityChart(readings, og, fgEst, ferm, packed));
+    if (b.notes) view.append(h('h3', null, 'Notes'), h('p', { style: 'white-space:pre-wrap' }, b.notes));
     view.append(h('h3', null, 'Log'));
-    if (!entries.length) view.append(h('div', { class: 'empty' }, 'Nothing logged yet.'));
-    view.append(h('div', { class: 'btns' }, h('button', { class: 'btn danger', onclick: async () => { if (await deleteBatch(b)) go('batches'); } }, 'Delete this batch')));
+    if (!entries.length) view.append(h('div', { class: 'empty' }, 'Nothing logged yet. Brew day steps, gravity readings, dry hops, packaging and tasting notes all collect here.'));
     const LBL = { gravity: 'Gravity', step: 'Brew day', note: 'Note', package: 'Packaging', tasting: 'Tasting', dryhop: 'Dry hop', sugar: 'Late addition' };
-    for (const e of entries.slice().reverse()) view.append(h('div', { class: 'rec' }, h('div', { class: 't' }, h('b', null, `${e.date}  ${LBL[e.type] || 'Note'}`),
+    for (const e of entries.slice().reverse()) view.append(h('div', { class: 'rec' }, h('div', { class: 't' }, h('b', null, `${B.niceDate(e.date)}  ${LBL[e.type] || 'Note'}`),
       h('div', { class: 'meta' }, e.type === 'gravity' ? `${Number(e.sg).toFixed(3)}${e.instrument === 'brix' ? ' (from ' + e.raw + ' Brix)' : e.tempF ? ' at ' + e.tempF + 'F' : ''}${e.fermTempF ? ' \u00B7 fermenter ' + e.fermTempF + 'F' : ''}${e.note ? ' \u00B7 ' + e.note : ''}` : [e.text, e.note].filter(Boolean).join(' \u00B7 '))),
-      h('button', { class: 'act', onclick: async () => { if (confirm('Delete this entry?')) { await DB.del('entries', e.id); go('batches', 'view:' + b.id); } } }, 'Delete')));
+      h('button', { class: 'act', onclick: async () => { if (!confirm('Delete this entry?')) return; await DB.del('entries', e.id);
+        if (e.type === 'gravity') { if (isOg(e) && num(b.og) === num(e.sg)) b.og = ''; await syncGravity(b); } render(); } }, 'Delete')));
+    view.querySelectorAll('.rec > .act').forEach(el => { if (el.textContent === 'Delete') el.classList.add('quiet'); });
+    view.append(h('div', { class: 'btns', style: 'margin-top:28px' }, h('button', { class: 'btn danger', onclick: async () => { if (await deleteBatch(b)) go('batches'); } }, 'Delete this batch')));
   }
-  function gravityChart(gravity, og) {
-    const pts = gravity.map(g => ({ d: g.date, sg: num(g.sg) })).filter(p => p.sg > 0);
-    const max = Math.max(og || 0, ...pts.map(p => p.sg)), min = Math.min(...pts.map(p => p.sg)) - 0.004;
-    const w = 300, hh = 120, pad = 4;
-    const x = i => pad + i * (w - 2 * pad) / Math.max(1, pts.length - 1);
-    const y = sg => hh - pad - (sg - min) / Math.max(0.001, max - min) * (hh - 2 * pad);
-    const path = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.sg).toFixed(1)}`).join(' ');
-    const svg = `<svg viewBox="0 0 ${w} ${hh}" style="width:100%;height:140px;background:var(--panel);border:1px solid var(--line);border-radius:6px">
-      <path d="${path}" fill="none" stroke="var(--amber)" stroke-width="2"/>
-      ${pts.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.sg).toFixed(1)}" r="3" fill="var(--amber)"/>`).join('')}
+  /* Gravity against time. Days run along the bottom (not just the order the readings came in), the dashed line is where the
+     yeast is expected to finish, and fermenter temperatures ride along the top when they were logged. */
+  function gravityChart(readings, og, fgEst, ferm, packed) {
+    const pts = readings.map(g => ({ d: g.date, sg: num(g.sg), t: num(g.fermTempF) })).filter(p => p.sg > 0);
+    const span = B.daysBetween(pts[0].d, pts[pts.length - 1].d), byDay = span > 0;
+    const hi = Math.max(og || 0, ...pts.map(p => p.sg)) + 0.002, lo = Math.min(fgEst || 9, ...pts.map(p => p.sg)) - 0.003;
+    const W = 320, H = 170, L = 40, R = 8, T = 12, Bm = 22;
+    const x = (p, i) => L + (byDay ? B.daysBetween(pts[0].d, p.d) / span : i / Math.max(1, pts.length - 1)) * (W - L - R);
+    const y = sg => T + (hi - sg) / Math.max(0.001, hi - lo) * (H - T - Bm);
+    const path = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p, i).toFixed(1)},${y(p.sg).toFixed(1)}`).join(' ');
+    const ticks = [hi - 0.002, (hi + lo) / 2, lo + 0.003].map(v => Math.round(v * 1000) / 1000);
+    const temps = pts.filter(p => p.t > 0), tLo = Math.min(...temps.map(p => p.t)), tHi = Math.max(...temps.map(p => p.t));
+    const ty = t => T + 4 + (tHi === tLo ? 0.5 : (tHi - t) / (tHi - tLo)) * 22;
+    const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gravity readings over time" style="width:100%;height:auto;background:var(--panel);border:1px solid var(--line);border-radius:6px">
+      ${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 5}" y="${(y(v) + 3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="ui-monospace,Menlo,monospace">${v.toFixed(3)}</text>`).join('')}
+      ${fgEst && fgEst > lo && fgEst < hi ? `<line x1="${L}" x2="${W - R}" y1="${y(fgEst).toFixed(1)}" y2="${y(fgEst).toFixed(1)}" stroke="var(--ok)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W - R - 3}" y="${(y(fgEst) - 4).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--ok)">expected ${fgEst.toFixed(3)}</text>` : ''}
+      ${temps.length > 1 ? `<path d="${temps.map((p, i) => `${i ? 'L' : 'M'}${x(p, pts.indexOf(p)).toFixed(1)},${ty(p.t).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="2 3"/>` : ''}
+      <path d="${path}" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${pts.map((p, i) => `<circle cx="${x(p, i).toFixed(1)}" cy="${y(p.sg).toFixed(1)}" r="3.5" fill="var(--amber)" stroke="var(--panel)" stroke-width="1.5"/>`).join('')}
+      <text x="${L}" y="${H - 6}" font-size="10" fill="var(--muted)">${B.niceDate(pts[0].d)}</text><text x="${W - R}" y="${H - 6}" text-anchor="end" font-size="10" fill="var(--muted)">${byDay ? 'day ' + span : B.niceDate(pts[pts.length - 1].d)}</text>
     </svg>`;
-    return h('div', null, h('h3', null, 'Gravity'), h('div', { html: svg }), h('p', { class: 'muted small' }, `${pts.length} readings, ${pts[0].sg.toFixed(3)} down to ${pts[pts.length - 1].sg.toFixed(3)}`));
+    const last = pts[pts.length - 1];
+    return h('div', null, h('h3', null, 'Fermentation'), h('div', { html: svg }),
+      h('p', { class: 'muted small', style: 'margin-top:6px' }, `${pts.length} readings${byDay ? ` over ${span} day${span === 1 ? '' : 's'}` : ''}: ${pts[0].sg.toFixed(3)} down to ${last.sg.toFixed(3)}.`,
+        temps.length > 1 ? ` Fermenter ${tLo === tHi ? tLo : tLo + ' to ' + tHi}F (dotted).` : '', packed ? '' : ferm && ferm.ready ? ' The gravity has stopped moving: it is ready to package.' : ferm && ferm.state === 'stable' ? ' Same reading twice: check once more in a day or two before you package.' : ''));
   }
-  function entryForm(b, type) {
+  // a planned copy of a brewed batch, carrying forward what the last tasting said to change
+  function rebrew(b, entries) {
+    const nb = JSON.parse(JSON.stringify(b)); for (const k of ['id', 'og', 'fg', 'lastSg', 'actuals', 'process', 'pitchDate', 'onBrewday', 'waterNote', 'sample']) delete nb[k];
+    nb.name = B.nextBrewName((b.name || 'Batch').replace(/^Example:\s*/, '')); nb.status = 'Planned'; nb.brewDate = today();
+    nb.fermentables = (b.fermentables || []).filter(f => !f.late); nb.dryHops = B.dryHopsOf(b).map(d => { const c = Object.assign({}, d); delete c.added; delete c.extra; return c; });
+    const last = entries.filter(e => e.type === 'tasting' && e.note).pop();
+    nb.notes = [`Rebrew of ${b.name || 'a batch'}, brewed ${B.niceDate(b.brewDate)}.`, last ? `Last time you said: ${last.note}` : '', b.notes || ''].filter(Boolean).join('\n').slice(0, 1500);
+    state.draft = nb; go('batches', 'new');
+  }
+  /* The recipe as a link: everything is packed into the address itself, so there is nothing to upload and nothing to host. Whoever
+     opens it sees the recipe in their own copy of the app, can save it, and can fill a cart from it. */
+  async function shareRecipe(b, est) {
+    const url = APP_URL + '#r=' + RT.encodeShare(b), og = num(b.og) || est.og, fgEst = expectedFg(b, est);
+    const text = RT.asText(b, { og: og > 1 ? og.toFixed(3) : '', ibu: batchIbu(b, est).v, abv: og > 1 && fgEst ? B.abv(og, fgEst) : '' });
+    if (navigator.share) { try { await navigator.share({ title: b.name || 'Recipe', text: text + '\n\nOpen it in Brew Log:', url }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(text + '\n\nOpen it in Brew Log: ' + url); toast('Recipe and link copied'); }
+    catch (e) { const box = h('textarea', { rows: 8, readonly: true, style: 'width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);padding:10px;font:inherit;font-size:14px' }); box.value = text + '\n\nOpen it in Brew Log: ' + url;
+      sheet(close => [h('h2', null, 'Share this recipe'), h('p', { class: 'muted small' }, 'Copy this and send it. The link opens the recipe in Brew Log.'), box, h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: close }, 'Done'))]); box.focus(); box.select(); }
+  }
+  /* A picture of the batch to post or print: the beer in its own colour, its name and its numbers. Drawn on a canvas, so it
+     needs no network and nothing is uploaded. */
+  async function batchCard(b, est, og, fg) {
+    const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'); if (!c) return toast('This browser cannot draw the card');
+    const font = (wt, px) => `${wt} ${px}px -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`, beer = B.srmHex(est.srm || 6);
+    c.fillStyle = '#2A1B10'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#F2A03D'; c.fillRect(0, 0, W, 14);
+    // the glass
+    const gx = W / 2, gy = 150, gw = 330, gh = 470;
+    c.fillStyle = beer; c.beginPath(); c.moveTo(gx - gw / 2, gy + 60); c.lineTo(gx + gw / 2, gy + 60); c.lineTo(gx + gw / 2 - 38, gy + gh - 30); c.quadraticCurveTo(gx + gw / 2 - 40, gy + gh, gx + gw / 2 - 72, gy + gh); c.lineTo(gx - gw / 2 + 72, gy + gh); c.quadraticCurveTo(gx - gw / 2 + 40, gy + gh, gx - gw / 2 + 38, gy + gh - 30); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.3)'; c.lineWidth = 22; c.lineCap = 'round'; c.beginPath(); c.moveTo(gx - gw / 2 + 62, gy + 120); c.lineTo(gx - gw / 2 + 84, gy + gh - 110); c.stroke();
+    c.fillStyle = '#FFF8EC'; for (const [dx, dy, r] of [[-125, 34, 58], [-45, 8, 68], [50, 14, 64], [128, 38, 52]]) { c.beginPath(); c.arc(gx + dx, gy + dy, r, 0, Math.PI * 2); c.fill(); }
+    c.beginPath(); c.roundRect ? c.roundRect(gx - gw / 2 - 26, gy + 20, gw + 52, 84, 42) : c.rect(gx - gw / 2 - 26, gy + 20, gw + 52, 84); c.fill();
+    // name, wrapped to two lines at most
+    c.fillStyle = '#FBF4EA'; c.textAlign = 'center'; let size = 84; const name = (b.name || 'Untitled').replace(/^Example:\s*/, '');
+    const wrap = px => { c.font = font(700, px); const words = name.split(/\s+/), out = ['']; for (const wd of words) { const t = out[out.length - 1] ? out[out.length - 1] + ' ' + wd : wd; if (c.measureText(t).width > W - 160 && out[out.length - 1]) out.push(wd); else out[out.length - 1] = t; } return out; };
+    let lines = wrap(size); while ((lines.length > 2 || lines.some(l => c.measureText(l).width > W - 120)) && size > 44) { size -= 6; lines = wrap(size); }
+    lines.slice(0, 2).forEach((l, i) => c.fillText(l, W / 2, 730 + i * (size + 12)));
+    const ty = 730 + (Math.min(2, lines.length) - 1) * (size + 12);
+    c.fillStyle = '#C9B79F'; c.font = font(400, 40); c.fillText([b.style && b.style !== b.name ? b.style : '', brewedLine(b)].filter(Boolean).join('  \u00B7  '), W / 2, ty + 70);
+    // the numbers
+    const measured = og > 1 && fg && fg < og, bi = batchIbu(b, est), fgEst = expectedFg(b, est);
+    const cells = [[measured ? B.abv(og, fg).toFixed(1) + '%' : (og > 1 && fgEst ? '~' + B.abv(og, fgEst).toFixed(1) + '%' : '-'), 'ABV'], [bi.v ? String(bi.v) : '-', 'IBU'], [og > 1 ? og.toFixed(3) : '-', 'OG'], [measured ? Number(fg).toFixed(3) : (fgEst ? '~' + fgEst.toFixed(3) : '-'), 'FG']];
+    const cw = (W - 160) / 4, cy = ty + 150;
+    c.fillStyle = '#F2A03D'; c.beginPath(); c.roundRect ? c.roundRect(80, cy, W - 160, 190, 18) : c.rect(80, cy, W - 160, 190); c.fill();
+    cells.forEach(([v, l], i) => { c.fillStyle = '#1B1407'; c.font = font(700, 62); c.fillText(v, 80 + cw * i + cw / 2, cy + 92); c.font = font(600, 30); c.fillText(l, 80 + cw * i + cw / 2, cy + 146); });
+    const hops = [...new Set((b.hops || []).concat(B.dryHopsOf(b)).map(x => x.name).filter(Boolean))].slice(0, 4).join(', '), y = yeastOf(b);
+    c.fillStyle = '#C9B79F'; c.font = font(400, 34); const facts = [hops ? 'Hops: ' + hops : '', b.yeast ? 'Yeast: ' + (y ? y.name.split('/')[0].trim() : b.yeast) : ''].filter(Boolean); facts.forEach((t, i) => c.fillText(t.length > 56 ? t.slice(0, 55) + '\u2026' : t, W / 2, cy + 256 + i * 48));
+    c.fillStyle = '#F2A03D'; c.font = font(700, 34); c.fillText('BREW LOG', W / 2, H - 78); c.fillStyle = '#C9B79F'; c.font = font(400, 28); c.fillText(APP_URL.replace(/^https?:\/\//, '').replace(/\/$/, ''), W / 2, H - 38);
+    const blob = await new Promise(res => cv.toBlob(res, 'image/png')); if (!blob) return toast('Could not make the picture');
+    const file = new File([blob], `${(b.name || 'batch').replace(/[^\w-]+/g, '_')}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) { try { await navigator.share({ files: [file], title: b.name || 'Batch' }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.append(a); a.click(); a.remove(); toast('Picture saved');
+  }
+  const ENTRY_TITLES = { gravity: 'Gravity reading', note: 'Note', package: 'Packaging', tasting: 'Tasting notes', dryhop: 'Dry hop added' };
+  async function entryForm(b, type) {
     view.innerHTML = '';
     const date = inp(today(), 'date'), note = inp('', 'text');
-    const titles = { gravity: 'Gravity reading', note: 'Note', package: 'Packaging', tasting: 'Tasting notes', dryhop: 'Dry hop added' };
-    view.append(h('button', { class: 'back', onclick: () => go('batches', 'view:' + b.id) }, '\u2039 ' + (b.name || 'batch')), h('h2', null, titles[type]), field('Date', date));
+    const leave = () => goBack('batches', 'view:' + b.id);
+    view.append(h('button', { class: 'back', onclick: leave }, '\u2039 ' + (b.name || 'batch')), h('h2', null, ENTRY_TITLES[type]), field('Date', date));
     let collect;
     if (type === 'gravity') {
       const mode = sel([{ v: 'sg', t: 'Hydrometer (SG)' }, { v: 'brix', t: 'Refractometer (Brix)' }], 'sg');
@@ -355,13 +574,19 @@
       const wrap = h('div', null, sgRow);
       const update = () => {
         if (mode.value === 'sg') { const v = num(sg.value), t = num(temp.value); corrected.textContent = v && t ? `Corrected for temperature: ${B.hydrometerCorrect(v, t, EQ.hydroCalF).toFixed(3)} (hydrometer calibrated at ${EQ.hydroCalF}F)` : ''; }
-        else { const ob = num(obrix.value), cb = num(cbrix.value); if (!cb) { corrected.textContent = ''; return; } const val = ob ? B.refractoFg(ob, cb, EQ.wcf) : B.brixToSgUnfermented(cb, EQ.wcf); corrected.textContent = `${ob ? 'Terrill-corrected gravity' : 'Unfermented wort gravity'}: ${val.toFixed(3)} (correction factor ${EQ.wcf})`; }
+        else { const ob = num(obrix.value), cb = num(cbrix.value); if (!cb) { corrected.textContent = ''; return; } const val = ob ? B.refractoFg(ob, cb, EQ.wcf) : B.brixToSgUnfermented(cb, EQ.wcf); corrected.textContent = `${ob ? 'Corrected for alcohol' : 'Unfermented wort gravity'}: ${val.toFixed(3)} (correction factor ${EQ.wcf})`; }
       };
       mode.addEventListener('change', () => { wrap.innerHTML = ''; wrap.append(mode.value === 'sg' ? sgRow : brixRow); update(); });
       [sg, temp, obrix, cbrix].forEach(i => i.addEventListener('input', update));
-      view.append(field('Instrument', mode), wrap, corrected, field('Fermenter temp (F), optional', fermTemp), field('Note', note));
+      // the reading taken before pitching is the batch's original gravity: say so and ABV and efficiency are worked out from it
+      const prior = (await DB.byBatch('entries', b.id)).filter(e => e.type === 'gravity' && !isPreboil(e)).length;
+      const ogBox = h('input', { type: 'checkbox', style: 'width:24px;height:24px;min-height:24px;flex:none;padding:0' }); ogBox.checked = !num(b.og) && !prior && ['Planned', 'Brewing', 'Fermenting'].includes(b.status);
+      view.append(field('Instrument', mode), wrap, corrected,
+        h('label', { class: 'field', style: 'display:flex;align-items:center;gap:10px' }, ogBox, h('span', { style: 'margin:0;color:var(--text)' }, 'This is the original gravity (OG), taken before pitching', num(b.og) ? h('span', { class: 'muted small', style: 'display:block' }, `The batch already has an OG of ${num(b.og).toFixed(3)}; tick this to replace it.`) : null)),
+        field('Fermenter temp (F), optional', fermTemp), field('Note', note));
       collect = () => {
         const rec = { instrument: mode.value, note: note.value.trim() }; if (num(fermTemp.value)) rec.fermTempF = num(fermTemp.value);
+        if (ogBox.checked) { rec.og = true; rec.note = rec.note ? 'OG, ' + rec.note : 'OG'; }
         if (mode.value === 'sg') { const v = num(sg.value); if (!v) { toast('Enter the reading'); return null; } rec.raw = v; rec.sg = num(temp.value) ? B.hydrometerCorrect(v, num(temp.value), EQ.hydroCalF) : v; rec.tempF = temp.value; }
         else { const v = num(cbrix.value); if (!v) { toast('Enter the reading'); return null; } const ob = num(obrix.value); rec.raw = v; rec.sg = ob ? B.refractoFg(ob, v, EQ.wcf) : B.brixToSgUnfermented(v, EQ.wcf); if (ob) rec.obrix = ob; }
         return rec; };
@@ -404,14 +629,51 @@
       if (type === 'dryhop') { const list = B.dryHopsOf(b).map(d => Object.assign({}, d)); const hit = list.find(d => !d.added && d.name.toLowerCase() === data.hop.toLowerCase());
         if (hit) { hit.added = rec.date; if (data.oz) hit.oz = data.oz; hit.type = data.form; } else { const ref = D.HOPS.find(x => x.name === data.hop); list.push({ name: data.hop, oz: data.oz, type: data.form, alpha: ref ? ((ref.alphaLow + ref.alphaHigh) / 2).toFixed(1) : '', days: 4, day: '', added: rec.date, extra: true }); }
         b.dryHops = list; b.extras = (b.extras || []).filter(e => !/^dry hop:/i.test(String(e || ''))); await DB.put('batches', b); }
-      if (type === 'package' && ['Planned', 'Brewing', 'Fermenting', 'Conditioning'].includes(b.status)) { b.status = 'Packaged'; await DB.put('batches', b); }
-      if (type === 'gravity' && !b.og && rec.sg > 1.02 && b.status !== 'Packaged') { /* first reading of a fresh batch is probably the OG; leave that to the user */ }
-      toast('Logged'); go('batches', 'view:' + b.id); } }, 'Save'),
-      h('button', { class: 'btn secondary', onclick: () => go('batches', 'view:' + b.id) }, 'Cancel')));
+      if (type === 'gravity') { if (rec.og) b.og = rec.sg; await syncGravity(b); }
+      if (type === 'package') { if (!num(b.fg) && num(b.lastSg)) b.fg = num(b.lastSg); if (['Planned', 'Brewing', 'Fermenting', 'Conditioning'].includes(b.status)) b.status = 'Packaged'; await DB.put('batches', b); }
+      if (type === 'tasting' && ['Packaged'].includes(b.status)) { b.status = 'Drinking'; await DB.put('batches', b); }
+      toast(rec.og ? 'Logged as the OG' : 'Logged'); leave(); } }, 'Save'),
+      h('button', { class: 'btn secondary', onclick: leave }, 'Cancel')));
   }
 
   // ---------- brew day ----------
   let timer = null;
+  /* One clock for the whole app. The guided brew day and the quick sheet keep their timers as start times in storage; this loop is
+     the only thing that rings, and it runs whatever screen is showing, so a hop addition still sounds while you are in a calculator.
+     A due addition keeps ringing every 20 seconds until it is ticked or three minutes have passed. */
+  let goLive = null, goView = null, sheetLive = null, audioCtx = null;
+  const rang = {};
+  /* Phones only let a page make sound after a tap, and only on an audio context that was started by one: so the context is made
+     (and a silent blip played) on the tap that starts a timer, and kept for the alarms that come later. */
+  function unlockAudio() { try { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; if (!audioCtx) audioCtx = new AC(); if (audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(); g.gain.value = 0.0001; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.05); } catch (e) { /* no audio */ } }
+  function alarmTick() {
+    const pill = $('#timerPill'), now = Date.now(); let label = '', ringingNow = false;
+    const g = goLive, step = g && g.plan[g.st.i], started = step && step.kind === 'timer' ? g.st.timers[step.id] : null;
+    if (started) {
+      const el = Math.floor((now - started) / 1000), left = step.minutes * 60 - el, fresh = []; let again = false;
+      for (const a of step.alarms || []) { const k = step.id + ':' + a.at, due = started + a.at * 60000; if (now < due) continue;
+        if (!g.st.fired[k]) { g.st.fired[k] = now - due > 120000 ? due : now; fresh.push(a); rang[k] = now; }          // long overdue (the app was closed): ring once, do not nag
+        else if (!g.st.ticked[k] && now - g.st.fired[k] < 180000) { ringingNow = true; if (now - (rang[k] || 0) >= 20000) { rang[k] = now; again = true; } } }
+      if (fresh.length) { S.set(g.key, g.st); beep(3); notify(step.title, fresh[fresh.length - 1].label); ringingNow = true; } else if (again) beep(2);
+      const upcoming = (step.alarms || []).find(a => a.at * 60 > el);
+      label = `${left < 0 ? '+' : ''}${fmtMS(left)}${upcoming ? ' \u00B7 next in ' + fmtMS(upcoming.at * 60 - el) : ''}`;
+      if (goView) goView(el, left, upcoming);
+    }
+    const sl = sheetLive;
+    if (sl && sl.start) { const s2 = Math.floor((now - sl.start) / 1000);
+      for (const a of sl.additions) { const k = 'sheet:' + sl.id + ':' + a.at + ':' + a.label; if (s2 >= a.at * 60 && !rang[k]) { rang[k] = now; if (s2 - a.at * 60 < 120) { beep(3); notify('Boil', a.label); ringingNow = true; } } }
+      if (!label && s2 < (sl.boilLen + 30) * 60) { const next = sl.additions.find(a => a.at * 60 > s2); label = `${fmtMS(s2)}${next ? ' \u00B7 next in ' + fmtMS(next.at * 60 - s2) : ''}`; } }
+    if (pill) { const onScreen = state.tab === 'brewday'; pill.hidden = !label || onScreen; pill.textContent = label; pill.classList.toggle('ring', ringingNow); }
+  }
+  setInterval(alarmTick, 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ((goLive && goLive.plan[goLive.st.i] && goLive.st.timers[goLive.plan[goLive.st.i].id]) || (sheetLive && sheetLive.start))) keepAwake(); });
+  // after a reload in the middle of a brew day, pick the clocks up where they were
+  async function resumeBrewday() {
+    const id = await S.get('goActive', null); if (!id) return;
+    const b = await DB.get('batches', id), st = b ? await S.get('go:' + id, null) : null; if (!b || !st) return;
+    EQ = await equip(); const est = recipeStats(b); goLive = { b, st, key: 'go:' + id, plan: B.brewPlan(b, EQ, grainLbOf(b), est.boilG, yeastOf(b)) };
+  }
   const onBrewday = x => x.onBrewday === true || (x.onBrewday !== false && (['Planned', 'Brewing'].includes(x.status) || (x.status === 'Fermenting' && (x.pitchDate || x.brewDate) === today())));
   const grainLbOf = b => (b.fermentables || []).reduce((s, f) => { const ref = D.FERMENTABLES.find(x => x.name === f.name); return s + ((ref && ref.extract) || f.late ? 0 : num(f.lb)); }, 0);
   // small inputs for the numbers a step records; read() returns only what was typed, parsed
@@ -473,8 +735,9 @@
     const list = await batchList();
     const shown = list.filter(onBrewday);
     const b = shown.find(x => x.id === state.batchId) || shown[0] || null; if (b) state.batchId = b.id;
-    if (state.sub === 'go' && b) return renderGo(b);
-    clearInterval(goTimer);
+    const goState = b ? await S.get('go:' + b.id, null) : null;
+    // a guided brew day in progress is where the Brew day tab lands; the sheet is one tap back from it
+    if (b && (state.sub === 'go' || (state.sub !== 'sheet' && goState && goState.i > 0))) return renderGo(b);
     view.append(h('h2', null, 'Brew day'));
     const others = list.filter(x => !shown.includes(x));
     const addSel = others.length ? sel([{ v: '', t: 'Add a batch to brew day\u2026' }].concat(others.map(x => ({ v: String(x.id), t: `${x.name || 'batch ' + x.id} (${x.status})` }))), '') : null;
@@ -485,20 +748,18 @@
       h('button', { style: 'background:none;border:0;color:inherit;font:inherit;padding:0;cursor:pointer', onclick: async () => { state.batchId = x.id; await S.set('lastBatch', x.id); render(); } }, x.name || 'batch'),
       h('button', { 'aria-label': `Take ${x.name || 'batch'} off brew day`, title: 'Take off brew day', style: 'background:none;border:0;color:inherit;font:inherit;font-size:18px;line-height:1;padding:2px 6px;cursor:pointer;opacity:.75', onclick: async () => { x.onBrewday = false; await DB.put('batches', x); if (state.batchId === x.id) state.batchId = null; toast(`${x.name || 'Batch'} taken off brew day. It is still under Batches.`); render(); } }, '\u00D7')))));
     if (addSel) view.append(field('', addSel));
-    const goState = await S.get('go:' + b.id, null);
     view.append(h('button', { class: 'btn block', style: 'font-size:18px;min-height:56px', onclick: () => go('brewday', 'go') }, goState ? `Continue guided brew day (step ${goState.i + 1})` : 'Go: guided brew day, start to finish'),
       h('p', { class: 'muted small' }, 'One step at a time from strike water to pitching, with timers, hop alarms and gravity checks built from this recipe and your equipment profile.'));
     const done = (await S.get('steps:' + b.id, {})) || {};
     const est = recipeStats(b), y = yeastOf(b);
     // numbers you want in your hand on brew day
-    const grainLb = grainLbOf(b);
-    const qtLb = EQ.qtPerLb;
+    const grainLb = grainLbOf(b), T = B.brewTargets(b, EQ, grainLb, y);
     const readout = h('div', { class: 'readout' });
     const line = (l, v, n) => readout.append(h('div', { class: 'line' }, h('span', { class: 'l' }, l, n ? h('span', { class: 'n' }, n) : null), h('span', { class: 'v' }, v)));
     if (grainLb) {
-      line('Strike water', `${B.strikeWaterVolume(grainLb, qtLb)} gal`, `${qtLb} qt per lb over ${grainLb} lb (${EQ.name})`);
-      line('Strike temp', `${B.strikeTemp(qtLb, 65, num(b.mashF) || 152, EQ.tunLossF)} F`, `grain at 65F, ${EQ.tunLossF}F for the tun`);
-      line('Sparge water', `${B.spargeVolume(num(b.boilGal) || EQ.boilGal, B.strikeWaterVolume(grainLb, qtLb), grainLb, EQ.absorbGalLb)} gal`, `${EQ.absorbGalLb} gal per lb absorbed`);
+      line('Strike water', `${T.strikeGal} gal`, T.noSparge ? `all of it, no sparge: ${T.qtPerLb} qt per lb over ${B.round.r2(grainLb)} lb (${EQ.name})` : `${T.qtPerLb} qt per lb over ${B.round.r2(grainLb)} lb (${EQ.name})`);
+      line('Strike temp', `${T.strikeF} F`, `grain at ${T.grainF}F, ${EQ.tunLossF}F for the tun`);
+      if (!T.noSparge) line('Sparge water', `${T.spargeGal} gal`, `${EQ.absorbGalLb} gal per lb absorbed`);
       line('Expected in fermenter', `${B.postBoilToPackage(B.boilOff(num(b.boilGal) || EQ.boilGal, EQ.boilOffGalHr, num(b.boilMin) || EQ.boilMin), EQ.trubGal)} gal`, `${EQ.boilOffGalHr} gal/hr boil-off, ${EQ.trubGal} gal trub`);
     }
     line('Pre-boil target', `${b.boilGal || '-'} gal`, est.boilG ? `about ${est.boilG.toFixed(3)}` : null);
@@ -511,6 +772,7 @@
     const nextEl = h('p', { class: 'muted small', style: 'text-align:center;margin-top:-4px' });
     const boilLen = num(b.boilMin) || EQ.boilMin;
     const additions = (b.hops || []).filter(hp => hp.name && hp.minutes !== '' && !hp.whirlpool).map(hp => ({ label: `${hp.oz} oz ${hp.name}`, at: boilLen - num(hp.minutes) })).sort((x, y2) => x.at - y2.at);
+    const live = () => { sheetLive = { id: b.id, start, additions, boilLen }; if (start) keepAwake(); };
     function tick() {
       if (!start) { tdisp.textContent = '00:00'; nextEl.textContent = additions.length ? `First addition at +${additions[0].at} min` : ''; return; }
       const s = Math.floor((Date.now() - start) / 1000); const m = s / 60;
@@ -520,10 +782,10 @@
       else if (m >= boilLen) nextEl.textContent = `Boil done: flameout. Still boiling? The total is counted when you tick Flameout.`;
       else nextEl.textContent = `All hops in; flameout in ${Math.floor(boilLen - m)} min`;
     }
-    clearInterval(timer); timer = setInterval(tick, 1000); tick();
+    clearInterval(timer); timer = setInterval(tick, 1000); tick(); live();
     view.append(tdisp, nextEl, h('div', { class: 'btns' },
-      h('button', { class: 'btn', onclick: async () => { start = Date.now(); await S.set('timerStart:' + b.id, start); tick(); toast('Boil timer started'); } }, 'Start boil timer'),
-      h('button', { class: 'btn secondary', onclick: async () => { start = null; await S.set('timerStart:' + b.id, null); tick(); } }, 'Reset')));
+      h('button', { class: 'btn', onclick: async () => { unlockAudio(); start = Date.now(); await S.set('timerStart:' + b.id, start); live(); tick(); toast('Boil timer started: each addition will ring'); } }, 'Start boil timer'),
+      h('button', { class: 'btn secondary', onclick: async () => { start = null; await S.set('timerStart:' + b.id, null); live(); tick(); } }, 'Reset')));
     view.append(h('h3', null, 'Steps'), h('p', { class: 'muted small' }, 'Type the number, then Done. Blanks are fine: only what you enter is recorded.'));
     const { steps } = B.brewSteps(b, EQ, grainLb, y);
     const rec = k => (done[k] && typeof done[k] === 'object') ? done[k] : (done[k] ? { t: done[k] } : null);
@@ -539,7 +801,7 @@
           const now = Date.now();
           if (st.id === 'mashout' && vals.mashTotal === undefined && rec('mashin') && rec('mashin').ts) vals.mashTotal = Math.max(1, Math.round((now - rec('mashin').ts) / 60000));
           if (st.id === 'flameout' && vals.boilTotal === undefined) { const t0 = start || (rec('boil') && rec('boil').ts); if (t0) vals.boilTotal = Math.max(1, Math.round((now - t0) / 60000)); }
-          if (st.id === 'boil' && !start) { start = now; await S.set('timerStart:' + b.id, start); }
+          if (st.id === 'boil' && !start) { unlockAudio(); start = now; await S.set('timerStart:' + b.id, start); live(); }
           done[st.id] = { t: hopTime(), ts: now, vals };
           await S.set('steps:' + b.id, done); await saveActuals(b, vals);
           const said = B.actualsText(st.fields || [], vals);
@@ -574,12 +836,14 @@
   async function renderStock() {
     const inv = await DB.all('stock');
     if (state.sub === 'suggest') return suggestScreen(inv);
+    if (state.sub === 'new') { const pre = state.stockPrefill; state.stockPrefill = null; return stockForm(null, pre); }
+    if (state.sub && state.sub.startsWith('edit:')) { const it = inv.find(i => i.id === Number(state.sub.slice(5))); return it ? stockForm(it) : go('stock', null, { replace: true }); }
     view.append(h('h2', null, 'Stock'));
     const photoIn = h('input', { type: 'file', accept: 'image/*', capture: 'environment', hidden: true, onchange: e => { if (e.target.files[0]) labelFlow(e.target.files[0]); e.target.value = ''; } });
     view.append(photoIn,
       h('div', { class: 'btns' },
         h('button', { class: 'btn', onclick: () => photoIn.click() }, 'Photograph a label'),
-        h('button', { class: 'btn secondary', onclick: () => stockForm(null) }, 'Add by hand'),
+        h('button', { class: 'btn secondary', onclick: () => go('stock', 'new') }, 'Add by hand'),
         h('button', { class: 'btn secondary', onclick: () => go('stock', 'suggest') }, 'What can I brew?')));
     view.append(h('p', { class: 'muted small' }, 'Photograph one bag or pack at a time, filling the frame with the label. The app reads the text and matches it against the ingredient tables, then asks you to confirm. A photo of a whole shelf will not work; the text is too small and too many labels overlap.'));
     if (!inv.length) return view.append(h('div', { class: 'empty' }, 'Nothing in stock yet.'));
@@ -594,7 +858,7 @@
           kind === 'Fermentable' && ref ? h('span', { class: 'swatch', style: 'background:' + B.srmHex(ref.lovibond) }) : null,
           h('div', { class: 't' }, h('b', null, `${it.amount || ''} ${it.unit || UNIT[kind]}  ${it.name}`),
             h('div', { class: 'meta' }, [ref && ref.genre ? ref.genre : null, ref && ref.alphaLow ? `${ref.alphaLow} to ${ref.alphaHigh}% alpha` : null, ref && ref.ppg ? `${ref.ppg} ppg, ${ref.lovibond} L` : null, ref && ref.attLow ? `${ref.attLow} to ${ref.attHigh}%, ${ref.tempLow} to ${ref.tempHigh} F` : null, it.note].filter(Boolean).join(' \u00B7 '))),
-          h('button', { class: 'act', onclick: () => stockForm(it) }, 'Edit')));
+          h('button', { class: 'act', onclick: () => go('stock', 'edit:' + it.id) }, 'Edit')));
       }
     }
   }
@@ -607,11 +871,11 @@
     const dl = h('datalist', { id: 'vocab' });
     const fillVocab = () => { dl.innerHTML = ''; VOCAB[kind.value]().forEach(v => dl.append(h('option', { value: v }))); unit.value = unit.value || UNIT[kind.value]; };
     kind.addEventListener('change', fillVocab); fillVocab();
-    view.append(h('button', { class: 'back', onclick: () => go('stock') }, '\u2039 Stock'), h('h2', null, item ? 'Edit stock' : 'Add to stock'), dl,
+    view.append(h('button', { class: 'back', onclick: () => goBack('stock') }, '\u2039 Stock'), h('h2', null, item ? 'Edit stock' : 'Add to stock'), dl,
       field('Kind', kind), field('Name', name), h('div', { class: 'row' }, field('Amount', amount), field('Unit', unit)), field('Note', note),
-      h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { r.kind = kind.value; r.name = name.value.trim(); r.amount = amount.value; r.unit = unit.value.trim(); r.note = note.value.trim(); if (!r.name) return toast('Name it'); await DB.put('stock', r); toast('Saved'); go('stock'); } }, 'Save'),
-        item ? h('button', { class: 'btn danger', onclick: async () => { await DB.del('stock', item.id); go('stock'); } }, 'Remove') : null,
-        h('button', { class: 'btn secondary', onclick: () => go('stock') }, 'Cancel')));
+      h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { r.kind = kind.value; r.name = name.value.trim(); r.amount = amount.value; r.unit = unit.value.trim(); r.note = note.value.trim(); if (!r.name) return toast('Name it'); await DB.put('stock', r); toast('Saved'); goBack('stock'); } }, 'Save'),
+        item ? h('button', { class: 'btn danger', onclick: async () => { await DB.del('stock', item.id); goBack('stock'); } }, 'Remove') : null,
+        h('button', { class: 'btn secondary', onclick: () => goBack('stock') }, 'Cancel')));
   }
   async function labelFlow(file) {
     view.innerHTML = '';
@@ -621,17 +885,17 @@
     let text = '';
     try { text = await ocr(cv, p => { bar.firstChild.style.width = Math.round(p * 100) + '%'; }); } catch (e) { status.textContent = 'The reader could not load (offline?). Add it by hand instead.'; }
     bar.remove();
-    if (!text.trim()) { status.textContent = 'No text found on that photo. Try filling the frame with the label, straight on, without glare.'; view.append(h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: () => stockForm(null) }, 'Add by hand'), h('button', { class: 'btn secondary', onclick: () => go('stock') }, 'Back'))); return; }
+    if (!text.trim()) { status.textContent = 'No text found on that photo. Try filling the frame with the label, straight on, without glare.'; view.append(h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: () => go('stock', 'new') }, 'Add by hand'), h('button', { class: 'btn secondary', onclick: () => go('stock') }, 'Back'))); return; }
     const candidates = [];
     for (const kind of ['Hop', 'Fermentable', 'Yeast']) B.matchVocab(text, VOCAB[kind](), 3).forEach(m => candidates.push({ kind, name: m.name, score: m.score }));
     candidates.sort((a, b) => b.score - a.score);
     status.textContent = candidates.length ? 'Tap the match, or add it by hand.' : 'Text read, but nothing matched the ingredient tables. Add it by hand.';
-    for (const c of candidates.slice(0, 6)) view.append(h('div', { class: 'rec' }, h('div', { class: 't' }, h('b', null, c.name), h('div', { class: 'meta' }, `${c.kind} \u00B7 confidence ${c.score}`)), h('button', { class: 'act', onclick: () => stockForm(null, { kind: c.kind, name: c.name, unit: UNIT[c.kind] }) }, 'Use')));
+    for (const c of candidates.slice(0, 6)) view.append(h('div', { class: 'rec' }, h('div', { class: 't' }, h('b', null, c.name), h('div', { class: 'meta' }, `${c.kind} \u00B7 confidence ${c.score}`)), h('button', { class: 'act', onclick: () => { state.stockPrefill = { kind: c.kind, name: c.name, unit: UNIT[c.kind] }; go('stock', 'new'); } }, 'Use')));
     view.append(h('details', { class: 'plat' }, h('summary', null, 'What the reader saw'), h('div', { class: 'body' }, h('pre', { class: 'pkg' }, text))),
-      h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => stockForm(null) }, 'Add by hand'), h('button', { class: 'btn secondary', onclick: () => go('stock') }, 'Back')));
+      h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => go('stock', 'new') }, 'Add by hand'), h('button', { class: 'btn secondary', onclick: () => go('stock') }, 'Back')));
   }
   async function suggestScreen(inv) {
-    view.append(h('button', { class: 'back', onclick: () => go('stock') }, '\u2039 Stock'), h('h2', null, 'What can I brew?'));
+    view.append(h('button', { class: 'back', onclick: () => goBack('stock') }, '\u2039 Stock'), h('h2', null, 'What can I brew?'));
     if (!inv.length) return view.append(h('div', { class: 'empty' }, 'Add some stock first and this ranks every style against what is on the shelf.'));
     const galIn = inp(5.5, 'number');
     const out = h('div');
@@ -641,7 +905,7 @@
       if (can.length) { out.append(h('h3', null, `Ready to brew (${can.length})`));
         for (const s of can) out.append(h('div', { class: 'rec' }, h('span', { class: 'swatch', style: 'background:' + B.srmHex((s.style.srmLow + s.style.srmHigh) / 2) }),
           h('div', { class: 't' }, h('b', null, s.style.name), h('div', { class: 'meta' }, `${s.style.abvLow} to ${s.style.abvHigh}% \u00B7 ${s.style.ibuLow} to ${s.style.ibuHigh} IBU \u00B7 ${s.style.note}`)),
-          h('button', { class: 'act', onclick: async () => { const b = BLANK(); b.name = s.style.name; b.style = s.style.name; b.batchGal = num(galIn.value) || 5.5;
+          h('button', { class: 'act', onclick: async () => { if (!(await needReg('save'))) return; const b = BLANK(); b.name = s.style.name; b.style = s.style.name; b.batchGal = num(galIn.value) || 5.5;
             b.fermentables = inv.filter(i => i.kind === 'Fermentable').map(i => ({ name: i.name, lb: '' }));
             b.hops = inv.filter(i => i.kind === 'Hop').slice(0, 3).map(i => ({ name: i.name, oz: '', alpha: '', minutes: '', type: 'pellet' }));
             const y = inv.find(i => i.kind === 'Yeast'); if (y) b.yeast = y.name;
@@ -658,17 +922,22 @@
 
 
   // ---------- guided brew day ("Go") ----------
-  let goTimer = null, wakeLock = null;
+  let wakeLock = null;
   function beep(times) {
-    try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const n = times || 3;
+    try { const AC = window.AudioContext || window.webkitAudioContext; if (!audioCtx) audioCtx = new AC(); const ctx = audioCtx; if (ctx.state === 'suspended') ctx.resume(); const n = times || 3;
       for (let i = 0; i < n; i++) { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 880; o.connect(g); g.connect(ctx.destination); const t = ctx.currentTime + i * 0.35; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.4, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28); o.start(t); o.stop(t + 0.3); } } catch (e) { /* no audio */ }
     try { navigator.vibrate && navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) { /* no vibration */ }
   }
-  async function notify(title, body) { try { if ('Notification' in window && Notification.permission === 'granted') new Notification(title, { body, tag: 'brewday' }); } catch (e) { /* not available */ } }
+  // Android only shows a notification that comes from the service worker; everything else takes the plain kind
+  async function notify(title, body) {
+    try { if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const reg = navigator.serviceWorker && navigator.serviceWorker.getRegistration ? await navigator.serviceWorker.getRegistration() : null;
+      if (reg && reg.showNotification) await reg.showNotification(title, { body, tag: 'brewday', renotify: true, icon: 'icons/icon-192.png' }); else new Notification(title, { body, tag: 'brewday' }); } catch (e) { /* not available */ }
+  }
   async function keepAwake() { try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) { /* denied */ } }
   const fmtMS = s => `${String(Math.floor(Math.abs(s) / 60)).padStart(2, '0')}:${String(Math.abs(s) % 60).padStart(2, '0')}`;
   async function renderGo(b) {
-    clearInterval(goTimer);
+    goView = null;
     const est = recipeStats(b);
     const grainLb = grainLbOf(b), y = yeastOf(b);
     const plan = B.brewPlan(b, EQ, grainLb, est.boilG, y);
@@ -676,15 +945,18 @@
     const st = (await S.get(key, null)) || { i: 0, timers: {}, fired: {}, ticked: {}, startedAt: Date.now() };
     const save = () => S.set(key, st);
     if (st.i >= plan.length) {
-      view.innerHTML = ''; view.append(h('button', { class: 'back', onclick: () => go('brewday') }, '\u2039 Brew day'), h('h2', null, 'Brew day complete'),
+      goLive = null; await S.set('goActive', null);
+      view.innerHTML = ''; view.append(h('button', { class: 'back', onclick: () => go('brewday', 'sheet') }, '\u2039 Brew day'), h('h2', null, 'Brew day complete'),
         h('p', null, `${b.name || 'The batch'} is in the fermenter. Gravity readings from the Batches screen from here on; the fermentation state updates itself.`),
-        h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: () => go('batches', 'view:' + b.id) }, 'Open the batch'), h('button', { class: 'btn secondary', onclick: async () => { await S.set(key, null); go('brewday'); } }, 'Clear this brew day')));
+        h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: () => go('batches', 'view:' + b.id) }, 'Open the batch'), h('button', { class: 'btn secondary', onclick: async () => { await S.set(key, null); go('brewday', 'sheet'); } }, 'Clear this brew day')));
       return;
     }
+    goLive = { b, st, key, plan }; if ((await S.get('goActive', null)) !== b.id) await S.set('goActive', b.id);
     keepAwake();
     const step = plan[st.i]; const next = plan[st.i + 1];
     view.innerHTML = '';
-    view.append(h('button', { class: 'back', onclick: () => go('brewday') }, '\u2039 Brew day'),
+    view.append(h('button', { class: 'back', onclick: () => go('brewday', 'sheet') }, '\u2039 Brew day sheet'),
+      h('div', { class: 'progress', style: 'margin:0 0 10px' }, h('i', { style: `width:${Math.round(st.i / plan.length * 100)}%` })),
       h('p', { class: 'muted small' }, `Step ${st.i + 1} of ${plan.length} \u00B7 ${b.name || 'batch'}`),
       h('h2', null, step.title));
     add(h('ul', { style: 'padding-left:18px;margin:0 0 12px' }, step.detail.map(d => h('li', { style: 'margin:0 0 6px' }, d))));
@@ -693,23 +965,20 @@
     const alarmList = h('div');
     if (step.kind === 'timer') {
       const started = st.timers[step.id];
-      const tick = () => {
-        if (!started) { tdisp.textContent = fmtMS(step.minutes * 60); nextEl.textContent = 'Not started'; return; }
-        const el = Math.floor((Date.now() - started) / 1000); const left = step.minutes * 60 - el;
+      const draw = (el, left, upcoming) => {
         tdisp.textContent = (left < 0 ? '+' : '') + fmtMS(left); tdisp.style.color = left < 0 ? 'var(--warn)' : '';
-        const due = (step.alarms || []).filter(a => a.at * 60 <= el);
-        for (const a of due) { const k = step.id + ':' + a.at; if (!st.fired[k]) { st.fired[k] = Date.now(); save(); beep(3); notify(step.title, a.label); } }
-        const upcoming = (step.alarms || []).find(a => a.at * 60 > el);
         nextEl.textContent = upcoming ? `Next: ${upcoming.label} in ${fmtMS(upcoming.at * 60 - el)}` : (left > 0 ? 'No more additions; timer runs to the end' : 'Time is up');
-        alarmList.querySelectorAll('[data-alarm]').forEach(row => { const k = row.dataset.alarm; row.classList.toggle('done', !!st.ticked[k]); row.querySelector('.tm').textContent = st.fired[k] ? 'now' : `+${row.dataset.at}m`; });
+        alarmList.querySelectorAll('[data-alarm]').forEach(row => { const k = row.dataset.alarm, due = !!st.fired[k] && !st.ticked[k]; row.classList.toggle('done', !!st.ticked[k]); row.classList.toggle('ringing', due); row.querySelector('.tm').textContent = st.fired[k] ? 'now' : `+${row.dataset.at}m`; });
       };
       view.append(tdisp, nextEl);
-      if (!started) view.append(h('div', { class: 'btns' }, h('button', { class: 'btn block', onclick: async () => { st.timers[step.id] = Date.now(); await save(); await DB.put('entries', { batchId: b.id, type: 'step', date: today(), text: `${step.title} started ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, created: Date.now() }); if ('Notification' in window && Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (e) { /* ignore */ } } renderGo(b); } }, `Start ${step.minutes}-minute timer`)));
+      if (!started) { tdisp.textContent = fmtMS(step.minutes * 60); nextEl.textContent = 'Not started';
+        view.append(h('div', { class: 'btns' }, h('button', { class: 'btn block', onclick: async () => { unlockAudio(); st.timers[step.id] = Date.now(); await save(); await DB.put('entries', { batchId: b.id, type: 'step', date: today(), text: `${step.title} started ${hopTime()}`, created: Date.now() }); if ('Notification' in window && Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (e) { /* ignore */ } } renderGo(b); } }, `Start ${step.minutes >= 100 ? B.fmtDuration(step.minutes) : step.minutes + '-minute'} timer`)),
+          h('p', { class: 'muted small', style: 'text-align:center' }, 'Each addition rings, and keeps ringing until you tick it. Keep the phone\'s sound on and this app open; the screen stays awake by itself.')); }
       for (const a of step.alarms || []) { const k = step.id + ':' + a.at;
         alarmList.append(h('div', { class: 'step' + (st.ticked[k] ? ' done' : ''), 'data-alarm': k, 'data-at': a.at }, h('span', { class: 'tm' }, `+${a.at}m`), h('span', { class: 't' }, a.label),
-          h('button', { class: 'act', onclick: async () => { st.ticked[k] = !st.ticked[k]; await save(); if (st.ticked[k]) await DB.put('entries', { batchId: b.id, type: 'step', date: today(), text: `${a.label} at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, created: Date.now() }); renderGo(b); } }, st.ticked[k] ? 'Undo' : 'Done'))); }
+          h('button', { class: 'act', onclick: async () => { st.ticked[k] = !st.ticked[k]; await save(); if (st.ticked[k]) await DB.put('entries', { batchId: b.id, type: 'step', date: today(), text: `${a.label} at ${hopTime()}`, created: Date.now() }); renderGo(b); } }, st.ticked[k] ? 'Undo' : 'Done'))); }
       view.append(alarmList);
-      goTimer = setInterval(tick, 1000); tick();
+      if (started) { goView = draw; const el = Math.floor((Date.now() - started) / 1000); draw(el, step.minutes * 60 - el, (step.alarms || []).find(a => a.at * 60 > el)); }
     }
     if (step.kind === 'input') {
       const sg = inp('', 'number', { placeholder: 'e.g. 1.052' }), temp = inp('', 'number', { placeholder: 'sample temp F' }), vol = inp('', 'number', { placeholder: 'gal' });
@@ -720,7 +989,7 @@
         corr.textContent = msg; };
       [sg, temp, vol].forEach(i => i.addEventListener('input', upd));
       view.append(h('div', { class: 'row3' }, field('Gravity', sg), field('Sample temp (F)', temp), field('Volume (gal)', vol)), corr);
-      view.append(h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { const v = num(sg.value); if (v) { const c = num(temp.value) ? B.hydrometerCorrect(v, num(temp.value), EQ.hydroCalF) : v; await DB.put('entries', { batchId: b.id, type: 'gravity', date: today(), sg: c, raw: v, tempF: temp.value, instrument: 'sg', note: `${step.id === 'og' ? 'OG' : 'Pre-boil'}${vol.value ? ', ' + vol.value + ' gal' : ''}`, created: Date.now() }); if (step.id === 'og') { b.og = c; await DB.put('batches', b); } } st.i++; await save(); renderGo(b); } }, sg.value ? 'Log and continue' : 'Continue'),
+      view.append(h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { const v = num(sg.value); if (v) { const c = num(temp.value) ? B.hydrometerCorrect(v, num(temp.value), EQ.hydroCalF) : v; await DB.put('entries', { batchId: b.id, type: 'gravity', date: today(), sg: c, raw: v, tempF: temp.value, instrument: 'sg', kind: step.id === 'og' ? 'og' : 'preboil', og: step.id === 'og', note: `${step.id === 'og' ? 'OG' : 'Pre-boil'}${vol.value ? ', ' + vol.value + ' gal' : ''}`, created: Date.now() }); if (step.id === 'og') { b.og = c; await DB.put('batches', b); } } st.i++; await save(); renderGo(b); } }, sg.value ? 'Log and continue' : 'Continue'),
         h('button', { class: 'btn secondary', onclick: async () => { st.i++; await save(); renderGo(b); } }, 'Skip')));
     } else {
       const ins = stepInputs(step.fields || [], b.actuals);
@@ -753,7 +1022,7 @@
     { id: 'hydro', title: 'Hydrometer temperature correction', about: 'A hydrometer is only right at its calibration temperature. Warm samples read low: this puts the points back.',  fields: [{ k: 'r', l: 'Reading', v: 1.050 }, { k: 't', l: 'Sample temp (F)', v: 80 }, { k: 'c', l: 'Calibrated at (F)', v: 60 }],
       out: v => [{ l: 'Corrected gravity', v: B.hydrometerCorrect(v.r, v.t, v.c).toFixed(4), n: v.t > v.c ? 'warm sample reads low' : 'cold sample reads high' }] },
     { id: 'refract', title: 'Refractometer', about: 'Brix to gravity. Once there is alcohol in the sample a refractometer reads wrong, so give it the original Brix too and it corrects for that.',  fields: [{ k: 'ob', l: 'Original Brix', v: 12 }, { k: 'fb', l: 'Current Brix', v: 6.5 }, { k: 'wcf', l: 'Wort correction factor', v: 1.04 }],
-      out: v => { const og = B.brixToSgUnfermented(v.ob, v.wcf), fg = B.refractoFg(v.ob, v.fb, v.wcf); return [{ l: 'OG', v: og.toFixed(3) }, { l: 'Current gravity', v: fg.toFixed(3), n: 'Terrill correction for alcohol' }, { l: 'ABV so far', v: B.abv(og, fg) + '%' }]; } },
+      out: v => { const og = B.brixToSgUnfermented(v.ob, v.wcf), fg = B.refractoFg(v.ob, v.fb, v.wcf); return [{ l: 'OG', v: og.toFixed(3) }, { l: 'Current gravity', v: fg.toFixed(3), n: 'corrected for alcohol (Novotn\u00FD)' }, { l: 'ABV so far', v: B.abv(og, fg) + '%' }]; } },
     { id: 'strike', title: 'Strike and infusion', about: 'How hot the water must be so that, once the cool grain is stirred in, the mash lands on your target.',  fields: [{ k: 'lb', l: 'Grain (lb)', v: 11 }, { k: 'r', l: 'Ratio (qt per lb)', v: 1.25 }, { k: 'gt', l: 'Grain temp (F)', v: 65 }, { k: 'mt', l: 'Target mash (F)', v: 152 }, { k: 'loss', l: 'Tun loss (F)', v: 2 }],
       out: v => [{ l: 'Strike temp', v: B.strikeTemp(v.r, v.gt, v.mt, v.loss) + ' F' }, { l: 'Strike volume', v: B.strikeWaterVolume(v.lb, v.r) + ' gal', n: `${B.round.r1(v.lb * v.r)} quarts` }, { l: 'Grain absorbs', v: B.grainAbsorption(v.lb) + ' gal' }, { l: 'Mash thickness', v: B.mashThickness(v.lb * v.r, v.lb) + ' qt/lb' }] },
     { id: 'infusion', title: 'Infusion step', about: 'For a mash tun you cannot heat, such as a picnic cooler. A step mash rests at two or more temperatures; with no burner under the mash, the way to climb from one rest to the next is to stir in boiling water. This tells you how much. On a BrewZilla, Grainfather or any heated, recirculating system you do not need it: set the next temperature on the controller and let it ramp.',
@@ -792,7 +1061,7 @@
       out: v => { const w = B.waterAdditions({}, [{ salt: 'Gypsum (CaSO4)', grams: v.gyp }, { salt: 'Calcium chloride (CaCl2)', grams: v.cacl }, { salt: 'Epsom salt (MgSO4)', grams: v.eps }, { salt: 'Table salt (NaCl)', grams: v.salt }, { salt: 'Baking soda (NaHCO3)', grams: v.soda }], v.gal);
         return [{ l: 'Calcium', v: w.Ca + ' ppm', n: 'aim 50 to 150' }, { l: 'Sulfate', v: w.SO4 + ' ppm' }, { l: 'Chloride', v: w.Cl + ' ppm' }, { l: 'Sodium / magnesium', v: `${w.Na} / ${w.Mg} ppm` }, { l: 'Sulfate : chloride', v: w.ratio === null ? '-' : w.ratio, n: B.ratioVerdict(w.ratio) }]; } },
     { id: 'convert', title: 'Conversions', about: 'Gravity, temperature, volume and weight between the units brewers meet.',  fields: [{ k: 'sg', l: 'Specific gravity', v: 1.048 }, { k: 'p', l: 'Plato', v: 12 }, { k: 'f', l: 'Fahrenheit', v: 152 }, { k: 'gal', l: 'Gallons', v: 5.5 }, { k: 'lb', l: 'Pounds', v: 11 }],
-      out: v => [{ l: `${v.sg} SG`, v: B.sgToPlato(v.sg) + ' °P' }, { l: `${v.p} °P`, v: B.platoToSg(v.p).toFixed(4) + ' SG' }, { l: `${v.f} F`, v: B.fToC(v.f) + ' C' }, { l: `${v.gal} gal`, v: B.galToL(v.gal) + ' L' }, { l: `${v.lb} lb`, v: B.lbToKg(v.lb) + ' kg' }] }
+      out: v => [{ l: `${v.sg} SG`, v: B.sgToPlato(v.sg) + ' \u00B0P' }, { l: `${v.p} \u00B0P`, v: B.platoToSg(v.p).toFixed(4) + ' SG' }, { l: `${v.f} F`, v: B.fToC(v.f) + ' C' }, { l: `${v.gal} gal`, v: B.galToL(v.gal) + ' L' }, { l: `${v.lb} lb`, v: B.lbToKg(v.lb) + ' kg' }] }
   ];
   // where the chosen figure sits in the style's range, and the bottle warning
   function carbLines(styleName, vol, tempF) {
@@ -802,8 +1071,9 @@
     return out;
   }
   const calcVals = {};
+  const firstSentence = t => { const i = t.indexOf('. '); return i < 0 ? t : t.slice(0, i + 1); };
   async function renderCalc() {
-    if (!state.sub) return view.append(h('h2', null, 'Calculators'), h('ul', { class: 'list' }, CALCS.map(c => h('li', null, h('button', { onclick: () => go('calc', c.id) }, h('span', { class: 't' }, h('b', null, c.title), c.about ? h('span', null, c.about.split('. ')[0] + '.') : null), h('span', { class: 'k' }, '\u203A'))))));
+    if (!state.sub) return view.append(h('h2', null, 'Calculators'), h('ul', { class: 'list' }, CALCS.map(c => h('li', null, h('button', { onclick: () => go('calc', c.id) }, h('span', { class: 't' }, h('b', null, c.title), c.about ? h('span', null, firstSentence(c.about)) : null), h('span', { class: 'k' }, '\u203A'))))));
     const c = CALCS.find(x => x.id === state.sub); if (!c) return go('calc');
     if (c.custom) return renderWaterBuild(c);
     const vals = calcVals[c.id] || (calcVals[c.id] = Object.fromEntries(c.fields.map(f => [f.k, f.v])));
@@ -817,7 +1087,7 @@
     const drawInputs = () => { inputs.innerHTML = ''; els = {}; for (const f of c.fields) {
       if (f.type === 'select') { const s = sel(typeof f.options === 'function' ? f.options() : f.options, vals[f.k]); s.addEventListener('change', () => { vals[f.k] = s.value; if (f.set) f.set(s.value, vals); if (c.link) c.link(f.k, vals); if (f.set || c.link) sync(f.k); update(); }); inputs.append(field(f.l, s)); }
       else { els[f.k] = inp(vals[f.k], 'number', { oninput: e => { vals[f.k] = e.target.value; if (c.link) { c.link(f.k, vals); sync(f.k); } update(); } }); inputs.append(field(f.l, els[f.k])); } } };
-    view.append(h('button', { class: 'back', onclick: () => go('calc') }, '\u2039 Calculators'), h('h2', null, c.title), c.about ? h('p', { class: 'muted' }, c.about) : null, readout);
+    view.append(h('button', { class: 'back', onclick: () => goBack('calc') }, '\u2039 Calculators'), h('h2', null, c.title), c.about ? h('p', { class: 'muted' }, c.about) : null, readout);
     if (c.examples) view.append(h('h3', null, 'Worked examples'), h('ul', { class: 'list' }, c.examples.map(ex => h('li', null, h('button', { onclick: () => { Object.assign(vals, ex.v); drawInputs(); update(); window.scrollTo(0, 0); } }, h('span', { class: 't' }, h('b', null, ex.t), h('span', null, ex.n)), h('span', { class: 'k' }, 'use'))))), h('h3', null, 'Your numbers'));
     view.append(inputs);
     if (c.credit) view.append(h('p', { class: 'muted small' }, B.SMPH_CREDIT), h('p', { class: 'muted small' }, 'A model, not a measurement: alpha acid on the pack varies 10 to 15% and a volume off by 10% moves the answer by 10%. The conditions it assumes (wort pH, chill time, krausen loss, age of the beer) are under Settings.'));
@@ -830,7 +1100,7 @@
     const list = await batchList(); const cur = state.batchId ? list.find(x => x.id === state.batchId) : null;
     const st = calcVals.waterbuild || (calcVals.waterbuild = { source: saved ? 'mine' : D.WATER_SOURCES[3].name, ions: saved ? Object.assign({}, saved) : null, target: D.WATER_PROFILES[1].name, gal: '', dilute: true, hard: '', alk: '', units: 'ppm' });
     if (!st.ions) { const p = D.WATER_SOURCES.find(w => w.name === st.source) || D.WATER_SOURCES[0]; st.ions = Object.fromEntries(B.IONS.map(i => [i, p[i]])); }
-    if (!st.gal) { const g = cur ? grainLbOf(cur) : 0; st.gal = cur && g ? B.round.r1(B.strikeWaterVolume(g, EQ.qtPerLb) + B.spargeVolume(num(cur.boilGal) || EQ.boilGal, B.strikeWaterVolume(g, EQ.qtPerLb), g, EQ.absorbGalLb)) : B.round.r1(EQ.boilGal + 1.5); }
+    if (!st.gal) { const g = cur ? grainLbOf(cur) : 0; st.gal = cur && g ? B.round.r1(B.brewTargets(cur, EQ, g, yeastOf(cur)).totalWaterGal) : B.round.r1(EQ.boilGal + 1.5); }
     const out = h('div');
     const srcSel = sel((saved ? [{ v: 'mine', t: 'My water (saved)' }] : []).concat(D.WATER_SOURCES.map(w => ({ v: w.name, t: w.name }))).concat([{ v: 'custom', t: 'From my water report or test kit' }]), st.source);
     const ionInputs = Object.fromEntries(B.IONS.map(i => [i, inp(st.ions[i], 'number')]));
@@ -865,7 +1135,7 @@
       btns.append(h('button', { class: 'btn secondary', onclick: async () => { await S.set('myWater', Object.assign({}, st.ions)); st.source = 'mine'; toast('Saved as your water'); go('calc', 'waterbuild'); } }, 'Save these as my water'));
       out.append(btns);
     }
-    view.append(h('button', { class: 'back', onclick: () => go('calc') }, '\u2039 Calculators'), h('h2', null, c.title), h('p', { class: 'muted' }, c.about),
+    view.append(h('button', { class: 'back', onclick: () => goBack('calc') }, '\u2039 Calculators'), h('h2', null, c.title), h('p', { class: 'muted' }, c.about),
       h('h3', null, '1. Your water'), field('Start from', srcSel), srcNote,
       h('div', { class: 'row3' }, field('Calcium', ionInputs.Ca), field('Magnesium', ionInputs.Mg), field('Sodium', ionInputs.Na)), h('div', { class: 'row3' }, field('Chloride', ionInputs.Cl), field('Sulfate', ionInputs.SO4), field('Bicarbonate', ionInputs.HCO3)),
       h('details', { class: 'plat' }, h('summary', null, 'Only have hardness and alkalinity?'), h('div', { class: 'body' }, h('p', { class: 'small' }, 'From a thin report, or a pool or aquarium test kit (GH and KH). Those two numbers decide most of what matters: how much to dilute and whether you need acid. Calcium and magnesium are split 70 to 30, which is typical; chloride, sulfate and sodium stay as they are above.'),
@@ -880,7 +1150,8 @@
   // ---------- reference ----------
   async function renderRef() {
     const sub = state.sub;
-    const back = h('button', { class: 'back', onclick: () => go('ref') }, '\u2039 Reference');
+    const back = h('button', { class: 'back', onclick: () => goBack('ref') }, '\u2039 Reference');
+    if (sub === 'shared') return renderShared();
     if (sub === 'hops') {
       const q = inp('', 'search', { placeholder: `search ${D.HOPS.length} hops` });
       const genre = sel(['All genres'].concat(D.HOP_GENRES), 'All genres');
@@ -902,8 +1173,8 @@
     }
     if (sub === 'styles' || (sub && sub.startsWith('recipe:'))) {
       if (sub.startsWith('recipe:')) {
-        const r = RC.RECIPES.find(x => x.name === sub.slice(7)); if (!r) return go('ref', 'recipes');
-        view.append(h('button', { class: 'back', onclick: () => go('ref', r.group === 'Historic' ? 'world' : 'styles') }, r.group === 'Historic' ? '\u2039 Beers of the world' : '\u2039 Styles'),
+        const r = RC.RECIPES.find(x => x.name === sub.slice(7)); if (!r) return go('ref', 'styles', { replace: true });
+        view.append(h('button', { class: 'back', onclick: () => goBack('ref', r.group === 'Historic' ? 'world' : 'styles') }, r.group === 'Historic' ? '\u2039 Beers of the world' : '\u2039 Styles'),
           h('h2', null, h('span', { class: 'swatch', style: 'background:' + B.srmHex(r.srm) }), r.name),
           h('p', { class: 'muted' }, `${r.region} \u00B7 ${r.group} \u00B7 ${RECIPE_GAL} gal, ${r.boilMin} min boil, ${EQ.efficiency}% efficiency`));
         view.append(modelToggle(IBU_MODEL, async m => { IBU_MODEL = m; await S.set('ibuModel', m); render(); }), sizePicker(() => render()));
@@ -921,10 +1192,11 @@
           h('p', null, h('b', null, 'Mash '), `${r.mashF}F for 60 minutes. `, h('b', null, 'Water: '), r.water),
           h('p', null, r.notes),
           h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => {
+            if (!(await needReg('save'))) return;
             const b = recipeToBatch(r, RECIPE_GAL); b.fermentables.forEach(f => delete f.pct); b.hops.forEach(hp => { delete hp.sized; delete hp.use; });
-            const id = await DB.put('batches', b); state.batchId = id; await S.set('lastBatch', id); toast('Batch created from the recipe'); go('batches', 'view:' + id); } }, `Brew this at ${RECIPE_GAL} gal`),
-            h('button', { class: 'btn secondary', onclick: () => { state.shopRecipe = r.name; go('shop'); } }, 'Shop for it'),
-            h('button', { class: 'btn secondary', onclick: () => go('ref', r.group === 'Historic' ? 'world' : 'styles') }, 'Back')),
+            const id = await DB.put('batches', b); state.batchId = id; await S.set('lastBatch', id); keepStorage(); toast('Batch created from the recipe'); go('batches', 'view:' + id); } }, `Brew this at ${RECIPE_GAL} gal`),
+            h('button', { class: 'btn secondary', onclick: () => go('shop', 'style:' + r.name) }, 'Shop for it'),
+            h('button', { class: 'btn secondary', onclick: async () => { const b = recipeToBatch(r, RECIPE_GAL); b.fermentables.forEach(f => delete f.pct); b.hops.forEach(hp => { delete hp.sized; delete hp.use; }); shareRecipe(b, recipeStats(b)); } }, 'Share it')),
           h('p', { class: 'muted small' }, `A generic, sensible version of the style, checked against the style ranges. Written for 5 gallons at 72% efficiency and shown here scaled to ${RECIPE_GAL} gallons at the ${EQ.efficiency}% mash efficiency in your equipment profile: grain follows both, hops and sugars follow the volume. Bigger batches take longer to chill, and hops keep bittering until the wort is below 140F: if yours does, raise "Minutes to chill below 140F" in Settings and every IBU figure follows.`),
           h('p', { class: 'muted small' }, MODEL_BLURB),
           (() => { const c = D.carbFor(r.name); return c ? h('p', { class: 'muted small' }, `Carbonation: ${c.low} to ${c.high} volumes.${c.note ? ' ' + c.note + '.' : ''}`) : null; })());
@@ -1120,15 +1392,17 @@
     const region = await S.get('region', 'US');
     view.append(h('h2', null, 'Shopping list'));
     // shop for one of your batches, or straight from a style with no batch made yet
-    const styleRecipe = state.shopRecipe ? RC.RECIPES.find(r => r.name === state.shopRecipe) : null;
-    const b = styleRecipe ? Object.assign(recipeToBatch(styleRecipe, RECIPE_GAL), { id: 'style:' + styleRecipe.name }) : await currentBatch(list);
-    if (list.length) view.append(h('div', { class: 'chips' }, list.slice(0, 8).map(x => h('button', { class: 'chip' + (!styleRecipe && b && x.id === b.id ? ' on' : ''), style: 'font-family:inherit', onclick: async () => { state.shopRecipe = null; state.batchId = x.id; await S.set('lastBatch', x.id); render(); } }, x.name || 'batch'))));
+    const styleRecipe = state.sub && state.sub.startsWith('style:') ? RC.RECIPES.find(r => r.name === state.sub.slice(6)) : null;
+    const shared = state.sub === 'shared' && state.shared ? state.shared : null;
+    const b = styleRecipe ? Object.assign(recipeToBatch(styleRecipe, RECIPE_GAL), { id: 'style:' + styleRecipe.name }) : shared ? Object.assign({}, shared, { id: 'shared' }) : await currentBatch(list);
+    if (list.length) view.append(h('div', { class: 'chips' }, list.slice(0, 8).map(x => h('button', { class: 'chip' + (!styleRecipe && !shared && b && x.id === b.id ? ' on' : ''), style: 'font-family:inherit', onclick: async () => { state.batchId = x.id; await S.set('lastBatch', x.id); go('shop'); } }, x.name || 'batch'))));
+    if (shared) view.append(h('div', { class: 'note' }, h('b', { style: 'color:var(--text)' }, `Shopping for ${shared.name}, `), 'the recipe you were sent. ', h('button', { class: 'act', style: 'background:none;border:0;color:var(--amber);font:inherit;padding:0;cursor:pointer;text-decoration:underline', onclick: () => go('ref', 'shared') }, 'Back to the recipe')));
     const styleSel = sel([{ v: '', t: list.length ? 'Or start from a style\u2026' : 'Start from a style\u2026' }].concat(RC.RECIPES.filter(r => r.group !== 'Historic').map(r => ({ v: r.name, t: `${r.name}  (${r.region})` }))), styleRecipe ? styleRecipe.name : '');
-    styleSel.addEventListener('change', () => { state.shopRecipe = styleSel.value || null; render(); });
+    styleSel.addEventListener('change', () => go('shop', styleSel.value ? 'style:' + styleSel.value : null));
     view.append(field(list.length ? '' : 'No batch yet? Pick a style and shop for its base recipe', styleSel));
     if (styleRecipe) view.append(sizePicker(() => render()), modelToggle(IBU_MODEL, async m => { IBU_MODEL = m; await S.set('ibuModel', m); render(); }),
       h('p', { class: 'muted small', style: 'margin-top:-4px' }, `The base ${styleRecipe.name} recipe at ${RECIPE_GAL} gal and your ${EQ.efficiency}% efficiency: OG ${styleRecipe.og.toFixed(3)}, ${recipeIbu(styleRecipe).v} IBU, ${styleRecipe.abv}%. A starting point: change anything once it is a batch.`),
-      h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: async () => { const nb = recipeToBatch(styleRecipe, RECIPE_GAL); nb.fermentables.forEach(f => delete f.pct); nb.hops.forEach(hp => { delete hp.sized; delete hp.use; }); const id = await DB.put('batches', nb); state.shopRecipe = null; state.batchId = id; await S.set('lastBatch', id); toast('Saved as a batch'); go('batches', 'view:' + id); } }, 'Save it as a batch'),
+      h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: async () => { if (!(await needReg('save'))) return; const nb = recipeToBatch(styleRecipe, RECIPE_GAL); nb.fermentables.forEach(f => delete f.pct); nb.hops.forEach(hp => { delete hp.sized; delete hp.use; }); const id = await DB.put('batches', nb); state.batchId = id; await S.set('lastBatch', id); keepStorage(); toast('Saved as a batch'); go('batches', 'view:' + id); } }, 'Save it as a batch'),
         h('button', { class: 'btn secondary', onclick: () => go('ref', 'recipe:' + styleRecipe.name) }, 'See the full recipe')));
     if (!b) return view.append(h('div', { class: 'empty' }, 'Pick a style above for a ready-made shopping list, or create a batch and the list builds itself from your recipe.'), h('button', { class: 'btn block', onclick: () => go('batches', 'new') }, 'New batch'));
     const packs = packsFor(b);
@@ -1152,6 +1426,9 @@
       const hasGrain = c.lines.some(l => l.group === 'Fermentables' && l.packs.some(p => /mill|crush/i.test(p.title || '')));
       const millPick = h('div', { class: 'chips', role: 'group', 'aria-label': 'Grain' }, h('span', { class: 'muted small', style: 'margin-right:4px' }, 'Grain'), [[true, 'Milled'], [false, 'Unmilled (I have a mill)']].map(([val, label]) => h('button', { class: 'chip' + (milled === val ? ' on' : ''), style: 'font-family:inherit', 'aria-pressed': String(milled === val), onclick: async () => { milled = val; await S.set('grainMilled', val); drawCart(); } }, label)));
       cartBox.append(h('a', { class: 'btn block', style: 'font-size:18px;min-height:56px;text-align:center;padding:10px 18px;line-height:1.25', href: c.url, target: '_blank', rel: 'noopener' }, `Add all to cart at ${vname}${c.total !== null ? '  \u00B7  about $' + c.total.toFixed(2) : ''}`));
+      // what the beer costs to drink: the cart over the pints that reach the glass
+      const cps = c.total !== null && !c.missing.filter(m => m.group === 'Fermentables' || m.group === 'Hops' || m.group === 'Yeast').length ? B.costPerServing(c.total, B.packagedGal(num(b.batchGal), EQ.trubGal)) : null;
+      if (cps) cartBox.append(h('p', { class: 'statline', style: 'text-align:center' }, h('b', null, `About ${B.money(cps.perPint)} a pint`), `, ${B.money(cps.perBottle)} a bottle: ${cps.pints} pints from this batch at ${vname}'s prices.`));
       if (hasGrain) cartBox.append(millPick);
       if (avail.length) { const xd = h('details', { class: 'plat' }, h('summary', null, `Brew day extras${ticked.length ? `: ${ticked.length} added` : ''}`), h('div', { class: 'body' },
         h('p', { class: 'muted small' }, 'Nothing here is added unless you tick it. Most of these last many batches, so tick only what you are out of.'),
@@ -1170,7 +1447,7 @@
       const left = shopping.filter(l => !cart[l.term]);
       listEl.append(h('p', { class: 'muted small' }, left.length ? `${shopping.length - left.length} of ${shopping.length} in the basket. "Find" opens the shop on that item; tick it once it is in your basket there.` : 'Everything is ticked. Check out at the shop.'));
       if (left.length) listEl.append(h('div', { class: 'btns' }, h('a', { class: 'btn', href: SH.searchUrl(vendorSel.value, left[0].term, tags), target: '_blank', rel: 'noopener' }, `Find next: ${left[0].item}`)));
-      const kit = SH.kitTerm(b); if (kit) listEl.append(h('div', { class: 'rec' }, h('div', { class: 't' }, h('b', null, 'Or buy it as one kit'), h('div', { class: 'meta' }, `Most shops sell a ${kit}: one product instead of ${shopping.length} lines, though not this exact recipe`)), h('a', { class: 'act', href: SH.searchUrl(vendorSel.value, kit, tags), target: '_blank', rel: 'noopener' }, 'Look')));
+      const kit = SH.kitTerm(b); if (kit) listEl.append(h('div', { class: 'rec' }, h('div', { class: 't' }, h('b', null, 'Or buy it as one kit'), h('div', { class: 'meta' }, `Most shops sell ${/^[aeiou]/i.test(kit) ? 'an' : 'a'} ${kit}: one product instead of ${shopping.length} lines, though not this exact recipe`)), h('a', { class: 'act', href: SH.searchUrl(vendorSel.value, kit, tags), target: '_blank', rel: 'noopener' }, 'Look')));
       const groups = [...new Set(shopping.map(l => l.group))];
       for (const g of groups) {
         listEl.append(h('h3', null, g));
@@ -1195,22 +1472,208 @@
       BOOK.url ? h('div', { class: 'btns' }, h('a', { class: 'btn', href: BOOK.url, target: '_blank', rel: 'noopener' }, 'See the log book')) : h('p', { class: 'muted small' }, 'Coming soon.'));
   }
 
+  // ---------- a recipe someone sent ----------
+  async function renderShared() {
+    const b = state.shared; if (!b) return go('ref', 'styles', { replace: true });
+    const est = recipeStats(b), fgEst = expectedFg(b, est), bi = batchIbu(b, est), y = yeastOf(b);
+    view.append(h('p', { class: 'muted small', style: 'margin:0 0 6px' }, 'A recipe someone sent you'),
+      h('div', { class: 'hero', style: 'align-items:center;margin-bottom:6px' }, glass(est.srm || 4, 34), h('div', null, h('h2', { style: 'margin:0' }, b.name), h('p', { class: 'muted', style: 'margin:2px 0 0' }, [b.style && b.style !== b.name ? b.style : null, `${b.batchGal} gal`, `${b.boilMin} min boil`, `mash ${b.mashF}F`].filter(Boolean).join(' \u00B7 ')))));
+    const ro = h('div', { class: 'readout' });
+    [['OG / FG', est.og > 1 ? `${est.og.toFixed(3)} / ${fgEst ? fgEst.toFixed(3) : '-'}` : '-', `at the ${b.efficiency}% mash efficiency it was written for`], [`IBU (${bi.label})`, String(bi.v || '-'), bi.other + (est.ibuDry ? `; dry hops read +${est.ibuDry} on a lab test` : '')], ['Colour', `${est.srm || '-'} SRM`, ''], ['ABV', est.og > 1 && fgEst ? B.abv(est.og, fgEst) + '%' : '-', y ? `${y.name.split('/')[0].trim()} attenuates ${y.attLow} to ${y.attHigh}%` : 'assuming 75% attenuation']]
+      .forEach(([l, v, n]) => ro.append(h('div', { class: 'line' }, h('span', { class: 'l' }, l, n ? h('span', { class: 'n' }, n) : null), h('span', { class: 'v' }, v))));
+    view.append(ro);
+    const tbl = rows => h('div', { class: 'tablewrap' }, h('table', { class: 'ref', style: 'min-width:0' }, h('tbody', null, rows.map(r => h('tr', null, h('td', { class: 'mono', style: 'width:24%' }, r[0]), h('td', null, r[1]), h('td', { class: 'mono' }, r[2] || ''))))));
+    if (b.fermentables.length) view.append(h('h3', null, 'Fermentables'), tbl(b.fermentables.map(f => [`${f.lb} lb`, f.name])));
+    if (b.hops.length || b.dryHops.length) view.append(h('h3', null, 'Hops'), tbl(b.hops.map(hp => [`${hp.oz} oz`, `${hp.name}${hp.alpha ? ' (' + hp.alpha + '%)' : ''}`, hp.whirlpool ? 'whirlpool' : hp.minutes === '' ? 'boil' : `${hp.minutes} min`]).concat(b.dryHops.map(d => [`${d.oz} oz`, d.name, `dry hop, ${d.days} days`]))));
+    add(h('h3', null, 'Yeast and process'), h('p', null, h('b', null, b.yeast || 'No yeast named'), b.fermF ? ` \u00B7 ferment at ${b.fermF}F` : ''),
+      b.salts.length ? h('p', null, h('b', null, 'Water: '), b.salts.map(x => `${x.grams} g ${x.salt.replace(/\s*\(.*\)/, '')}`).join(', ')) : null, b.notes ? h('p', { style: 'white-space:pre-wrap' }, b.notes) : null,
+      h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { if (!(await needReg('save'))) return; const nb = Object.assign(BLANK(), JSON.parse(JSON.stringify(b)), { brewDate: today() }); const id = await DB.put('batches', nb); state.batchId = id; await S.set('lastBatch', id); keepStorage(); state.shared = null; state.sharedCode = ''; toast('Saved to your batches'); go('batches', 'view:' + id, { replace: true }); } }, 'Save to my batches'),
+        h('button', { class: 'btn secondary', onclick: () => go('shop', 'shared') }, 'Shop for it')),
+      h('p', { class: 'muted small' }, 'The whole recipe travelled inside the link, so nothing was uploaded and nothing is stored anywhere but your phone. Save it and you can scale it to your own system, change anything, and run it through a guided brew day.'));
+  }
+
+  // ---------- bring a recipe in: paste it, photograph it, or import a file ----------
+  const IMPORT_EXAMPLE = 'Citra Pale Ale (5 gal)\n10 lb 2-row\n1 lb Crystal 40\n0.5 oz Magnum @ 60 min\n1 oz Citra @ 10 min\n2 oz Citra dry hop 5 days\nUS-05, mash at 152F';
+  function renderImport() {
+    const box = h('textarea', { rows: 9, placeholder: IMPORT_EXAMPLE, 'aria-label': 'The recipe', style: 'width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);padding:12px;font:inherit;font-size:16px;font-family:var(--mono);line-height:1.4' }); box.value = state.importText || '';
+    const out = h('div'), status = h('p', { class: 'muted small' }), bar = h('div', { class: 'progress', hidden: true }, h('i'));
+    const read = () => { state.importText = box.value; out.innerHTML = ''; if (!box.value.trim()) return toast('Paste or type a recipe first');
+      const p = RT.parse(box.value, { fermentables: D.FERMENTABLES, hops: D.HOPS, yeast: D.YEAST });
+      if (!p.count) return out.append(h('div', { class: 'empty' }, 'Nothing in that looked like a recipe. Each ingredient needs an amount and a unit on its line, like "10 lb pale malt" or "28 g Cascade 15 min".'));
+      const draft = RT.toBatch(p, BLANK(), D.HOPS); draft._said = [p.og ? `OG ${p.og.toFixed(3)}` : '', p.ibu ? `${p.ibu} IBU` : '', p.abv ? `${p.abv}%` : ''].filter(Boolean).join(' \u00B7 ');
+      const est = recipeStats(draft), unknown = p.fermentables.filter(f => !f.known).map(f => f.name).concat(p.hops.concat(p.dryHops).filter(x => !x.known).map(x => x.name)), untimed = p.hops.filter(hp => hp.minutes === '' && !hp.whirlpool).map(hp => hp.name);
+      const row = (a, n, c, flag) => h('tr', null, h('td', { class: 'mono', style: 'width:24%' }, a), h('td', null, n, flag ? h('span', { class: 'badge due', style: 'margin-left:8px' }, flag) : null), h('td', { class: 'mono' }, c || ''));
+      out.append(h('h3', null, 'What it read'), h('p', { class: 'muted small' }, `${p.name || 'No name found'}${p.batchGal ? ` \u00B7 ${p.batchGal} gal` : ''}${p.metric ? ' \u00B7 converted from metric' : ''}${est.og > 1 ? ` \u00B7 comes to OG ${est.og.toFixed(3)} on your system` : ''}${p.og ? ` (the recipe says ${p.og.toFixed(3)})` : ''}`),
+        h('div', { class: 'tablewrap' }, h('table', { class: 'ref', style: 'min-width:0' }, h('tbody', null,
+          p.fermentables.map(f => row(`${f.lb} lb`, f.name, '', f.known ? '' : 'not in the lists')),
+          p.hops.map(hp => row(`${hp.oz} oz`, hp.name + (hp.alpha ? ` (${hp.alpha}%)` : ''), hp.whirlpool ? 'whirlpool' : hp.minutes === '' ? 'no time' : `${hp.minutes} min`, hp.known ? '' : 'not in the lists')),
+          p.dryHops.map(d => row(`${d.oz} oz`, d.name, `dry hop, ${d.days} days`, d.known ? '' : 'not in the lists')),
+          p.yeast ? row('yeast', p.yeast, p.fermF ? `${p.fermF}F` : '', p.yeastKnown ? '' : 'not in the lists') : null,
+          p.salts.map(x => row(`${x.grams} g`, x.salt, 'water')), p.mashF ? row('mash', `${p.mashF}F${p.mashMin ? ' for ' + p.mashMin + ' min' : ''}`, '') : null))));
+      if (unknown.length) out.append(h('p', { class: 'small' }, h('b', null, 'Not in the app\'s lists: '), unknown.join(', '), '. They are kept as typed. On the next screen pick the nearest name from the list, or the gravity and bitterness will leave them out.'));
+      if (untimed.length) out.append(h('p', { class: 'small' }, h('b', null, 'No boil time found for: '), untimed.join(', '), '. Add the minutes on the next screen.'));
+      if (p.unread.length) out.append(h('details', { class: 'plat' }, h('summary', null, `${p.unread.length} line${p.unread.length === 1 ? '' : 's'} it could not use`), h('div', { class: 'body' }, h('pre', { class: 'pkg' }, p.unread.join('\n')))));
+      out.append(h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: () => { state.draft = draft; go('batches', 'new'); } }, 'Looks right: make it a batch')));
+      out.scrollIntoView && out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    const photoIn = h('input', { type: 'file', accept: 'image/*', hidden: true, onchange: async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      status.textContent = 'Reading the photo\u2026 the first one takes a little longer while the reader loads.'; bar.hidden = false; bar.firstChild.style.width = '0';
+      try { const cv = await fileToCanvas(f, 2200); const text = await ocr(cv, pr => { bar.firstChild.style.width = Math.round(pr * 100) + '%'; });
+        if (!text.trim()) status.textContent = 'No text found on that photo. Fill the frame with the recipe, straight on, in good light.';
+        else { box.value = text.trim(); status.textContent = 'This is what the reader saw. Photos are never perfect: fix any line that looks wrong, then press Read the recipe.'; read(); } }
+      catch (err) { status.textContent = 'The photo reader could not load (it needs a connection the first time). Type or paste the recipe instead.'; }
+      bar.hidden = true; } });
+    const xmlIn = h('input', { type: 'file', accept: '.xml,.beerxml,text/xml,application/xml', hidden: true, onchange: async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      try { const recipes = window.BeerXML.importRecipes(await f.text(), { fermentables: D.FERMENTABLES, hops: D.HOPS, yeast: D.YEAST }, B.matchVocab); if (!(await needReg('save'))) return;
+        let lastId = null; for (const r of recipes) { r.status = 'Planned'; lastId = await DB.put('batches', r); } keepStorage(); toast(`${recipes.length} recipe${recipes.length === 1 ? '' : 's'} imported`); state.batchId = lastId; go('batches', 'edit:' + lastId, { replace: true }); }
+      catch (err) { toast(err.message); } } });
+    view.append(h('button', { class: 'back', onclick: () => goBack('batches') }, '\u2039 Batches'), h('h2', null, 'Bring a recipe in'),
+      h('p', { class: 'muted' }, 'Paste a recipe from anywhere (a forum, an email, a brewing program\'s text export) or photograph one from a book or a kit sheet. The app picks out the grain, hops and yeast and builds a batch for you to check.'),
+      box, photoIn, xmlIn, status, bar,
+      h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: read }, 'Read the recipe'), h('button', { class: 'btn secondary', onclick: () => photoIn.click() }, 'Photograph one'),
+        navigator.clipboard && navigator.clipboard.readText ? h('button', { class: 'btn secondary', onclick: async () => { try { const t = await navigator.clipboard.readText(); if (t) { box.value = t; read(); } else toast('The clipboard is empty'); } catch (e) { toast('Paste into the box instead'); } } }, 'Paste') : null,
+        h('button', { class: 'btn secondary', onclick: () => xmlIn.click() }, 'Import BeerXML')),
+      h('p', { class: 'muted small' }, 'Pounds, ounces, kilos and grams are all understood, and metric recipes are converted. BeerXML is the file Brewfather, BeerSmith, Brewer\'s Friend and Grainfather export.'), out);
+    if (state.importText) read();
+  }
+
+  // ---------- registration ----------
+  /* Registration is one small file, register.js, edited on GitHub like tags.js. With no sign-up link in it there is no registration
+     and the app behaves exactly as it did before. With one, people can look around freely and are asked for a first name and an email
+     when they save their first batch or install the app (or before anything else, if the file says when: 'open'). The address goes to
+     the list the link points at and nowhere else; nothing about their brewing is sent. */
+  const REG = (() => { const c = window.BREWLOG_REGISTER || {}, target = B.signupTarget(c.signup, c.fields), text = k => typeof c[k] === 'string' ? c[k].trim() : '';
+    return { loaded: !!window.BREWLOG_REGISTER, target, on: !!target.url && !target.problem && c.when !== 'off', when: c.when === 'open' ? 'open' : 'save', perk: text('perk') || 'You will get an occasional email about new recipes, new features and the Brew Log book.',
+      privacy: text('privacy'), contact: text('contact'), extra: c.extra && typeof c.extra === 'object' ? c.extra : null, askSystem: c.askSystem !== false }; })();
+  async function registered() { return !REG.on || !!(await S.get('reg', null)); }
+  // true once they are registered (or registration is off); false if they closed the form
+  async function needReg(reason) { return (await registered()) ? true : regSheet(reason, false, false); }
+  async function sendSignup(reg, target) {
+    const t = target || REG.target; if (!t.url) return false;
+    const body = new URLSearchParams(B.signupPairs(t, { email: reg.email, name: reg.name, system: reg.system, source: 'Brew Log ' + APP_VERSION }, REG.extra)).toString();
+    // a form post to another site: the browser sends it but will not let the page read the reply, so "sent" is all that can be known
+    try { await Promise.race([fetch(t.url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body, keepalive: true }), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 8000))]); return true; } catch (e) { return false; }
+  }
+  // registered with no signal: send it the next time the app opens online
+  async function retrySignup() { try { const r = await S.get('reg', null); if (r && !r.sent && REG.on && navigator.onLine !== false && await sendSignup(r)) { r.sent = true; await S.set('reg', r); } } catch (e) { /* next time */ } }
+  const sheets = [];
+  /* A panel over the page. build(close) returns its contents. locked: no way out but through it. */
+  function sheet(build, opts) {
+    const o = opts || {}, wrap = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true' }), card = h('div', { class: 'sheet-card' });
+    const close = () => { const i = sheets.indexOf(entry); if (i < 0) return; sheets.splice(i, 1); wrap.remove(); if (o.onclose) o.onclose(); }, entry = { close, locked: !!o.locked };
+    for (const k of [].concat(build(close)).flat(Infinity)) if (k !== null && k !== undefined && k !== false) card.append(k.nodeType ? k : document.createTextNode(String(k)));
+    wrap.append(card); if (!o.locked) wrap.addEventListener('click', e => { if (e.target === wrap) close(); });
+    document.body.append(wrap); sheets.push(entry); return close;
+  }
+  function closeSheets() { for (const e of sheets.slice()) if (!e.locked) e.close(); }
+  function regSheet(reason, locked, preview) {
+    return new Promise(resolve => {
+      const name = inp('', 'text', { autocomplete: 'given-name', placeholder: 'First name', 'aria-label': 'First name' }), email = inp('', 'email', { autocomplete: 'email', placeholder: 'you@example.com', inputmode: 'email', 'aria-label': 'Email' });
+      const system = sel([{ v: '', t: 'Choose\u2026' }].concat(D.SYSTEMS.map(x => ({ v: x.id, t: x.name }))).concat([{ v: 'extract', t: 'Extract or partial mash on the stove' }, { v: 'other', t: 'Something else' }, { v: 'none', t: 'Not brewing yet' }]), '');
+      const err = h('p', { class: 'small', role: 'alert', style: 'color:var(--warn);min-height:1.3em;margin:0 0 6px' });
+      const count = RC.RECIPES.filter(r => r.group !== 'Historic').length; let done = false;
+      const title = { save: 'Register to keep your batches', install: 'Register to install Brew Log', open: 'Welcome to Brew Log', settings: 'Register this copy' }[reason] || 'Register';
+      const why = reason === 'open' ? `Register and it is yours, free: ${count} recipes sized to your system, a guided brew day with hop alarms, and a shopping list that fills the cart for you.` : 'It is free. Register once and Brew Log is yours: as many batches as you like, on your phone, with or without a signal.';
+      const submit = async () => {
+        const e = email.value.trim(), n = name.value.trim(); if (!B.validEmail(e)) { err.textContent = 'That email address does not look right.'; email.focus(); return; }
+        if (preview) { done = true; close(); toast('A preview: nothing was saved or sent'); return resolve(true); }
+        const sys = D.SYSTEMS.find(x => x.id === system.value), reg = { email: e, name: n, system: system.value ? system.options[system.selectedIndex].text : '', at: Date.now(), sent: false };
+        await S.set('reg', reg);
+        if (sys && !(await hasEquip())) await S.set('equip', Object.assign({}, EQUIP_DEFAULT, sys.eq, { name: sys.name }));
+        done = true; close(); toast(n ? `Thanks, ${n}. You are registered.` : 'You are registered.'); resolve(true);
+        sendSignup(reg).then(async ok => { if (ok) { reg.sent = true; await S.set('reg', reg); } });   // not waited for: the app is theirs whether or not the signal is good
+      };
+      const close = sheet(shut => [
+        h('div', { class: 'hero', style: 'align-items:center;margin-bottom:10px' }, glass(8, 40), h('h2', { style: 'margin:0' }, title)),
+        h('p', null, why),
+        h('form', { onsubmit: ev => { ev.preventDefault(); submit(); } }, field('First name', name), field('Email', email), REG.askSystem ? field('What do you brew on? (optional)', system, 'Pick one and the water volumes and boil-off are set up for that kind of system.') : null, err,
+          h('button', { class: 'btn block', type: 'submit', style: 'min-height:54px;font-size:17px' }, 'Register and continue')),
+        h('p', { class: 'muted small', style: 'margin-top:10px' }, REG.perk, ' Unsubscribe whenever you like. Your batches, readings and notes are not sent anywhere: they stay on this phone. ', REG.privacy ? h('a', { href: REG.privacy, target: '_blank', rel: 'noopener' }, 'Privacy') : null),
+        locked ? null : h('div', { class: 'btns', style: 'justify-content:center' }, h('button', { class: 'btn secondary sm', type: 'button', onclick: shut }, reason === 'save' ? 'Not now: keep looking around' : 'Not now'))
+      ], { locked, onclose: () => { if (!done) resolve(false); } });
+      setTimeout(() => { try { name.focus(); } catch (e) { /* not focusable yet */ } }, 50);
+    });
+  }
+  // brewlog/?register: what register.js says, whether the link can be used, and a way to try it
+  function regCheck() {
+    const t = REG.target;
+    if (!REG.loaded) return h('div', { class: 'lock' }, h('b', null, 'Registration check'), h('p', { class: 'small', style: 'margin-top:6px;color:var(--warn)' }, 'register.js did not load, so registration is off. Open it on GitHub and look for a missing quote or comma.'));
+    const addr = inp(`test-${Date.now().toString(36)}@example.com`, 'email'), result = h('p', { class: 'small' });
+    return h('div', { class: 'lock' }, h('b', null, 'Registration check'),
+      h('p', { class: 'muted small', style: 'margin-top:6px' }, 'Settings come from register.js in the brewlog repository. Edit that file on GitHub; the app picks the change up within about ten minutes. This box only shows when the address ends in ?register.'),
+      h('ul', { class: 'small', style: 'padding-left:18px;margin:8px 0' },
+        h('li', { style: 'margin:6px 0' }, h('b', null, 'Sign-up link: '), t.problem ? h('span', { style: 'color:var(--warn)' }, t.problem) : `${t.kind}. Sign-ups are posted to ${t.url}`),
+        t.url && !t.problem ? h('li', { style: 'margin:6px 0' }, h('b', null, 'What is sent: '), ['email', 'name', 'system', 'source'].filter(k => t.map[k]).map(k => `${k === 'name' ? 'first name' : k === 'system' ? 'what they brew on' : k === 'source' ? 'the app version' : 'email'} as ${t.map[k]}`).join(', '), t.map.name ? '' : ' (no first name: the link has nowhere to put it)') : null,
+        h('li', { style: 'margin:6px 0' }, h('b', null, 'When people are asked: '), REG.on ? (REG.when === 'open' ? 'before anything else, the first time the app opens' : 'when they save their first batch or press Install; everything else is open to look around') : 'never. Registration is off.')),
+      t.url && !t.problem ? field('Send a test sign-up as', addr, 'A mailing-list service may refuse a made-up address: use a real one of yours for those.') : null,
+      h('div', { class: 'btns' }, t.url && !t.problem ? h('button', { class: 'btn', onclick: async () => { if (!B.validEmail(addr.value)) return toast('Put an email address in the box'); result.textContent = 'Sending\u2026';
+        const ok = await sendSignup({ email: addr.value.trim(), name: 'Test', system: 'Test from the app' }); result.textContent = ok ? `Sent as ${addr.value.trim()}. Look for it in your sheet or your list. If it has not arrived within a minute, the link is not right.` : 'It could not be sent. Check the connection, then the link.'; } }, 'Send a test sign-up') : null,
+        h('button', { class: 'btn secondary', onclick: () => regSheet('save', false, true) }, 'See the registration screen')), result);
+  }
+
+  // ---------- backup and restore ----------
+  const saveFile = file => { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.append(a); a.click(); a.remove(); };
+  /* Everything in one file: batches, their logs, the stock and the settings. The shop catalog is left out; it is fetched fresh anyway. */
+  async function backupNow() {
+    const data = { app: 'brewlog', version: APP_VERSION, exported: new Date().toISOString(), batches: await DB.all('batches'), entries: await DB.all('entries'), stock: await DB.all('stock'), kv: (await DB.all('kv')).filter(r => r && r.key !== 'catalogCache') };
+    const file = new File([JSON.stringify(data)], `brew-log-backup-${today()}.json`, { type: 'application/json' }), said = `${data.batches.length} batch${data.batches.length === 1 ? '' : 'es'} backed up`;
+    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) { try { await navigator.share({ files: [file], title: 'Brew Log backup' }); await S.set('lastBackup', Date.now()); toast(said); if (state.tab === 'batches' || state.tab === 'settings') render(); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    saveFile(file); await S.set('lastBackup', Date.now()); toast(said + ': keep the file somewhere safe'); if (state.tab === 'batches' || state.tab === 'settings') render();
+  }
+  async function applyRestore(data, replace) {
+    const objs = v => (Array.isArray(v) ? v : []).filter(x => x && typeof x === 'object'), batches = objs(data.batches), entries = objs(data.entries), stock = objs(data.stock), kv = objs(data.kv).filter(r => typeof r.key === 'string');
+    if (replace) { await DB.clearAll(); S.cache = {}; for (const b of batches) await DB.put('batches', b); for (const e of entries) await DB.put('entries', e); for (const x of stock) await DB.put('stock', x); for (const r of kv) await DB.put('kv', { key: r.key, value: r.value }); }
+    else { const map = new Map();   // added alongside what is here: every batch gets a fresh number and its log follows it
+      for (const b of batches) { const c = Object.assign({}, b); delete c.id; map.set(b.id, await DB.put('batches', c)); }
+      for (const e of entries) { if (!map.has(e.batchId)) continue; const c = Object.assign({}, e, { batchId: map.get(e.batchId) }); delete c.id; await DB.put('entries', c); }
+      for (const x of stock) { const c = Object.assign({}, x); delete c.id; await DB.put('stock', c); } }
+    state.batchId = null; state.restore = null; goLive = null; sheetLive = null; keepStorage(); toast(`${batches.length} batch${batches.length === 1 ? '' : 'es'} restored`); go('batches');
+  }
+  async function renderRestore() {
+    const d = state.restore, here = (await DB.all('batches')).length, n = (d.batches || []).length, when = String(d.exported || '').slice(0, 10);
+    add(h('button', { class: 'back', onclick: () => { state.restore = null; goBack('settings'); } }, '\u2039 Settings'), h('h2', null, 'Restore a backup'),
+      h('p', null, `This backup ${when ? 'was made on ' + B.niceDate(when) : 'has no date'}${d.version ? ' by Brew Log ' + String(d.version).slice(0, 12) : ''}. It holds ${n} batch${n === 1 ? '' : 'es'}, ${(d.entries || []).length} log entries and ${(d.stock || []).length} stock items.`),
+      h('p', { class: 'muted' }, here ? `This phone has ${here} batch${here === 1 ? '' : 'es'} now.` : 'This phone has no batches yet.'),
+      h('button', { class: 'btn block', onclick: () => applyRestore(d, false) }, here ? 'Add them to what is here' : 'Restore'),
+      here ? h('p', { class: 'muted small' }, 'Keeps everything on this phone and adds the backup\'s batches beside it. Settings are left as they are.') : null,
+      here ? h('button', { class: 'btn danger block', onclick: () => { if (confirm('Replace every batch, log entry and setting on this phone with the backup? What is here now will be gone.')) applyRestore(d, true); } }, 'Replace everything on this phone') : null,
+      here ? h('p', { class: 'muted small' }, 'For moving to a new phone, or going back to an earlier state: the phone ends up exactly as the backup was, settings included.') : null,
+      h('button', { class: 'btn secondary block', onclick: () => { state.restore = null; goBack('settings'); } }, 'Cancel'));
+  }
+
   // ---------- settings ----------
   async function renderSettings() {
+    if (state.sub === 'restore') { if (state.restore) return renderRestore(); return go('settings', null, { replace: true }); }
     const region = await S.get('region', 'US');
     const regionSel = sel(['US', 'UK'], region);
     regionSel.addEventListener('change', async () => { await S.set('region', regionSel.value); toast('Saved'); });
     const eq = await equip(); const ef = {};
     const mkE = (k, label, hint) => { ef[k] = inp(eq[k], k === 'name' ? 'text' : 'number'); return field(label, ef[k], hint); };
-    view.append(h('h2', null, 'Settings'),
+    const check = on => { const c = h('input', { type: 'checkbox', style: 'width:24px;height:24px;min-height:24px;flex:none;padding:0' }); c.checked = !!on; return c; };
+    ef.noSparge = check(eq.noSparge);
+    const ratio = mkE('qtPerLb', 'Mash ratio (qt per lb)', 'recirculating systems often run thinner, 1.5 to 2'), syncSparge = () => { ratio.style.opacity = ef.noSparge.checked ? 0.45 : 1; ef.qtPerLb.disabled = ef.noSparge.checked; };
+    ef.noSparge.addEventListener('change', syncSparge); syncSparge();
+    const preset = sel([{ v: '', t: 'Start from a typical system\u2026' }].concat(D.SYSTEMS.map(x => ({ v: x.id, t: `${x.name}: ${x.eg}` }))), '');
+    preset.addEventListener('change', () => { const sys = D.SYSTEMS.find(x => x.id === preset.value); if (!sys) return; for (const k in sys.eq) if (ef[k]) { if (k === 'noSparge') ef[k].checked = !!sys.eq[k]; else ef[k].value = sys.eq[k]; } ef.name.value = sys.name; syncSparge(); toast('Filled in. Check the numbers, then Save equipment'); });
+    const restoreIn = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      try { const data = JSON.parse(await f.text()); if (!data || data.app !== 'brewlog' || !Array.isArray(data.batches)) throw new Error('not a backup'); state.restore = data; go('settings', 'restore'); } catch (err) { toast('That file is not a Brew Log backup'); } } });
+    const exportCsv = async () => {
+      const batches = await DB.all('batches'), entries = await DB.all('entries');
+      const rows = entries.map(e => { const b = batches.find(x => x.id === e.batchId) || {}; return { batch: b.name || '', date: e.date, type: e.type, detail: e.type === 'gravity' ? Number(e.sg).toFixed(3) : (e.text || ''), note: e.note || '' }; });
+      saveFile(new File([B.toCsv(rows, [{ key: 'batch', label: 'Batch' }, { key: 'date', label: 'Date' }, { key: 'type', label: 'Type' }, { key: 'detail', label: 'Detail' }, { key: 'note', label: 'Note' }])], `brew-log-${today()}.csv`, { type: 'text/csv' }));
+    };
+    const mine = await S.get('procChips', []), reg = await S.get('reg', null), lastBackup = await S.get('lastBackup', 0);
+    add(h('h2', null, 'Settings'),
+      TAG_CHECK ? tagCheck() : null, REG_CHECK ? regCheck() : null,
       h('h3', null, 'Equipment profile'),
       h('p', { class: 'muted small' }, 'These numbers drive the brew day sheet and new-batch defaults. Everyone\'s rig is different; put yours in once.'),
-      mkE('name', 'System name'), h('div', { class: 'row' }, mkE('batchGal', 'Batch size (gal)'), mkE('boilGal', 'Pre-boil volume (gal)')),
+      field('', preset), mkE('name', 'System name'), h('div', { class: 'row' }, mkE('batchGal', 'Batch size (gal)'), mkE('boilGal', 'Pre-boil volume (gal)')),
       h('div', { class: 'row' }, mkE('boilMin', 'Boil length (min)'), mkE('efficiency', 'Mash efficiency %')),
-      h('div', { class: 'row' }, mkE('qtPerLb', 'Mash ratio (qt per lb)', 'recirculating systems often run thinner, 1.5 to 2'), mkE('tunLossF', 'Strike temp loss to the tun (F)')),
+      h('label', { class: 'field', style: 'display:flex;align-items:flex-start;gap:10px' }, ef.noSparge, h('span', { style: 'margin:0;color:var(--text)' }, 'No sparge: all the water goes in with the grain', h('span', { class: 'muted small', style: 'display:block' }, 'Brew in a bag, and most all-in-one brews done without a sparge. The strike water is then the pre-boil volume plus what the grain keeps.'))),
+      h('div', { class: 'row' }, ratio, mkE('tunLossF', 'Strike temp loss to the tun (F)')),
+      h('div', { class: 'row' }, mkE('grainTempF', 'Grain temperature (F)', 'a summer garage is nearer 85: the strike water wants to be cooler'), mkE('absorbGalLb', 'Grain absorption (gal per lb)', 'about 0.08 for a squeezed bag')),
       h('div', { class: 'row' }, mkE('boilOffGalHr', 'Boil-off (gal per hour)'), mkE('trubGal', 'Trub and kettle loss (gal)')),
-      h('div', { class: 'row' }, mkE('absorbGalLb', 'Grain absorption (gal per lb)'), mkE('hydroCalF', 'Hydrometer calibration (F)')),
-      mkE('wcf', 'Refractometer wort correction factor', 'usually 1.02 to 1.06'),
+      h('div', { class: 'row' }, mkE('hydroCalF', 'Hydrometer calibration (F)'), mkE('wcf', 'Refractometer correction factor', 'usually 1.02 to 1.06')),
       h('details', { class: 'plat' }, h('summary', null, 'IBU model: the conditions it assumes'), h('div', { class: 'body' },
         h('p', { class: 'small' }, 'The SMPH model predicts the IBUs a lab would measure in your finished beer, and that depends on more than the hops. The defaults suit most brewers; change only what you know.'),
         h('div', { class: 'row' }, mkE('chillMin', 'Minutes to chill below 140F', 'hops keep bittering until then; an immersion chiller is about 10, no-chill is 60 or more'), mkE('wortPh', 'Wort pH after the boil', 'untreated water about 5.6 to 5.75; treated 5.1 to 5.4. Lower pH, fewer IBUs')),
@@ -1218,31 +1681,37 @@
         (() => { ef.clarity = sel(B.SMPH_CLARITY.map(([t, v]) => ({ v: String(v), t })), String(eq.clarity)); ef.krausen = sel(B.SMPH_KRAUSEN.map(([t, v]) => ({ v: String(v), t })), String(eq.krausen)); return h('div', { class: 'row' }, field('Wort into the fermenter', ef.clarity, 'clear wort keeps more bitterness'), field('Krausen', ef.krausen, 'a blow-off tube carries bitterness away')); })(),
         (() => { const ms = sel([{ v: 'smph', t: 'SMPH: the finished beer, as a lab would measure it' }, { v: 'tinseth', t: 'Tinseth: the usual homebrew figure' }], IBU_MODEL); ms.addEventListener('change', async () => { IBU_MODEL = ms.value; await S.set('ibuModel', ms.value); toast('Saved'); }); return field('IBU figure to lead with', ms, 'Sets how the built-in recipes are hopped and the default for new batches. Each batch keeps its own choice on its recipe form.'); })(),
         h('p', { class: 'muted small' }, B.SMPH_CREDIT))),
-      h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { const out = {}; for (const k in ef) out[k] = k === 'name' ? ef[k].value.trim() : num(ef[k].value); if (!out.wortPh) out.wortPh = 5.5; if (!out.chillMin) out.chillMin = 10; if (!out.clarity) out.clarity = 1; if (!out.krausen) out.krausen = 1; await S.set('equip', out); toast('Equipment saved'); } }, 'Save equipment')),
-      await (async () => { const mine = await S.get('procChips', []); if (!mine.length) return null;
-        return h('div', null, h('h3', null, 'Your process note buttons'), h('div', { class: 'chips' }, mine.map(m => h('button', { class: 'chip', style: 'font-family:inherit', onclick: async () => { await S.set('procChips', mine.filter(x => x !== m)); toast('Removed'); render(); } }, m + '  \u00D7'))), h('p', { class: 'muted small' }, 'Tap one to remove it from the brew day buttons. Past log entries are untouched.')); })(),
+      h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { const out = {}; for (const k in ef) out[k] = k === 'name' ? ef[k].value.trim() : k === 'noSparge' ? ef[k].checked : num(ef[k].value); if (!out.wortPh) out.wortPh = 5.5; if (!out.chillMin) out.chillMin = 10; if (!out.clarity) out.clarity = 1; if (!out.krausen) out.krausen = 1; if (!out.grainTempF) out.grainTempF = 65; if (!out.qtPerLb) out.qtPerLb = 1.25; await S.set('equip', out); toast('Equipment saved'); } }, 'Save equipment')),
+      mine.length ? h('div', null, h('h3', null, 'Your process note buttons'), h('div', { class: 'chips' }, mine.map(m => h('button', { class: 'chip', style: 'font-family:inherit', onclick: async () => { await S.set('procChips', mine.filter(x => x !== m)); toast('Removed'); render(); } }, m + '  \u00D7'))), h('p', { class: 'muted small' }, 'Tap one to remove it from the brew day buttons. Past log entries are untouched.')) : null,
       field('Shop region', regionSel),
-      h('h3', null, 'Export'),
-      h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: async () => {
-        const batches = await DB.all('batches'), entries = await DB.all('entries');
-        const rows = entries.map(e => { const b = batches.find(x => x.id === e.batchId) || {}; return { batch: b.name || '', date: e.date, type: e.type, detail: e.type === 'gravity' ? Number(e.sg).toFixed(3) : (e.text || ''), note: e.note || '' }; });
-        const csv = B.toCsv(rows, [{ key: 'batch', label: 'Batch' }, { key: 'date', label: 'Date' }, { key: 'type', label: 'Type' }, { key: 'detail', label: 'Detail' }, { key: 'note', label: 'Note' }]);
-        const file = new File([csv], `brew-log-${today()}.csv`, { type: 'text/csv' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.append(a); a.click(); a.remove();
-      } }, 'Export the log as .csv')),
+      h('h3', null, 'Back up and restore'), restoreIn,
+      h('p', { class: 'muted small' }, 'Your batches, readings, stock and settings live in this browser on this phone and nowhere else. A backup is one file: keep it in your files or email it to yourself, then restore it here or on a new phone.', lastBackup ? ` Last backup ${B.niceDate(B.isoDay(new Date(lastBackup)))}.` : ' No backup made yet.'),
+      h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: backupNow }, 'Back up everything'), h('button', { class: 'btn secondary', onclick: () => restoreIn.click() }, 'Restore from a backup'), h('button', { class: 'btn secondary', onclick: exportCsv }, 'Export the log as .csv')),
+      REG.on || reg ? h('div', null, h('h3', null, 'Registration'), h('p', { class: 'muted small' }, reg ? `Registered as ${reg.email}.` : 'This copy is not registered yet. It is free, and it lets you save batches and install the app.'),
+        REG.on ? h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: async () => { if (await regSheet('settings', false, false)) render(); } }, reg ? 'Register a different address' : 'Register')) : null) : null,
       h('h3', null, 'Your data'),
-      h('p', { class: 'muted small' }, 'Batches and log entries live in this browser on this phone. Nothing is uploaded.'),
-      h('div', { class: 'btns' }, h('button', { class: 'btn danger', onclick: async () => { if (confirm('Delete every batch and log entry?')) { await DB.clearAll(); S.cache = {}; state.batchId = null; toast('Cleared'); go('batches'); } } }, 'Delete all data')),
-      h('h3', null, 'Updates'),
-      h('p', { class: 'muted small' }, `This page is Brew Log ${APP_VERSION}.`), h('p', { class: 'muted small' }, B.SMPH_CREDIT),
-      h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: async () => { toast('Fetching the latest files'); try { const keys = await caches.keys(); for (const k of keys) if (k.startsWith('blog-')) await caches.delete(k); if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); } } catch (e) { /* ignore */ } location.replace(location.pathname + '?r=' + Date.now()); } }, 'Check for updates and reload')),
+      h('p', { class: 'muted small' }, 'Batches, log entries and stock are kept in this browser on this phone. Nothing about your brewing is uploaded.', reg ? ' The name and email you registered with went to the Brew Log mailing list, and nothing else did.' : '', ' Shop links open the shop\'s own site; a photo you ask the app to read is read on the phone.'),
+      h('div', { class: 'btns' }, h('button', { class: 'btn danger', onclick: async () => { if (confirm('Delete every batch, log entry, stock item and setting on this phone? Make a backup first if you might want them back.')) { await DB.clearAll(); S.cache = {}; state.batchId = null; goLive = null; sheetLive = null; toast('Cleared'); go('batches'); } } }, 'Delete all data')),
+      h('h3', null, 'About'),
+      h('p', { class: 'muted small' }, `Brew Log ${APP_VERSION}. Free to use.`), h('p', { class: 'muted small' }, B.SMPH_CREDIT),
+      h('div', { class: 'btns' },
+        h('button', { class: 'btn secondary', onclick: async () => { const text = 'Brew Log: a free homebrew log with recipes, a guided brew day and one-tap ingredient carts.'; if (navigator.share) { try { await navigator.share({ title: 'Brew Log', text, url: APP_URL }); } catch (e) { /* cancelled */ } } else { try { await navigator.clipboard.writeText(APP_URL); toast('Link copied'); } catch (e) { toast(APP_URL); } } } }, 'Tell another brewer'),
+        REG.contact ? h('a', { class: 'btn secondary', href: /^https?:/i.test(REG.contact) ? REG.contact : 'mailto:' + REG.contact + '?subject=' + encodeURIComponent('Brew Log ' + APP_VERSION), target: '_blank', rel: 'noopener' }, 'Report a problem or ask for something') : null,
+        h('button', { class: 'btn secondary', onclick: async () => { toast('Fetching the latest files'); try { const keys = await caches.keys(); for (const k of keys) if (k.startsWith('blog-')) await caches.delete(k); if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); } } catch (e) { /* ignore */ } location.replace(location.pathname + '?r=' + Date.now()); } }, 'Check for updates and reload')),
       bookCard());
-    if (TAG_CHECK) view.querySelector('h2').after(tagCheck());
   }
 
   let deferredPrompt = null;
-  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; $('#installBtn').hidden = false; });
-  $('#installBtn').addEventListener('click', async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; $('#installBtn').hidden = true; });
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; $('#installBtn').hidden = false; if (state.tab === 'batches' && !state.sub) render(); });
+  async function installApp() { if (!deferredPrompt) return; if (!(await needReg('install'))) return; const ev = deferredPrompt; deferredPrompt = null; $('#installBtn').hidden = true; try { ev.prompt(); await ev.userChoice; } catch (e) { /* dismissed */ } if (state.tab === 'batches') render(); }
+  $('#installBtn').addEventListener('click', installApp);
+  window.addEventListener('appinstalled', () => { deferredPrompt = null; $('#installBtn').hidden = true; });
+  const pill = $('#timerPill'); if (pill) pill.addEventListener('click', () => go('brewday', goLive ? 'go' : 'sheet'));
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
-  render();
+  (async () => {
+    const r = readRoute(); if (r && !TAG_CHECK && !REG_CHECK) { state.tab = r.tab; state.sub = r.sub; }
+    try { history.replaceState({ r: routeOf(state.tab, state.sub) }, ''); } catch (e) { /* no history */ }
+    await resumeBrewday(); await render(); retrySignup();
+    if (REG.on && REG.when === 'open' && !TAG_CHECK && !REG_CHECK && !(await S.get('reg', null))) regSheet('open', true, false);
+  })();
 })();

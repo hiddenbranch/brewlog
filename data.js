@@ -54,7 +54,19 @@
     ['Sterling', 6, 9, 'D', 'Saaz-like, spicy lemon', 'Saaz', 'Noble'],
     ['Crystal', 3.5, 5.5, 'A', 'Woody, floral, spicy', 'Hallertau Mittelfrüh', 'Noble'],
     ['Bramling Cross', 5, 7, 'D', 'Black currant, lemon, spice', 'Progress', 'Earthy and floral'],
-    ['Progress', 5, 7.5, 'A', 'Soft, earthy, honey', 'East Kent Golding', 'Earthy and floral']
+    ['Progress', 5, 7.5, 'A', 'Soft, earthy, honey', 'East Kent Golding', 'Earthy and floral'],
+    ['Nectaron', 10.5, 11.5, 'D', 'Passionfruit, peach, pineapple, grapefruit', 'Nelson Sauvin, Galaxy', 'Tropical'],
+    ['Krush', 10, 14, 'A', 'Orange, mango, guava, berry; sold as HBC 586 until 2024', 'Citra, Mosaic', 'Tropical'],
+    ['Talus', 8.1, 9.5, 'A', 'Pink grapefruit, dried rose, pine resin, sage', 'Sabro, Chinook', 'Citrus'],
+    ['Cashmere', 7.7, 9.1, 'D', 'Lemon, lime, peach, melon', 'Cascade, Amarillo', 'Stone fruit'],
+    ['Ekuanot', 13, 15.5, 'D', 'Melon, berry, lime, papaya, green pepper', 'Mosaic, Azacca', 'Tropical'],
+    ['Waimea', 16, 19, 'D', 'Tangelo, citrus peel, pine needle', 'Columbus, Simcoe', 'Pine and resin'],
+    ['Rakau', 9, 11, 'D', 'Apricot, fig, pine', 'Amarillo', 'Stone fruit'],
+    ['Lemondrop', 5, 7, 'A', 'Lemon, mint, green tea', 'Cascade, Motueka', 'Citrus'],
+    ['Bravo', 14, 17, 'B', 'Clean, with orange and a little pine', 'Columbus, Apollo', 'Clean bittering'],
+    ['Galena', 12, 14, 'B', 'Clean, black currant; a workhorse', 'Nugget, Cluster', 'Clean bittering'],
+    ['Herkules', 12, 17, 'B', 'Robust German high-alpha; spicy, a little melon', 'Magnum, Warrior', 'Clean bittering'],
+    ['First Gold', 6.5, 8.5, 'D', 'Orange marmalade, spice; a dwarf Golding', 'East Kent Golding', 'Earthy and floral']
   ].map(h => ({ name: h[0], alphaLow: h[1], alphaHigh: h[2], use: h[3], flavour: h[4], subs: h[5], genre: h[6] }));
   D.HOP_GENRES = [...new Set(D.HOPS.map(h => h.genre))].sort();
 
@@ -114,7 +126,20 @@
     ['Molasses', 36, 80, 'Sugar', true, 'Rum-like, strong; a little goes far'],
     ['Brown sugar', 46, 15, 'Sugar', true, 'Light caramel; ferments fully'],
     ['Dates', 30, 10, 'Sugar', true, 'Ancient and Middle Eastern beers; fruity sweetness'],
-    ['Rice hulls', 0, 0, 'Adjunct', false, 'No sugar: prevents a stuck mash']
+    ['Rice hulls', 0, 0, 'Adjunct', false, 'No sugar: prevents a stuck mash'],
+    ['Golden Promise', 37, 2.5, 'Base', false, 'Scottish base: sweet, clean, a little fuller than 2-row'],
+    ['Pale ale malt', 37, 3.5, 'Base', false, 'Kilned a shade darker than 2-row: more malt in the glass'],
+    ['Crystal / Caramel 10L', 35, 10, 'Crystal', false, 'The palest crystal: body and a little honey'],
+    ['Midnight wheat', 33, 550, 'Roast', false, 'Black colour with almost no roast bite; black IPA'],
+    ['Flaked rye', 36, 3, 'Adjunct', false, 'Spice and a slick body; add rice hulls'],
+    ['Extra light DME', 44, 2.5, 'Extract', true, 'The palest dry extract: pilsners and anything pale'],
+    ['Amber DME', 44, 10, 'Extract', true, 'Dry extract with crystal malt already in it'],
+    ['Dark DME', 44, 30, 'Extract', true, 'Dry extract for porters and stouts'],
+    ['Amber LME', 36, 10, 'Extract', true, 'Liquid extract with crystal malt already in it'],
+    ['Dark LME', 36, 30, 'Extract', true, 'Liquid extract for porters and stouts'],
+    ['Wheat LME', 36, 3, 'Extract', true, 'Usually about two thirds wheat, one third barley'],
+    ['Munich LME', 36, 8, 'Extract', true, 'Malty depth for bocks and ambers without a mash'],
+    ['Rice syrup solids', 42, 0.5, 'Sugar', true, 'Lightens body like flaked rice, with no mash']
   ].map(f => ({ name: f[0], ppg: f[1], lovibond: f[2], group: f[3], extract: f[4], note: f[5] }));
 
   // attenuation percent, temp range F, flocculation
@@ -177,7 +202,15 @@
     ['Diamond Lager (dry)', 'Lager', 75, 82, 50, 59, 'High', 'Dry lager yeast, forgiving'],
     ['Novalager (dry)', 'Lager', 78, 83, 50, 68, 'High', 'Ferments lager-clean at ale temperatures'],
     ['WLP570 Belgian Golden', 'Ale', 74, 78, 68, 75, 'Low', 'Golden strong; pear and spice'],
-    ['Wyeast 1272 American Ale II', 'Ale', 72, 76, 60, 72, 'Medium-high', 'Slightly fruitier than 1056']
+    ['Wyeast 1272 American Ale II', 'Ale', 72, 76, 60, 72, 'Medium-high', 'Slightly fruitier than 1056'],
+    ['K-97 / SafAle K-97', 'Ale', 80, 84, 59, 68, 'Low', 'Kölsch and altbier from a sachet; throws a big head and is slow to clear'],
+    ['T-58 / SafAle T-58', 'Ale', 72, 78, 59, 75, 'Medium', 'Peppery, spicy Belgian character; blonde, dubbel, wit'],
+    ['WB-06 / SafAle WB-06', 'Ale', 86, 90, 64, 75, 'Low', 'Dry wheat beer yeast: clove at the cool end, banana warm; finishes very dry'],
+    ['BE-134 / SafAle BE-134', 'Ale', 89, 93, 64, 82, 'Low', 'Saison from a sachet: very dry, peppery; it keeps eating, so wait for a stable gravity'],
+    ['BE-256 / SafAle BE-256', 'Ale', 82, 86, 59, 68, 'High', 'Strong Belgian ales: fast, fruity, drops well'],
+    ['S-33 / SafAle S-33', 'Ale', 68, 72, 59, 68, 'Medium', 'Low attenuation: body for bitters, milds and hazy beers'],
+    ['S-23 / SafLager S-23', 'Lager', 80, 84, 54, 59, 'High', 'Berlin lager strain; a little fruity, best kept cool'],
+    ['S-189 / SafLager S-189', 'Lager', 80, 84, 54, 59, 'High', 'Clean and malty; forgiving if the fermenter runs a few degrees warm']
   ].map(y => ({ name: y[0], type: y[1], attLow: y[2], attHigh: y[3], tempLow: y[4], tempHigh: y[5], floc: y[6], note: y[7] }));
 
   // og, fg, ibu, srm, abv ranges: widely published typical figures, not a quotation of any guideline document
@@ -425,6 +458,19 @@
   ];
 
   // Quick process notes for brew day. The brewer can add their own in the app.
+  /* Typical starting points for an equipment profile. Nobody's system matches these exactly: they get a new brewer's water
+     volumes and boil-off close enough that the first brew day sheet makes sense, and every number can be changed after.
+     Pre-boil volume is the batch size, plus the 4% the wort shrinks as it cools, plus an hour of boil-off. */
+  D.SYSTEMS = [
+    { id: 'aio120', name: 'All-in-one on a 120V socket', eg: 'BrewZilla 35L, Anvil Foundry 10.5, Grainfather G30 in the US',
+      eq: { batchGal: 5.5, boilGal: 6.5, boilMin: 60, efficiency: 72, qtPerLb: 1.6, tunLossF: 0, boilOffGalHr: 0.7, trubGal: 0.75, absorbGalLb: 0.1, noSparge: false, chillMin: 15 } },
+    { id: 'aio240', name: 'All-in-one on 240V', eg: 'BrewZilla or Foundry on 240V, Grainfather G40, most of them outside North America',
+      eq: { batchGal: 5.5, boilGal: 6.75, boilMin: 60, efficiency: 72, qtPerLb: 1.6, tunLossF: 0, boilOffGalHr: 1.0, trubGal: 0.75, absorbGalLb: 0.1, noSparge: false, chillMin: 15 } },
+    { id: 'biab', name: 'Brew in a bag', eg: 'One kettle on a burner, all the water in with the grain, no sparge',
+      eq: { batchGal: 5.5, boilGal: 7, boilMin: 60, efficiency: 70, qtPerLb: 1.25, tunLossF: 1, boilOffGalHr: 1.25, trubGal: 0.5, absorbGalLb: 0.08, noSparge: true, chillMin: 12 } },
+    { id: 'cooler', name: 'Cooler mash tun and a kettle', eg: 'Batch or fly sparge, usually over propane',
+      eq: { batchGal: 5.5, boilGal: 7, boilMin: 60, efficiency: 72, qtPerLb: 1.5, tunLossF: 3, boilOffGalHr: 1.25, trubGal: 0.5, absorbGalLb: 0.125, noSparge: false, chillMin: 10 } }
+  ];
   D.PROCESS_CHIPS = ['Whirlfloc or Irish moss', 'Campden tablet for chlorine', 'Yeast nutrient', 'Recirculated the mash', 'No recirculation (overnight mash)', 'Rice hulls', 'Acid or pH adjustment', 'Tap water chill only', 'Ice bath or pre-chiller', 'Oxygenated or aerated', 'Stirred the mash'];
 
   D.PROCESS = {
