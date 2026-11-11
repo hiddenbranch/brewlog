@@ -4,8 +4,8 @@
   const B = window.BrewCore, D = window.BrewData, SH = window.BrewShop, RC = window.BrewRecipes, RT = window.RecipeText;
   B.setHopRef(D.HOPS);
   const OCR_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
-  const APP_VERSION = '1.9.0';
-  const BOOK = { title: 'Homebrewer\'s Brew Log Book', url: '', blurb: 'The paper companion: brew day sheets, fermentation charts and recipe pages built to be photographed into this app.' };
+  const APP_VERSION = '1.9.1';
+  const BOOK = { title: 'Homebrewer\'s Brew Log Book', url: '', blurb: 'The paper companion: brew day sheets, fermentation charts and recipe pages, with a beginner\'s guide and something to read while the kettle boils.' };
   const CDN = { jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js' };
   const STATUSES = ['Planned', 'Brewing', 'Fermenting', 'Conditioning', 'Packaged', 'Drinking', 'Finished'];
   const EQUIP_DEFAULT = { name: 'My system', batchGal: 5.5, boilGal: 7, boilMin: 60, efficiency: 72, qtPerLb: 1.25, tunLossF: 2, grainTempF: 65, noSparge: false, boilOffGalHr: 1.2, trubGal: 0.5, absorbGalLb: 0.125, wcf: 1.04, hydroCalF: 60, elevationFt: 0, chillMin: 10, wortPh: 5.5, clarity: 1.0, krausen: 1.0, ageWeeks: 3 };
@@ -123,7 +123,7 @@
   }
 
   // ---------- first open ----------
-  /* A pint the colour of the beer. The same shape is drawn on the batch card image. */
+  /* A pint the color of the beer. The same shape is drawn on the batch card image. */
   function glass(srm, size) {
     const c = B.srmHex(srm === undefined || srm === null ? 6 : srm), w = size || 40;
     return h('span', { class: 'glass', 'aria-hidden': 'true', html: `<svg viewBox="0 0 64 80" width="${w}" height="${Math.round(w * 1.25)}"><path d="M13 18h38l-4.200 53.500a5 5 0 0 1-5 4.500H22.200a5 5 0 0 1-5-4.500z" fill="${c}"/><path d="M19.500 27l2.400 37" stroke="rgba(255,255,255,.35)" stroke-width="3" stroke-linecap="round" fill="none"/><g fill="#FFF8EC"><rect x="10" y="13" width="44" height="10" rx="5"/><circle cx="19" cy="13" r="6.500"/><circle cx="29" cy="10" r="7.500"/><circle cx="40" cy="11" r="7"/><circle cx="48" cy="14" r="5.500"/></g></svg>` });
@@ -144,7 +144,7 @@
   function welcome(pickXml) {
     const count = RC.RECIPES.filter(r => r.group !== 'Historic').length;
     const row = (t, sub, fn) => h('li', null, h('button', { onclick: fn }, h('span', { class: 't' }, h('b', null, t), h('span', null, sub)), h('span', { class: 'k' }, '\u203A')));
-    const box = h('div', null, h('div', { class: 'hero' }, glass(8, 56), h('div', null, h('h2', { style: 'margin:0 0 6px' }, 'Welcome to Brew Log'),
+    const box = h('div', null, h('div', { class: 'hero' }, h('img', { src: 'icons/icon-192.png?v=2', width: 72, height: 72, alt: '', style: 'border-radius:16px;flex:none' }), h('div', null, h('h2', { style: 'margin:0 0 6px' }, 'Welcome to Brew Log'),
       h('p', { class: 'muted', style: 'margin:0' }, 'Your recipes, your brew day and your fermentation readings in one place. Free, works with no signal, and your brews stay on this phone.'))),
       h('h3', null, 'Start here'),
       h('ul', { class: 'list' },
@@ -178,7 +178,7 @@
     for (const [n, sg, f] of [[2, 1.038, 67], [4, 1.021, 68], [7, 1.012, 68], [10, 1.01, 67], [13, 1.01, 66]]) await e(n, 'gravity', { sg, raw: sg, instrument: 'sg', fermTempF: f });
     await e(7, 'dryhop', { hop: 'Citra', oz: 2, form: 'pellet', text: '2 oz Citra (pellet (t-90))' });
     await e(14, 'package', { method: 'Keg', volumes: 2.5, tempF: 38, gal: 5, psi: 12, text: 'Keg, 2.5 vol, 12 psi at 38F' });
-    await e(24, 'tasting', { score: '4', text: 'appearance: gold, slight haze, white head; aroma: grapefruit and lime; flavour: bright citrus, soft bitterness; mouthfeel: medium-light (4/5)', note: 'Yes. More whirlpool hops next time, and mash a degree lower.' });
+    await e(24, 'tasting', { score: '4', text: 'appearance: gold, slight haze, white head; aroma: grapefruit and lime; flavor: bright citrus, soft bitterness; mouthfeel: medium-light (4/5)', note: 'Yes. More whirlpool hops next time, and mash a degree lower.' });
     state.batchId = id; await S.set('lastBatch', id); toast('An example batch: remove it whenever you like'); go('batches', 'view:' + id);
   }
   /* The year so far, and whether the equipment profile still tells the truth about mash efficiency. */
@@ -293,7 +293,7 @@
     function refresh() {
       const cur = collect(); const est = recipeStats(cur); stats.innerHTML = '';
       yeastHint.textContent = B.pitchAdvice(D.YEAST.find(y => y.name === cur.yeast) || null, num(cur.fermF));
-      if (!cur.fermentables.some(x => num(x.lb) > 0) && !cur.hops.some(x => num(x.oz) > 0)) { stats.append(h('div', { class: 'line' }, h('span', { class: 'l' }, 'Recipe numbers', h('span', { class: 'n' }, 'Add the grain and hops below. Gravity, bitterness, colour and strength fill in as you type, each checked against the style.')), h('span', { class: 'v' }, '-'))); return; }
+      if (!cur.fermentables.some(x => num(x.lb) > 0) && !cur.hops.some(x => num(x.oz) > 0)) { stats.append(h('div', { class: 'line' }, h('span', { class: 'l' }, 'Recipe numbers', h('span', { class: 'n' }, 'Add the grain and hops below. Gravity, bitterness, color and strength fill in as you type, each checked against the style.')), h('span', { class: 'v' }, '-'))); return; }
       const styleRec = RC.RECIPES.find(r => r.name === cur.style); const style = styleRec ? { ogLow: styleRec.ranges.og[0], ogHigh: styleRec.ranges.og[1], ibuLow: styleRec.ranges.ibu[0], ibuHigh: styleRec.ranges.ibu[1], srmLow: styleRec.ranges.srm[0], srmHigh: styleRec.ranges.srm[1] } : D.STYLES.find(s => s.name === cur.style);
       const line = (l, v, inRange, n) => stats.append(h('div', { class: 'line ' + (inRange === true ? 'ok' : inRange === false ? 'bad' : '') }, h('span', { class: 'l' }, l, n ? h('span', { class: 'n' }, n) : null), h('span', { class: 'v' }, v)));
       const within = (v, lo, hi) => style && v ? (v >= lo && v <= hi) : null;
@@ -303,7 +303,7 @@
       line(`IBU (${bi.label})`, bi.v || '-', within(bi.v, style && style.ibuLow, style && style.ibuHigh), [style ? `style ${style.ibuLow} to ${style.ibuHigh}` : null, bi.other].filter(Boolean).join(' \u00B7 ') || null);
       if (est.smph.dissolved < 0.97) line('Alpha acids that dissolve', Math.round(est.smph.dissolved * 100) + '%', false, 'wort holds about 200 ppm freely and never more than 580: past that, more hops add little bitterness');
       if (est.ibuDry > 0) line('Dry hops add', '+' + est.ibuDry, null, 'on a lab IBU test; it tastes less bitter than kettle IBUs');
-      line('Colour (SRM)', est.srm || '-', within(est.srm, style && style.srmLow, style && style.srmHigh), style ? `style ${style.srmLow} to ${style.srmHigh}` : null);
+      line('Color (SRM)', est.srm || '-', within(est.srm, style && style.srmLow, style && style.srmHigh), style ? `style ${style.srmLow} to ${style.srmHigh}` : null);
       if (est.og > 1) { const yeastRef = D.YEAST.find(y => y.name === cur.yeast); const att = yeastRef ? (yeastRef.attLow + yeastRef.attHigh) / 2 : 75;
         const fgEst = B.fromPoints(B.points(est.og) * (1 - att / 100));
         line('Expected FG and ABV', `${fgEst.toFixed(3)}  /  ${B.abv(est.og, fgEst)}%`, null, yeastRef ? `${yeastRef.name.split('/')[0].trim()} attenuates ${yeastRef.attLow} to ${yeastRef.attHigh}%` : 'assuming 75% attenuation');
@@ -360,12 +360,12 @@
     f.ibuModel = sel([{ v: 'smph', t: 'SMPH: the finished beer, as a lab would measure it' }, { v: 'tinseth', t: 'Tinseth: the usual homebrew figure' }], r.ibuModel || IBU_MODEL); f.ibuModel.addEventListener('change', () => refresh());
     f.notes = h('textarea', { rows: 3 }); f.notes.value = r.notes || '';
     add(h('button', { class: 'back', onclick: () => b ? goBack('batches', 'view:' + b.id) : goBack('batches') }, b ? '\u2039 ' + (b.name || 'Batch') : '\u2039 Batches'), h('h2', null, b ? 'Edit batch' : draft ? 'Check the recipe' : 'New batch'),
-      draft ? h('p', { class: 'muted small' }, 'Nothing is saved until you press Create batch. Change anything that looks wrong: names come from the app\'s ingredient lists, so pick the closest if one was not recognised.') : null, styleList, yeastList,
+      draft ? h('p', { class: 'muted small' }, 'Nothing is saved until you press Create batch. Change anything that looks wrong: names come from the app\'s ingredient lists, so pick the closest if one was not recognized.') : null, styleList, yeastList,
       h('datalist', { id: 'ferms' }, D.FERMENTABLES.map(x => h('option', { value: x.name }))), h('datalist', { id: 'hops' }, D.HOPS.map(x => h('option', { value: x.name }))),
       mk('name', 'Name'), field('Style', f.style), h('div', { class: 'row' }, mk('brewDate', 'Brew date', 'date'), field('Status', status)),
       h('div', { class: 'row' }, mk('batchGal', 'Batch size (gal)', 'number'), mk('boilGal', 'Pre-boil volume (gal)', 'number')),
       (() => { const to = inp('', 'number', { placeholder: 'e.g. 10', 'aria-label': 'Scale the recipe to this many gallons' });
-        return h('div', { class: 'row', style: 'grid-template-columns:1fr auto;align-items:end' }, field('Scale the whole recipe to (gal)', to, 'Changing the batch size above only changes the maths. This multiplies every ingredient to suit.'),
+        return h('div', { class: 'row', style: 'grid-template-columns:1fr auto;align-items:end' }, field('Scale the whole recipe to (gal)', to, 'Changing the batch size above only changes the math. This multiplies every ingredient to suit.'),
           h('button', { class: 'btn secondary', style: 'margin-bottom:14px', onclick: () => { const g = num(to.value), from = num(f.batchGal.value); if (!(g > 0) || !(from > 0)) return toast('Enter the new size'); const k = g / from;
             for (const el of rows.fermentables.children) { const i = $('.flb', el); if (num(i.value)) i.value = B.roundLb(num(i.value) * k); }
             for (const el of rows.hops.children) { const i = $('.hoz', el); if (num(i.value)) i.value = B.roundOz(num(i.value) * k); }
@@ -378,7 +378,7 @@
       h('h3', null, 'Fermentables'), rows.fermentables, h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => { rows.fermentables.append(fermRow({})); } }, 'Add fermentable')),
       h('h3', null, 'Hops'), field('IBU figure to lead with, and to check against the style', f.ibuModel, 'The other one is always shown beside it'), rows.hops, h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => { rows.hops.append(hopRow({})); } }, 'Add hop')),
       h('div', { class: 'row' }, mk('wpTempF', 'Whirlpool temp (F)', 'number', { placeholder: '175' }), mk('wpMin', 'Whirlpool minutes', 'number', { placeholder: '20' })),
-      h('p', { class: 'muted small', style: 'margin:-6px 0 4px' }, 'Only used by hops ticked as whirlpool. Hotter and longer means more bitterness from them.'),
+      h('p', { class: 'muted small', style: 'margin:-6px 0 4px' }, 'Only used by hops marked as whirlpool. Hotter and longer means more bitterness from them.'),
       h('h3', null, 'Dry hops'), rows.dry, h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => { rows.dry.append(dryRow({})); } }, 'Add dry hop')),
       h('p', { class: 'muted small', style: 'margin:-4px 0 4px' }, 'Leave "Add on day" blank and the app picks the window from the yeast: after the ferment has slowed, a few days before packaging. Put 2 for a hazy IPA charge during active fermentation.'),
       h('h3', null, 'Yeast'), h('div', { class: 'row', style: 'grid-template-columns:1fr 130px' }, field('Yeast', f.yeast), mk('fermF', 'Pitch at (F)', 'number', { placeholder: 'auto' })), yeastHint,
@@ -431,7 +431,7 @@
     line('IBU / SRM', `${bi.v || '-'} / ${est.srm || '-'}`, [og > 1 && bi.v ? `BU:GU ${B.bitternessRatio(bi.v, og)}` : null, bi.label, bi.other, est.ibuDry ? `dry hops +${est.ibuDry} on a lab test` : null].filter(Boolean).join(' \u00B7 '));
     if (num(b.og)) { const eff = batchEfficiency(b); if (eff) line('Mash efficiency', eff + '%', `planned ${b.efficiency}%`); }
     view.append(readout);
-    // A first reading logged before the app asked which one was the OG (anything from 1.8), or with the box left unticked: offer it, never guess.
+    // A first reading logged before the app asked which one was the OG (anything from 1.8), or with the box left unchecked: offer it, never guess.
     const fresh = readings.filter(e => !isOg(e)), cand = !num(b.og) && fresh.length ? fresh[0] : null;
     if (cand && num(cand.sg) > 1.02 && fresh.every(e => num(e.sg) <= num(cand.sg)) && (!b.brewDate || Math.abs(B.daysBetween(b.brewDate, cand.date)) <= 1))
       view.append(h('div', { class: 'note' }, `Was ${num(cand.sg).toFixed(3)} on ${B.niceDate(cand.date)} your original gravity? `, h('button', { class: 'btn sm', style: 'margin:6px 0 0', onclick: async () => { cand.og = true; await DB.put('entries', cand); b.og = num(cand.sg); await syncGravity(b); toast('OG set'); render(); } }, 'Yes, use it as the OG')));
@@ -523,7 +523,7 @@
     catch (e) { const box = h('textarea', { rows: 8, readonly: true, style: 'width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);padding:10px;font:inherit;font-size:14px' }); box.value = text + '\n\nOpen it in Brew Log: ' + url;
       sheet(close => [h('h2', null, 'Share this recipe'), h('p', { class: 'muted small' }, 'Copy this and send it. The link opens the recipe in Brew Log.'), box, h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: close }, 'Done'))]); box.focus(); box.select(); }
   }
-  /* A picture of the batch to post or print: the beer in its own colour, its name and its numbers. Drawn on a canvas, so it
+  /* A picture of the batch to post or print: the beer in its own color, its name and its numbers. Drawn on a canvas, so it
      needs no network and nothing is uploaded. */
   async function batchCard(b, est, og, fg) {
     const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'); if (!c) return toast('This browser cannot draw the card');
@@ -582,7 +582,7 @@
       const prior = (await DB.byBatch('entries', b.id)).filter(e => e.type === 'gravity' && !isPreboil(e)).length;
       const ogBox = h('input', { type: 'checkbox', style: 'width:24px;height:24px;min-height:24px;flex:none;padding:0' }); ogBox.checked = !num(b.og) && !prior && ['Planned', 'Brewing', 'Fermenting'].includes(b.status);
       view.append(field('Instrument', mode), wrap, corrected,
-        h('label', { class: 'field', style: 'display:flex;align-items:center;gap:10px' }, ogBox, h('span', { style: 'margin:0;color:var(--text)' }, 'This is the original gravity (OG), taken before pitching', num(b.og) ? h('span', { class: 'muted small', style: 'display:block' }, `The batch already has an OG of ${num(b.og).toFixed(3)}; tick this to replace it.`) : null)),
+        h('label', { class: 'field', style: 'display:flex;align-items:center;gap:10px' }, ogBox, h('span', { style: 'margin:0;color:var(--text)' }, 'This is the original gravity (OG), taken before pitching', num(b.og) ? h('span', { class: 'muted small', style: 'display:block' }, `The batch already has an OG of ${num(b.og).toFixed(3)}; check this to replace it.`) : null)),
         field('Fermenter temp (F), optional', fermTemp), field('Note', note));
       collect = () => {
         const rec = { instrument: mode.value, note: note.value.trim() }; if (num(fermTemp.value)) rec.fermTempF = num(fermTemp.value);
@@ -616,7 +616,7 @@
     } else if (type === 'tasting') {
       const f = {}; const mk = k => { f[k] = inp('', 'text'); return field(k[0].toUpperCase() + k.slice(1), f[k]); };
       const score = sel(['', '1', '2', '3', '4', '5'], '');
-      view.append(mk('appearance'), mk('aroma'), mk('flavour'), mk('mouthfeel'), field('Score out of 5', score), field('Would you brew it again? What changes?', note));
+      view.append(mk('appearance'), mk('aroma'), mk('flavor'), mk('mouthfeel'), field('Score out of 5', score), field('Would you brew it again? What changes?', note));
       collect = () => { const parts = Object.keys(f).map(k => f[k].value.trim() ? `${k}: ${f[k].value.trim()}` : null).filter(Boolean); if (!parts.length && !note.value.trim()) { toast('Write something'); return null; } return { score: score.value, text: parts.join('; ') + (score.value ? ` (${score.value}/5)` : ''), note: note.value.trim() }; };
     } else {
       const text = h('textarea'); view.append(field('Note', text));
@@ -640,7 +640,7 @@
   let timer = null;
   /* One clock for the whole app. The guided brew day and the quick sheet keep their timers as start times in storage; this loop is
      the only thing that rings, and it runs whatever screen is showing, so a hop addition still sounds while you are in a calculator.
-     A due addition keeps ringing every 20 seconds until it is ticked or three minutes have passed. */
+     A due addition keeps ringing every 20 seconds until it is checked off or three minutes have passed. */
   let goLive = null, goView = null, sheetLive = null, audioCtx = null;
   const rang = {};
   /* Phones only let a page make sound after a tap, and only on an audio context that was started by one: so the context is made
@@ -729,7 +729,7 @@
     for (const hp of fi.sched) box.append(h('div', { style: 'margin-top:6px' }, hp.added ? h('span', { class: 'badge ok' }, 'added') : h('span', { class: 'badge' + (fi.due.includes(hp) ? ' due' : '') }, 'dry hop'), `${hp.oz ? hp.oz + ' oz ' : ''}${hp.name}: ${hp.fromDate ? `${hp.fromDate} to ${hp.toDate}` : `day ${hp.fromDay} to ${hp.toDay}`}, ${hp.days} days in`));
     const btns = h('div', { class: 'btns' }, h('button', { class: 'btn secondary', onclick: () => entryForm(b, 'dryhop') }, 'Log a dry hop'),
       fi.pitched ? h('button', { class: 'btn secondary', onclick: () => { downloadText(B.icsFor(b.name || 'Batch', fi.pitched, fi.plan, fi.sched.filter(x => !x.added)), `${(b.name || 'batch').replace(/[^\w-]/g, '_')}-reminders.ics`, 'text/calendar'); toast('Open the file to add the reminders to your calendar'); } }, 'Reminders to calendar') : null);
-    return h('div', null, box, btns, h('p', { class: 'muted small' }, fi.pitched ? 'A web app cannot ring an alarm next week, so the reminders go to your phone calendar: the dry hop window, the first gravity check and the earliest packaging day, each with a 9 am alert. The app also flags a due dry hop on the Batches screen.' : 'Once you tick "Yeast pitched" the dates fill in and you can send the reminders to your calendar.'));
+    return h('div', null, box, btns, h('p', { class: 'muted small' }, fi.pitched ? 'A web app cannot ring an alarm next week, so the reminders go to your phone calendar: the dry hop window, the first gravity check and the earliest packaging day, each with a 9 am alert. The app also flags a due dry hop on the Batches screen.' : 'Once you check off "Yeast pitched" the dates fill in and you can send the reminders to your calendar.'));
   }
   async function renderBrewday() {
     const list = await batchList();
@@ -779,7 +779,7 @@
       tdisp.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
       const next = additions.find(a2 => a2.at * 60 > s);
       if (next) { const left = next.at * 60 - s; nextEl.textContent = `Next: ${next.label} in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`; if (left <= 60 && !tdisp._warned) { tdisp._warned = next.label; try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) { /* no vibration */ } } if (left > 60) tdisp._warned = null; }
-      else if (m >= boilLen) nextEl.textContent = `Boil done: flameout. Still boiling? The total is counted when you tick Flameout.`;
+      else if (m >= boilLen) nextEl.textContent = `Boil done: flameout. Still boiling? The total is counted when you check off Flameout.`;
       else nextEl.textContent = `All hops in; flameout in ${Math.floor(boilLen - m)} min`;
     }
     clearInterval(timer); timer = setInterval(tick, 1000); tick(); live();
@@ -932,7 +932,7 @@
   async function notify(title, body) {
     try { if (!('Notification' in window) || Notification.permission !== 'granted') return;
       const reg = navigator.serviceWorker && navigator.serviceWorker.getRegistration ? await navigator.serviceWorker.getRegistration() : null;
-      if (reg && reg.showNotification) await reg.showNotification(title, { body, tag: 'brewday', renotify: true, icon: 'icons/icon-192.png' }); else new Notification(title, { body, tag: 'brewday' }); } catch (e) { /* not available */ }
+      if (reg && reg.showNotification) await reg.showNotification(title, { body, tag: 'brewday', renotify: true, icon: 'icons/icon-192.png?v=2' }); else new Notification(title, { body, tag: 'brewday' }); } catch (e) { /* not available */ }
   }
   async function keepAwake() { try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) { /* denied */ } }
   const fmtMS = s => `${String(Math.floor(Math.abs(s) / 60)).padStart(2, '0')}:${String(Math.abs(s) % 60).padStart(2, '0')}`;
@@ -973,7 +973,7 @@
       view.append(tdisp, nextEl);
       if (!started) { tdisp.textContent = fmtMS(step.minutes * 60); nextEl.textContent = 'Not started';
         view.append(h('div', { class: 'btns' }, h('button', { class: 'btn block', onclick: async () => { unlockAudio(); st.timers[step.id] = Date.now(); await save(); await DB.put('entries', { batchId: b.id, type: 'step', date: today(), text: `${step.title} started ${hopTime()}`, created: Date.now() }); if ('Notification' in window && Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (e) { /* ignore */ } } renderGo(b); } }, `Start ${step.minutes >= 100 ? B.fmtDuration(step.minutes) : step.minutes + '-minute'} timer`)),
-          h('p', { class: 'muted small', style: 'text-align:center' }, 'Each addition rings, and keeps ringing until you tick it. Keep the phone\'s sound on and this app open; the screen stays awake by itself.')); }
+          h('p', { class: 'muted small', style: 'text-align:center' }, 'Each addition rings, and keeps ringing until you check it off. Keep the phone\'s sound on and this app open; the screen stays awake by itself.')); }
       for (const a of step.alarms || []) { const k = step.id + ':' + a.at;
         alarmList.append(h('div', { class: 'step' + (st.ticked[k] ? ' done' : ''), 'data-alarm': k, 'data-at': a.at }, h('span', { class: 'tm' }, `+${a.at}m`), h('span', { class: 't' }, a.label),
           h('button', { class: 'act', onclick: async () => { st.ticked[k] = !st.ticked[k]; await save(); if (st.ticked[k]) await DB.put('entries', { batchId: b.id, type: 'step', date: today(), text: `${a.label} at ${hopTime()}`, created: Date.now() }); renderGo(b); } }, st.ticked[k] ? 'Undo' : 'Done'))); }
@@ -1042,7 +1042,7 @@
         return [{ l: 'IBU', v: Math.max(0, Math.round(r.kettle - malt)), n: `plus ${malt} that any beer of this gravity reads from malt alone` },
           { l: 'Made of', v: `${p.iaa} + ${B.round.r1(p.oaa + p.oba + p.pp)}`, n: 'iso-alpha acids + auxiliary bittering compounds (oxidized hop acids, polyphenols)' },
           { l: 'Alpha acids that dissolve', v: Math.round(r.dissolved * 100) + '%', n: r.dissolved < 0.97 ? `${r.peakAA} ppm in solution; the wort holds 200 freely and never more than 580` : 'under the solubility limit: all of it', tone: r.dissolved < 0.7 ? 'bad' : '' },
-          { l: 'Utilisation', v: (r.utilization * 100).toFixed(1) + '%', n: 'alpha acid added that ends up as iso-alpha acid in the glass' },
+          { l: 'Utilization', v: (r.utilization * 100).toFixed(1) + '%', n: 'alpha acid added that ends up as iso-alpha acid in the glass' },
           { l: 'Tinseth, for comparison', v: B.ibuTinseth(hop, v.gal, v.og), n: 'the usual homebrew formula; it predicts wort, not finished beer, and has no ceiling' }]; } },
     { id: 'prime', title: 'Priming sugar', about: 'Sugar for bottle conditioning. Pick the style and the target fills itself; change it if you like it livelier or flatter.',
       fields: [{ k: 'style', l: 'Carbonate by style', type: 'select', v: '', options: () => [{ v: '', t: 'Choose a style\u2026' }].concat(D.CARBONATION.map(c => ({ v: c.name, t: `${c.name}: ${c.low} to ${c.high}` }))), set: (choice, vals) => { const c = D.CARBONATION.find(x => x.name === choice); if (c) vals.vol = c.mid; } }, { k: 'vol', l: 'Target CO2 volumes', v: 2.4 }, { k: 'gal', l: 'Beer (gal)', v: 5 }, { k: 'temp', l: 'Highest temp since fermentation (F)', v: 68 }],
@@ -1053,7 +1053,7 @@
       // the two numbers are one fact seen from both ends: whichever the brewer touches, the other is recalculated
       link: (changed, vals) => { const t = num(vals.temp) || 38; if (changed === 'psi') vals.vol = B.volumesAtPsi(t, num(vals.psi)); else vals.psi = Math.max(0, B.kegPsi(t, num(vals.vol) || 0)); },
       out: (v, raw) => [{ l: 'Set the regulator to', v: v.psi + ' psi', n: `${B.psiToBar(v.psi)} bar at ${v.temp}F; about a week to equilibrate, or 30 psi for 24 hours then down to this` }, { l: 'Which gives', v: v.vol + ' volumes' }].concat(carbLines(raw.style, v.vol, v.temp)) },
-    { id: 'yeast', title: 'Pitch rate and starter', about: 'How many cells the wort needs, how many an ageing pack still has, and whether a starter closes the gap.',  fields: [{ k: 'gal', l: 'Batch (gal)', v: 5.5 }, { k: 'og', l: 'OG', v: 1.055 }, { k: 'rate', l: 'Rate (M cells/ml/degP)', v: 0.75 }, { k: 'cells', l: 'Cells in the pack (billion)', v: 100 }, { k: 'months', l: 'Pack age (months)', v: 2 }, { k: 'starter', l: 'Starter size (L)', v: 2 }],
+    { id: 'yeast', title: 'Pitch rate and starter', about: 'How many cells the wort needs, how many an aging pack still has, and whether a starter closes the gap.',  fields: [{ k: 'gal', l: 'Batch (gal)', v: 5.5 }, { k: 'og', l: 'OG', v: 1.055 }, { k: 'rate', l: 'Rate (M cells/ml/degP)', v: 0.75 }, { k: 'cells', l: 'Cells in the pack (billion)', v: 100 }, { k: 'months', l: 'Pack age (months)', v: 2 }, { k: 'starter', l: 'Starter size (L)', v: 2 }],
       out: v => { const need = B.cellsNeeded(v.gal, v.og, v.rate); const viable = B.yeastViability(v.cells, v.months); const grown = B.starterGrowth(viable, v.starter);
         return [{ l: 'Cells needed', v: need + ' billion', n: '0.75 ale, 1.5 lager' }, { l: 'Viable in the pack', v: viable + ' billion', n: `${v.months} months old` }, { l: `After a ${v.starter} L starter`, v: grown + ' billion', n: `${B.starterDme(v.starter)} g DME`, tone: grown >= need ? 'ok' : 'bad' }, { l: 'Verdict', v: grown >= need ? 'enough' : 'short: bigger starter or another pack', tone: grown >= need ? 'ok' : 'bad' }]; } },
     { id: 'waterbuild', title: 'Water: what to add', about: 'Start from your water, pick the profile you want, and it works out how much RO to cut it with and how many grams of each salt to add.', custom: true },
@@ -1143,7 +1143,7 @@
       h('details', { class: 'plat' }, h('summary', null, 'Where to find your water numbers'), h('div', { class: 'body' }, h('ul', null, D.WATER_REPORT_HELP.map(x => h('li', { class: 'small' }, x))))),
       h('h3', null, '2. The water you want'), field('Target profile', tgtSel), h('div', { class: 'row', style: 'align-items:end' }, field('Total brewing water (gal)', galIn, cur ? `strike plus sparge for ${cur.name || 'the current batch'}` : 'strike plus sparge'), h('label', { class: 'field', style: 'display:flex;align-items:center;gap:10px;min-height:48px' }, dil, h('span', { style: 'margin:0' }, 'Allow dilution with RO or distilled'))),
       h('h3', null, '3. What to add'), out,
-      h('p', { class: 'muted small' }, 'Salts go in the strike water. Figures are for the whole volume; chalk is left out because it barely dissolves. Matching a famous city to the last ppm is not the point: get calcium above 50, set the sulfate to chloride balance for the beer, and keep the alkalinity right for its colour.'));
+      h('p', { class: 'muted small' }, 'Salts go in the strike water. Figures are for the whole volume; chalk is left out because it barely dissolves. Matching a famous city to the last ppm is not the point: get calcium above 50, set the sulfate to chloride balance for the beer, and keep the alkalinity right for its color.'));
     noteFor(); draw();
   }
 
@@ -1158,15 +1158,15 @@
       const use = sel([{ v: 'All', t: 'Any use' }, { v: 'B', t: 'Bittering' }, { v: 'A', t: 'Aroma' }, { v: 'D', t: 'Dual' }], 'All');
       const out = h('div');
       const draw = () => { out.innerHTML = ''; const t = q.value.toLowerCase();
-        const list = D.HOPS.filter(x => (!t || x.name.toLowerCase().includes(t) || x.flavour.toLowerCase().includes(t) || x.genre.toLowerCase().includes(t))
+        const list = D.HOPS.filter(x => (!t || x.name.toLowerCase().includes(t) || x.flavor.toLowerCase().includes(t) || x.genre.toLowerCase().includes(t))
           && (genre.value === 'All genres' || x.genre === genre.value) && (use.value === 'All' || x.use === use.value));
         if (!list.length) return out.append(h('div', { class: 'empty' }, 'No hop matches that.'));
         const groups = genre.value === 'All genres' ? D.HOP_GENRES : [genre.value];
         for (const g of groups) {
           const inG = list.filter(x => x.genre === g); if (!inG.length) continue;
           out.append(h('h3', null, g, h('span', { class: 'muted small' }, `  ${inG.length}`)));
-          out.append(h('div', { class: 'tablewrap' }, h('table', { class: 'ref' }, h('thead', null, h('tr', null, ['Hop', 'Alpha %', 'Use', 'Flavour', 'Substitutes'].map(x => h('th', null, x)))),
-            h('tbody', null, inG.map(x => h('tr', null, h('td', null, x.name), h('td', { class: 'mono' }, `${x.alphaLow} to ${x.alphaHigh}`), h('td', null, { B: 'Bittering', A: 'Aroma', D: 'Dual' }[x.use]), h('td', null, x.flavour), h('td', null, x.subs)))))));
+          out.append(h('div', { class: 'tablewrap' }, h('table', { class: 'ref' }, h('thead', null, h('tr', null, ['Hop', 'Alpha %', 'Use', 'Flavor', 'Substitutes'].map(x => h('th', null, x)))),
+            h('tbody', null, inG.map(x => h('tr', null, h('td', null, x.name), h('td', { class: 'mono' }, `${x.alphaLow} to ${x.alphaHigh}`), h('td', null, { B: 'Bittering', A: 'Aroma', D: 'Dual' }[x.use]), h('td', null, x.flavor), h('td', null, x.subs)))))));
         } };
       [q, genre, use].forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', draw));
       view.append(back, h('h2', null, 'Hops'), field('Search', q), h('div', { class: 'row' }, field('Genre', genre), field('Use', use)), out); draw(); return;
@@ -1181,7 +1181,7 @@
         const sized = recipeToBatch(r, RECIPE_GAL);
         const ri = recipeIbu(r), rHops = sized.hops.map(hp => Object.assign({}, hp)).concat(sized.dryHops.map(d => Object.assign({ use: 'Dry hop', minutes: 0, dryDays: d.days }, d)));
         const ro = h('div', { class: 'readout' });
-        [['OG / FG', `${r.og.toFixed(3)} / ${r.fg.toFixed(3)}`, `style ${r.ranges.og[0].toFixed(3)} to ${r.ranges.og[1].toFixed(3)}`], [`IBU (${ri.label})`, String(ri.v), `style ${r.ranges.ibu[0]} to ${r.ranges.ibu[1]} \u00B7 ${ri.other}${r.ibuDry ? '; dry hops read +' + r.ibuDry + ' on a lab test' : ''}`], ['Colour', `${r.srm} SRM`, `style ${r.ranges.srm[0]} to ${r.ranges.srm[1]}`], ['ABV', `${r.abv}%`, `style ${r.ranges.abv[0]} to ${r.ranges.abv[1]}`]]
+        [['OG / FG', `${r.og.toFixed(3)} / ${r.fg.toFixed(3)}`, `style ${r.ranges.og[0].toFixed(3)} to ${r.ranges.og[1].toFixed(3)}`], [`IBU (${ri.label})`, String(ri.v), `style ${r.ranges.ibu[0]} to ${r.ranges.ibu[1]} \u00B7 ${ri.other}${r.ibuDry ? '; dry hops read +' + r.ibuDry + ' on a lab test' : ''}`], ['Color', `${r.srm} SRM`, `style ${r.ranges.srm[0]} to ${r.ranges.srm[1]}`], ['ABV', `${r.abv}%`, `style ${r.ranges.abv[0]} to ${r.ranges.abv[1]}`]]
           .forEach(([l, v, n]) => ro.append(h('div', { class: 'line' }, h('span', { class: 'l' }, l, h('span', { class: 'n' }, n)), h('span', { class: 'v' }, v))));
         view.append(ro);
         view.append(h('h3', null, 'Fermentables'), h('div', { class: 'tablewrap' }, h('table', { class: 'ref' }, h('tbody', null, sized.fermentables.map(f => h('tr', null, h('td', { class: 'mono', style: 'width:22%' }, `${f.lb} lb`), h('td', null, f.name), h('td', { class: 'mono' }, `${f.pct}%`)))))));
@@ -1336,8 +1336,8 @@
       return;
     }
     if (sub === 'off') {
-      view.append(back, h('h2', null, 'Off-flavours'));
-      for (const o of D.OFF_FLAVOURS) view.append(h('details', { class: 'plat' }, h('summary', null, o.taste), h('div', { class: 'body' },
+      view.append(back, h('h2', null, 'Off-flavors'));
+      for (const o of D.OFF_FLAVORS) view.append(h('details', { class: 'plat' }, h('summary', null, o.taste), h('div', { class: 'body' },
         h('p', null, h('b', null, o.cause), '. ', o.why), h('p', null, h('b', null, 'Fix: '), o.fix))));
       return;
     }
@@ -1348,12 +1348,12 @@
     }
     add(h('h2', null, 'Reference'), h('ul', { class: 'list' }, [
       ['styles', 'Styles and recipes', `${RC.RECIPES.filter(r => r.group !== 'Historic').length} styles by region, each with its ranges and a sized 5-gallon recipe`],
-      ['hops', 'Hops', `${D.HOPS.length} varieties grouped by genre, with alpha, flavour and substitutes`],
+      ['hops', 'Hops', `${D.HOPS.length} varieties grouped by genre, with alpha, flavor and substitutes`],
       ['hopforms', 'Hop forms', 'Pellet, leaf, cryo, extract, wet and the rest: what they are and how to dose them'],
-      ['fermentables', 'Fermentables', `${D.FERMENTABLES.length} malts, adjuncts, sugars and extracts with PPG and colour`],
+      ['fermentables', 'Fermentables', `${D.FERMENTABLES.length} malts, adjuncts, sugars and extracts with PPG and color`],
       ['yeast', 'Yeast', `${D.YEAST.length} strains: attenuation, pitch and ferment range, flocculation`],
       ['water', 'Water profiles', 'Target profiles, how to find your starting water, and the calculator that says what to add'],
-      ['off', 'Off-flavours', 'What it tastes like, what causes it, how to fix it'],
+      ['off', 'Off-flavors', 'What it tastes like, what causes it, how to fix it'],
       ['world', 'Beers of the world: origins', `${D.WORLD.length} old beers: what they were, what became of them, and the modern beer each one turned into`],
       ['process', 'Process notes', 'Brew day, fermentation, packaging, cleaning']
     ].map(([id, t, s]) => h('li', null, h('button', { onclick: () => go('ref', id) }, h('span', { class: 't' }, h('b', null, t), h('span', null, s)), h('span', { class: 'k' }, '\u203A'))))));
@@ -1431,7 +1431,7 @@
       if (cps) cartBox.append(h('p', { class: 'statline', style: 'text-align:center' }, h('b', null, `About ${B.money(cps.perPint)} a pint`), `, ${B.money(cps.perBottle)} a bottle: ${cps.pints} pints from this batch at ${vname}'s prices.`));
       if (hasGrain) cartBox.append(millPick);
       if (avail.length) { const xd = h('details', { class: 'plat' }, h('summary', null, `Brew day extras${ticked.length ? `: ${ticked.length} added` : ''}`), h('div', { class: 'body' },
-        h('p', { class: 'muted small' }, 'Nothing here is added unless you tick it. Most of these last many batches, so tick only what you are out of.'),
+        h('p', { class: 'muted small' }, 'Nothing here is added unless you check it. Most of these last many batches, so check only what you are out of.'),
         avail.map(e => { const box = h('input', { type: 'checkbox', style: 'width:24px;height:24px;min-height:24px;flex:none;padding:0;margin-top:2px' }); box.checked = ticked.includes(e.name);
           box.addEventListener('change', async () => { ticked = box.checked ? ticked.concat([e.name]) : ticked.filter(n => n !== e.name); await S.set(extrasKey, ticked); drawCart(); });
           return h('label', { style: 'display:flex;gap:12px;align-items:flex-start;padding:8px 0;cursor:pointer' }, box, h('span', null, h('b', null, e.name), e.inRecipe ? h('span', { class: 'badge', style: 'margin-left:8px' }, 'in this recipe\'s water') : null, h('span', { class: 'muted small', style: 'display:block' }, e.note))); })));
@@ -1445,7 +1445,7 @@
     vendorSel.addEventListener('change', drawCart); drawCart();
     const draw = () => { listEl.innerHTML = '';
       const left = shopping.filter(l => !cart[l.term]);
-      listEl.append(h('p', { class: 'muted small' }, left.length ? `${shopping.length - left.length} of ${shopping.length} in the basket. "Find" opens the shop on that item; tick it once it is in your basket there.` : 'Everything is ticked. Check out at the shop.'));
+      listEl.append(h('p', { class: 'muted small' }, left.length ? `${shopping.length - left.length} of ${shopping.length} in the cart. "Find" opens the shop on that item; check it off once it is in your cart there.` : 'Everything is in the cart. Check out at the shop.'));
       if (left.length) listEl.append(h('div', { class: 'btns' }, h('a', { class: 'btn', href: SH.searchUrl(vendorSel.value, left[0].term, tags), target: '_blank', rel: 'noopener' }, `Find next: ${left[0].item}`)));
       const kit = SH.kitTerm(b); if (kit) listEl.append(h('div', { class: 'rec' }, h('div', { class: 't' }, h('b', null, 'Or buy it as one kit'), h('div', { class: 'meta' }, `Most shops sell ${/^[aeiou]/i.test(kit) ? 'an' : 'a'} ${kit}: one product instead of ${shopping.length} lines, though not this exact recipe`)), h('a', { class: 'act', href: SH.searchUrl(vendorSel.value, kit, tags), target: '_blank', rel: 'noopener' }, 'Look')));
       const groups = [...new Set(shopping.map(l => l.group))];
@@ -1453,7 +1453,7 @@
         listEl.append(h('h3', null, g));
         for (const line of shopping.filter(l => l.group === g)) {
           const url = SH.searchUrl(vendorSel.value, line.term, tags);
-          const tick = h('input', { type: 'checkbox', 'aria-label': 'In the basket: ' + line.item, style: 'width:24px;height:24px;margin-top:2px;flex:none' }); tick.checked = !!cart[line.term];
+          const tick = h('input', { type: 'checkbox', 'aria-label': 'In the cart: ' + line.item, style: 'width:24px;height:24px;margin-top:2px;flex:none' }); tick.checked = !!cart[line.term];
           tick.addEventListener('change', async () => { if (tick.checked) cart[line.term] = true; else delete cart[line.term]; await S.set('cart:' + b.id, cart); draw(); });
           listEl.append(h('div', { class: 'rec', style: cart[line.term] ? 'opacity:.55' : '' }, tick, h('div', { class: 't' }, h('b', null, `${line.qty ? line.qty + '  ' : ''}${line.item}`), line.buy ? h('div', { class: 'meta' }, line.buy) : null),
             h('a', { class: 'act', href: url, target: '_blank', rel: 'noopener' }, 'Find')));
@@ -1462,7 +1462,7 @@
     vendorSel.addEventListener('change', draw); draw();
     view.append(listEl, h('div', { class: 'btns' },
       h('button', { class: 'btn', onclick: async () => { const text = SH.listAsText(shopping); try { await navigator.clipboard.writeText(text); toast('List copied'); } catch (e) { toast('Copy failed'); } } }, 'Copy the list'),
-      h('button', { class: 'btn secondary', onclick: async () => { const text = SH.listAsText(shopping); if (navigator.share) { try { await navigator.share({ title: (b.name || 'Brew') + ' shopping list', text }); } catch (e) { /* cancelled */ } } else toast('Sharing is not available here'); } }, 'Share')));
+      h('button', { class: 'btn secondary', onclick: async () => { const text = SH.listAsText(shopping); if (navigator.share) { try { await navigator.share({ title: (b.name || 'Brew') + ' shopping list', text }); } catch (e) { /* canceled */ } } else toast('Sharing is not available here'); } }, 'Share')));
     view.append(h('p', { class: 'muted small' }, 'One-tap carts work at shops whose systems accept a filled cart from a link, and only once the catalog for that shop has been built. Everywhere else each item opens as a search and you add it there. Quantities are rounded up to what shops sell.'));
     if (SH.hasAnyTag(tags)) view.append(h('p', { class: 'muted small' }, SH.DISCLOSURE));
     view.append(bookCard());
@@ -1479,7 +1479,7 @@
     view.append(h('p', { class: 'muted small', style: 'margin:0 0 6px' }, 'A recipe someone sent you'),
       h('div', { class: 'hero', style: 'align-items:center;margin-bottom:6px' }, glass(est.srm || 4, 34), h('div', null, h('h2', { style: 'margin:0' }, b.name), h('p', { class: 'muted', style: 'margin:2px 0 0' }, [b.style && b.style !== b.name ? b.style : null, `${b.batchGal} gal`, `${b.boilMin} min boil`, `mash ${b.mashF}F`].filter(Boolean).join(' \u00B7 ')))));
     const ro = h('div', { class: 'readout' });
-    [['OG / FG', est.og > 1 ? `${est.og.toFixed(3)} / ${fgEst ? fgEst.toFixed(3) : '-'}` : '-', `at the ${b.efficiency}% mash efficiency it was written for`], [`IBU (${bi.label})`, String(bi.v || '-'), bi.other + (est.ibuDry ? `; dry hops read +${est.ibuDry} on a lab test` : '')], ['Colour', `${est.srm || '-'} SRM`, ''], ['ABV', est.og > 1 && fgEst ? B.abv(est.og, fgEst) + '%' : '-', y ? `${y.name.split('/')[0].trim()} attenuates ${y.attLow} to ${y.attHigh}%` : 'assuming 75% attenuation']]
+    [['OG / FG', est.og > 1 ? `${est.og.toFixed(3)} / ${fgEst ? fgEst.toFixed(3) : '-'}` : '-', `at the ${b.efficiency}% mash efficiency it was written for`], [`IBU (${bi.label})`, String(bi.v || '-'), bi.other + (est.ibuDry ? `; dry hops read +${est.ibuDry} on a lab test` : '')], ['Color', `${est.srm || '-'} SRM`, ''], ['ABV', est.og > 1 && fgEst ? B.abv(est.og, fgEst) + '%' : '-', y ? `${y.name.split('/')[0].trim()} attenuates ${y.attLow} to ${y.attHigh}%` : 'assuming 75% attenuation']]
       .forEach(([l, v, n]) => ro.append(h('div', { class: 'line' }, h('span', { class: 'l' }, l, n ? h('span', { class: 'n' }, n) : null), h('span', { class: 'v' }, v))));
     view.append(ro);
     const tbl = rows => h('div', { class: 'tablewrap' }, h('table', { class: 'ref', style: 'min-width:0' }, h('tbody', null, rows.map(r => h('tr', null, h('td', { class: 'mono', style: 'width:24%' }, r[0]), h('td', null, r[1]), h('td', { class: 'mono' }, r[2] || ''))))));
@@ -1489,7 +1489,7 @@
       b.salts.length ? h('p', null, h('b', null, 'Water: '), b.salts.map(x => `${x.grams} g ${x.salt.replace(/\s*\(.*\)/, '')}`).join(', ')) : null, b.notes ? h('p', { style: 'white-space:pre-wrap' }, b.notes) : null,
       h('div', { class: 'btns' }, h('button', { class: 'btn', onclick: async () => { if (!(await needReg('save'))) return; const nb = Object.assign(BLANK(), JSON.parse(JSON.stringify(b)), { brewDate: today() }); const id = await DB.put('batches', nb); state.batchId = id; await S.set('lastBatch', id); keepStorage(); state.shared = null; state.sharedCode = ''; toast('Saved to your batches'); go('batches', 'view:' + id, { replace: true }); } }, 'Save to my batches'),
         h('button', { class: 'btn secondary', onclick: () => go('shop', 'shared') }, 'Shop for it')),
-      h('p', { class: 'muted small' }, 'The whole recipe travelled inside the link, so nothing was uploaded and nothing is stored anywhere but your phone. Save it and you can scale it to your own system, change anything, and run it through a guided brew day.'));
+      h('p', { class: 'muted small' }, 'The whole recipe traveled inside the link, so nothing was uploaded and nothing is stored anywhere but your phone. Save it and you can scale it to your own system, change anything, and run it through a guided brew day.'));
   }
 
   // ---------- bring a recipe in: paste it, photograph it, or import a file ----------
@@ -1584,7 +1584,7 @@
         sendSignup(reg).then(async ok => { if (ok) { reg.sent = true; await S.set('reg', reg); } });   // not waited for: the app is theirs whether or not the signal is good
       };
       const close = sheet(shut => [
-        h('div', { class: 'hero', style: 'align-items:center;margin-bottom:10px' }, glass(8, 40), h('h2', { style: 'margin:0' }, title)),
+        h('div', { class: 'hero', style: 'align-items:center;margin-bottom:10px' }, h('img', { src: 'icons/icon-192.png?v=2', width: 52, height: 52, alt: '', style: 'border-radius:12px;flex:none' }), h('h2', { style: 'margin:0' }, title)),
         h('p', null, why),
         h('form', { onsubmit: ev => { ev.preventDefault(); submit(); } }, field('First name', name), field('Email', email), REG.askSystem ? field('What do you brew on? (optional)', system, 'Pick one and the water volumes and boil-off are set up for that kind of system.') : null, err,
           h('button', { class: 'btn block', type: 'submit', style: 'min-height:54px;font-size:17px' }, 'Register and continue')),
@@ -1695,7 +1695,7 @@
       h('h3', null, 'About'),
       h('p', { class: 'muted small' }, `Brew Log ${APP_VERSION}. Free to use.`), h('p', { class: 'muted small' }, B.SMPH_CREDIT),
       h('div', { class: 'btns' },
-        h('button', { class: 'btn secondary', onclick: async () => { const text = 'Brew Log: a free homebrew log with recipes, a guided brew day and one-tap ingredient carts.'; if (navigator.share) { try { await navigator.share({ title: 'Brew Log', text, url: APP_URL }); } catch (e) { /* cancelled */ } } else { try { await navigator.clipboard.writeText(APP_URL); toast('Link copied'); } catch (e) { toast(APP_URL); } } } }, 'Tell another brewer'),
+        h('button', { class: 'btn secondary', onclick: async () => { const text = 'Brew Log: a free homebrew log with recipes, a guided brew day and one-tap ingredient carts.'; if (navigator.share) { try { await navigator.share({ title: 'Brew Log', text, url: APP_URL }); } catch (e) { /* canceled */ } } else { try { await navigator.clipboard.writeText(APP_URL); toast('Link copied'); } catch (e) { toast(APP_URL); } } } }, 'Tell another brewer'),
         REG.contact ? h('a', { class: 'btn secondary', href: /^https?:/i.test(REG.contact) ? REG.contact : 'mailto:' + REG.contact + '?subject=' + encodeURIComponent('Brew Log ' + APP_VERSION), target: '_blank', rel: 'noopener' }, 'Report a problem or ask for something') : null,
         h('button', { class: 'btn secondary', onclick: async () => { toast('Fetching the latest files'); try { const keys = await caches.keys(); for (const k of keys) if (k.startsWith('blog-')) await caches.delete(k); if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); } } catch (e) { /* ignore */ } location.replace(location.pathname + '?r=' + Date.now()); } }, 'Check for updates and reload')),
       bookCard());

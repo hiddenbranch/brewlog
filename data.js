@@ -67,10 +67,10 @@
     ['Galena', 12, 14, 'B', 'Clean, black currant; a workhorse', 'Nugget, Cluster', 'Clean bittering'],
     ['Herkules', 12, 17, 'B', 'Robust German high-alpha; spicy, a little melon', 'Magnum, Warrior', 'Clean bittering'],
     ['First Gold', 6.5, 8.5, 'D', 'Orange marmalade, spice; a dwarf Golding', 'East Kent Golding', 'Earthy and floral']
-  ].map(h => ({ name: h[0], alphaLow: h[1], alphaHigh: h[2], use: h[3], flavour: h[4], subs: h[5], genre: h[6] }));
+  ].map(h => ({ name: h[0], alphaLow: h[1], alphaHigh: h[2], use: h[3], flavor: h[4], subs: h[5], genre: h[6] }));
   D.HOP_GENRES = [...new Set(D.HOPS.map(h => h.genre))].sort();
 
-  // ppg: points per pound per gallon at 100% efficiency. lovibond: colour. extract: not mashed
+  // ppg: points per pound per gallon at 100% efficiency. lovibond: color. extract: not mashed
   D.FERMENTABLES = [
     ['2-row pale malt', 37, 1.8, 'Base', false, 'Clean American base, up to 100%'],
     ['Maris Otter', 38, 3.0, 'Base', false, 'British base, bready and rich'],
@@ -84,12 +84,12 @@
     ['Flaked corn (maize)', 37, 0.5, 'Adjunct', false, 'Lightens body, classic American lager'],
     ['Flaked rice', 38, 0.5, 'Adjunct', false, 'Very neutral, dries the beer'],
     ['Crystal / Caramel 20L', 35, 20, 'Crystal', false, 'Light sweetness and body'],
-    ['Crystal / Caramel 40L', 34, 40, 'Crystal', false, 'Caramel, amber colour'],
+    ['Crystal / Caramel 40L', 34, 40, 'Crystal', false, 'Caramel, amber color'],
     ['Crystal / Caramel 60L', 34, 60, 'Crystal', false, 'Classic caramel note'],
     ['Crystal / Caramel 80L', 34, 80, 'Crystal', false, 'Raisin, deep caramel'],
     ['Crystal / Caramel 120L', 33, 120, 'Crystal', false, 'Dark fruit, can taste burnt above 10%'],
     ['CaraMunich', 34, 60, 'Crystal', false, 'German crystal, clean malty'],
-    ['CaraPils / Carafoam', 33, 1.8, 'Crystal', false, 'Body and head without colour'],
+    ['CaraPils / Carafoam', 33, 1.8, 'Crystal', false, 'Body and head without color'],
     ['Special B', 30, 180, 'Crystal', false, 'Raisin and plum, Belgian dark beers'],
     ['Biscuit malt', 35, 25, 'Roast', false, 'Toasted bread crust'],
     ['Victory malt', 34, 28, 'Roast', false, 'Nutty, toasty'],
@@ -98,8 +98,8 @@
     ['Chocolate malt', 28, 350, 'Roast', false, 'Cocoa, smooth roast'],
     ['Pale chocolate', 30, 200, 'Roast', false, 'Milder cocoa'],
     ['Roasted barley', 25, 300, 'Roast', false, 'Sharp coffee, dry stout; unmalted'],
-    ['Black patent', 25, 500, 'Roast', false, 'Acrid roast, colour; use sparingly'],
-    ['Carafa Special II', 30, 425, 'Roast', false, 'Dehusked: colour and roast without harshness'],
+    ['Black patent', 25, 500, 'Roast', false, 'Acrid roast, color; use sparingly'],
+    ['Carafa Special II', 30, 425, 'Roast', false, 'Dehusked: color and roast without harshness'],
     ['Acidulated malt', 27, 3, 'Special', false, 'Lowers mash pH about 0.1 per 1%'],
     ['Smoked / Rauch malt', 37, 3, 'Special', false, 'Beechwood smoke'],
     ['Peated malt', 34, 3, 'Special', false, 'Very strong; 1 to 2% is plenty'],
@@ -115,7 +115,7 @@
     ['Belgian candi syrup D-180', 32, 180, 'Sugar', true, 'Dark fruit, raisin, no body'],
     ['Honey', 35, 2, 'Sugar', true, 'Ferments dry; add after the boil'],
     ['Lactose', 35, 1, 'Sugar', true, 'Unfermentable: sweetness and body'],
-    ['Maple syrup', 30, 35, 'Sugar', true, 'Mostly ferments out; flavour is subtle'],
+    ['Maple syrup', 30, 35, 'Sugar', true, 'Mostly ferments out; flavor is subtle'],
     ['Agave nectar', 35, 3, 'Sugar', true, 'About three quarters sugar by weight, mostly fructose; ferments out almost completely. Handy for lifting a gravity that came in low'],
     ['Aromatic malt', 36, 20, 'Special', false, 'Intense malt aroma; 5 to 10% in Belgian and amber beers'],
     ['Torrified wheat', 36, 2, 'Adjunct', false, 'Puffed wheat: head retention in British ales'],
@@ -130,7 +130,7 @@
     ['Golden Promise', 37, 2.5, 'Base', false, 'Scottish base: sweet, clean, a little fuller than 2-row'],
     ['Pale ale malt', 37, 3.5, 'Base', false, 'Kilned a shade darker than 2-row: more malt in the glass'],
     ['Crystal / Caramel 10L', 35, 10, 'Crystal', false, 'The palest crystal: body and a little honey'],
-    ['Midnight wheat', 33, 550, 'Roast', false, 'Black colour with almost no roast bite; black IPA'],
+    ['Midnight wheat', 33, 550, 'Roast', false, 'Black color with almost no roast bite; black IPA'],
     ['Flaked rye', 36, 3, 'Adjunct', false, 'Spice and a slick body; add rice hulls'],
     ['Extra light DME', 44, 2.5, 'Extract', true, 'The palest dry extract: pilsners and anything pale'],
     ['Amber DME', 44, 10, 'Extract', true, 'Dry extract with crystal malt already in it'],
@@ -153,7 +153,7 @@
     ['Verdant IPA', 'Ale', 75, 82, 64, 72, 'Medium', 'Peach and stone fruit, hazy styles'],
     ['WLP029 German Ale / Kölsch', 'Ale', 72, 78, 65, 69, 'Medium', 'Clean, slight wine note, cold conditions well'],
     ['Wyeast 1007 German Ale', 'Ale', 73, 77, 55, 68, 'Low', 'Very dry and crisp, needs time to clear'],
-    ['WLP300 Hefeweizen', 'Ale', 72, 76, 68, 72, 'Low', 'Banana and clove; warmer favours banana'],
+    ['WLP300 Hefeweizen', 'Ale', 72, 76, 68, 72, 'Low', 'Banana and clove; warmer favors banana'],
     ['Wyeast 3068 Weihenstephan', 'Ale', 73, 77, 64, 75, 'Low', 'The classic hefeweizen strain'],
     ['WLP530 Abbey Ale', 'Ale', 75, 80, 66, 72, 'Medium', 'Belgian: spicy, fruity, likes to warm up'],
     ['Wyeast 3787 Trappist High Gravity', 'Ale', 74, 78, 64, 78, 'Medium', 'Dubbel and quad; tolerant of high gravity'],
@@ -173,7 +173,7 @@
     ['LalBrew Windsor', 'Ale', 68, 72, 59, 72, 'Low', 'Low attenuation on purpose: sweet, full English ales.'],
     ['LalBrew BRY-97', 'Ale', 77, 81, 59, 72, 'High', 'West Coast workhorse; slow to start, drops very clear.'],
     ['LalBrew Munich Classic', 'Ale', 70, 76, 62, 77, 'Low', 'Wheat beer dry yeast: banana and clove.'],
-    ['Omega Cosmic Punch', 'Ale', 73, 80, 68, 78, 'Medium', 'Thiolised: releases tropical thiols from the malt and hops. Pairs with Phantasm or thiol-rich hops.'],
+    ['Omega Cosmic Punch', 'Ale', 73, 80, 68, 78, 'Medium', 'Thiolized: releases tropical thiols from the malt and hops. Pairs with Phantasm or thiol-rich hops.'],
     ['Lallemand Philly Sour', 'Sour', 75, 82, 68, 77, 'Medium', 'Lachancea: produces lactic acid and alcohol in one pitch. No kettle souring needed.'],
     ['WildBrew Sour Pitch', 'Sour', 0, 0, 86, 104, 'n/a', 'Lactobacillus for kettle souring before the boil; not a fermenting yeast.'],
     ['Mangrove Jack M44 US West Coast', 'Ale', 73, 77, 64, 72, 'Medium', 'Clean, hop-forward American ale dry yeast.'],
@@ -260,10 +260,10 @@
   D.KVEIK_NOTES = [
     'Pitch hot. Most kveik is happiest between 85 and 98F and finishes a normal-gravity beer in two to four days.',
     'Underpitching is normal: kveik tolerates rates a tenth of a standard ale pitch, though a healthy pitch still ferments faster and cleaner.',
-    'Temperature steers the flavour. The same culture is close to neutral at 70F and full of fruit at 95F.',
+    'Temperature steers the flavor. The same culture is close to neutral at 70F and full of fruit at 95F.',
     'Harvest it. Kveik is traditionally dried on a ring or a log and stored for months; slurry keeps in the fridge and rouses back easily.',
     'It tolerates high gravity and low oxygen better than most ale yeast, which is why it suits big beers brewed in a hurry.',
-    'Kveik is a culture, not a single strain. Two packs labelled Voss from different suppliers can behave differently.',
+    'Kveik is a culture, not a single strain. Two packs labeled Voss from different suppliers can behave differently.',
     'Beyond the five listed there are a dozen other named farmhouse cultures (Ebbegarden, Stranda, Opshaug, Framgarden, Skare, Gjernes, Laerdal among them), mostly through Escarpment Labs and the kveik ring; treat them like Voss until you know them.'
   ];
   D.WATER_PROFILES = [
@@ -296,11 +296,11 @@
     ['Adambier', 'Historic', 'Dortmund', 1600, 9.0, 13.0, 30, 50, 'Strong dark sour ale, aged in wood, often with brettanomyces. Almost extinct; a handful of German and American brewers make it.', 'Munich and dark malts, aged hops, brett'],
     ['Kottbusser', 'Historic', 'Germany', 1800, 4.5, 5.5, 18, 25, 'Wheat and oat beer sweetened with honey and molasses, brewed in defiance of the purity law.', 'Wheat, oats, honey, molasses'],
     ['Mumme', 'Historic', 'Brunswick', 1500, 3.0, 12.0, 10, 25, 'Extremely thick, barely fermented malt beer exported by sea because it kept. Ranged from a low-alcohol syrup to a strong ale.', 'Very high malt bill, low attenuation'],
-    ['Berliner weisse (historic)', 'Historic', 'Berlin', 1700, 2.8, 3.8, 3, 8, 'Once called the champagne of the north, served in litre bowls with raspberry or woodruff syrup. Mixed fermentation with brett in the traditional version.', 'Wheat, lacto, brett'],
+    ['Berliner weisse (historic)', 'Historic', 'Berlin', 1700, 2.8, 3.8, 3, 8, 'Once called the champagne of the north, served in liter bowls with raspberry or woodruff syrup. Mixed fermentation with brett in the traditional version.', 'Wheat, lacto, brett'],
     ['Gose (historic)', 'Historic', 'Goslar and Leipzig', 1300, 4.0, 5.0, 5, 12, 'Salty, coriander-spiced sour wheat beer from a naturally saline river. Revived twice, once in the 1980s and again by American brewers.', 'Wheat, salt, coriander, lacto'],
     ['Kentucky common', 'Historic', 'Louisville', 1850, 4.0, 5.5, 15, 25, 'Dark, quick-turnaround beer sold within days of brewing, soured slightly by the local mash practice. Died with prohibition.', 'Corn, caramel and black malt, light sour'],
-    ['Steinbier', 'Traditional', 'Bavaria', 1500, 5.0, 6.5, 20, 30, 'Wort heated by dropping fire-heated rocks into it, caramelising sugar on the stones. Brewed where wooden vessels could not take direct fire.', 'Munich malt, heated granite'],
-    ['Porter (18th century)', 'Historic', 'London', 1720, 6.0, 7.5, 40, 60, 'The first industrial beer: brown malt, aged in vats for months, blended young and old. Far stronger and more sour than modern porter.', 'Brown malt, aged hops, vat ageing'],
+    ['Steinbier', 'Traditional', 'Bavaria', 1500, 5.0, 6.5, 20, 30, 'Wort heated by dropping fire-heated rocks into it, caramelizing sugar on the stones. Brewed where wooden vessels could not take direct fire.', 'Munich malt, heated granite'],
+    ['Porter (18th century)', 'Historic', 'London', 1720, 6.0, 7.5, 40, 60, 'The first industrial beer: brown malt, aged in vats for months, blended young and old. Far stronger and more sour than modern porter.', 'Brown malt, aged hops, vat aging'],
     ['India pale ale (19th century)', 'Historic', 'Burton', 1820, 6.0, 7.5, 60, 100, 'Heavily hopped pale ale shipped to India. Burton sulfate water, brett character from the cask, and much drier than the original story suggests.', 'Pale malt, huge hop rates, Burton water'],
     ['Bière de garde', 'Traditional', 'Northern France', 1800, 6.0, 8.5, 18, 28, 'Farmhouse beer brewed in winter to keep through summer. Malty, lightly fruity, often corked.', 'Pilsner and Munich malt, French ale yeast'],
     ['Saison (traditional)', 'Traditional', 'Wallonia', 1800, 3.5, 5.0, 20, 35, 'Originally a low-strength summer ration for farm workers, far weaker than the 6.5% version sold today.', 'Pilsner malt, wheat, saison yeast'],
@@ -309,16 +309,16 @@
     ['Sorghum beer (umqombothi)', 'Traditional', 'Southern Africa', 1000, 2.0, 4.0, 0, 5, 'Sour, cloudy, still fermenting when drunk, made from sorghum and maize. Brewed at home for ceremonies.', 'Sorghum malt, maize, lacto'],
     ['Tella', 'Traditional', 'Ethiopia', 1000, 2.0, 6.0, 5, 15, 'Home-brewed beer using gesho leaves as the bittering herb instead of hops.', 'Barley, gesho, teff'],
     ['Chang', 'Traditional', 'Tibet and Nepal', 1000, 3.0, 6.0, 0, 5, 'Barley or millet beer served warm, sometimes drunk through a bamboo straw from the fermenting vessel.', 'Barley or millet, rice-culture starter'],
-    ['Huangjiu-adjacent rice beer', 'Traditional', 'China', -2000, 8.0, 18.0, 0, 5, 'Grain wine using mould-based amylase (qu) rather than malt to convert starch. Older than any European beer tradition.', 'Rice, millet, qu starter'],
+    ['Huangjiu-adjacent rice beer', 'Traditional', 'China', -2000, 8.0, 18.0, 0, 5, 'Grain wine using mold-based amylase (qu) rather than malt to convert starch. Older than any European beer tradition.', 'Rice, millet, qu starter'],
     ['Kulmbacher eisbock', 'Historic', 'Franconia', 1890, 9.0, 14.0, 25, 35, 'Doppelbock partly frozen and the ice removed, concentrating what is left. Said to have started as an accident in a Kulmbach yard.', 'Munich malt, freeze concentration'],
     ['Baltic porter', 'Historic', 'Baltic coast', 1800, 8.0, 10.0, 20, 40, 'Porter reinterpreted with lager yeast for the Russian and Baltic trade. Smooth, dark, deceptively strong.', 'Munich, chocolate malt, lager yeast'],
-    ['Scotch ale / wee heavy', 'Traditional', 'Scotland', 1800, 6.5, 10.0, 17, 35, 'Strong malty ale from a long boil that caramelises the wort. The peat-smoke notion is a modern invention.', 'Maris Otter, long boil, minimal hops'],
+    ['Scotch ale / wee heavy', 'Traditional', 'Scotland', 1800, 6.5, 10.0, 17, 35, 'Strong malty ale from a long boil that caramelizes the wort. The peat-smoke notion is a modern invention.', 'Maris Otter, long boil, minimal hops'],
     ['Dampfbier', 'Traditional', 'Bavaria', 1800, 4.5, 5.5, 20, 25, 'Barley beer fermented warm with hefeweizen yeast: banana and clove without wheat.', 'Barley malt, weizen yeast'],
     ['Roggenbier', 'Traditional', 'Bavaria', 1500, 4.5, 6.0, 10, 20, 'Rye beer, spicy and full, made when rye was cheaper than barley until it was banned to protect the bread supply.', 'Rye malt, weizen yeast'],
-    ['Sake-adjacent kuchikami', 'Ancient', 'Japan', -300, 3.0, 8.0, 0, 5, 'Chewed-rice brewing, the Japanese parallel to chicha, later replaced by koji mould.', 'Rice, saliva or koji'],
+    ['Sake-adjacent kuchikami', 'Ancient', 'Japan', -300, 3.0, 8.0, 0, 5, 'Chewed-rice brewing, the Japanese parallel to chicha, later replaced by koji mold.', 'Rice, saliva or koji'],
     ['Braggot', 'Medieval', 'Wales and England', 1200, 6.0, 12.0, 10, 30, 'Half beer, half mead: malt and honey fermented together. Old enough to appear in Chaucer.', 'Pale malt, honey, gruit or hops'],
     ['Small beer', 'Historic', 'England and colonies', 1600, 0.5, 2.5, 5, 15, 'The second or third runnings from a strong beer mash, drunk all day by everyone including children, because it was safer than water.', 'Second runnings, minimal hops'],
-    ['Stein-age farmhouse ale (maltol)', 'Traditional', 'Norway', 1600, 6.0, 9.0, 5, 20, 'Juniper infusion, kveik, no boil in some traditions: the wort was steeped rather than boiled, giving a distinct flavour.', 'Juniper, kveik, raw or short boil']
+    ['Stein-age farmhouse ale (maltol)', 'Traditional', 'Norway', 1600, 6.0, 9.0, 5, 20, 'Juniper infusion, kveik, no boil in some traditions: the wort was steeped rather than boiled, giving a distinct flavor.', 'Juniper, kveik, raw or short boil']
   ].map(w => ({ name: w[0], era: w[1], region: w[2], year: w[3], abvLow: w[4], abvHigh: w[5], ibuLow: w[6], ibuHigh: w[7], note: w[8], key: w[9] }));
   D.WORLD_ERAS = [...new Set(D.WORLD.map(w => w.era))];
   /* What became of each beer. fate: 'Still brewed' (never stopped), 'Revived' (died out, brought back), 'Evolved' (the name or the
@@ -332,11 +332,11 @@
     'Chicha de jora': ['Still brewed', 'Chicha de jora itself, now made from malted maize rather than chewed', null, 'Sold in chicherias across Peru, Bolivia and Ecuador, marked by a red flag or a bunch of flowers on a pole. Malted maize (jora) has replaced chewing almost everywhere.'],
     'English monastic ale': ['Evolved', 'Trappist and abbey ales', 'Belgian dubbel', 'English monastic brewing ended with the dissolution in the 1530s. The tradition of monks brewing to support the house carried on in the Low Countries, and returned to England in 2018 when Mount St Bernard Abbey released Tynt Meadow. Modern abbey styles date from the 1800s and 1900s, not the middle ages.'],
     'St Gall abbey beer': ['Evolved', 'The graded abbey range: table beer, dubbel, tripel', 'Belgian tripel', 'Three breweries for three ranks of drinker is the same idea as a Trappist brewery keeping a light beer for the brothers and stronger ones for sale. The beers themselves are gone; the structure is not.'],
-    'Gruit ale': ['Revived', 'Modern gruit and herb ales; heather ale', null, 'Hops won between 1400 and 1600 and gruit vanished. Craft brewers brought it back, and 1 February is kept as International Gruit Day. Fraoch heather ale from Scotland and Jopen Koyt from Haarlem are long-running examples.'],
-    'Sahti': ['Still brewed', 'Sahti itself', null, 'Never stopped being made on Finnish farms and holds protected traditional-speciality status in the EU. A few commercial sahtis are sold in Finland, Lammin Sahti being the best known. It does not travel: it is unboiled, barely carbonated and short-lived.'],
+    'Gruit ale': ['Revived', 'Modern gruit and herb ales; heather ale', null, 'Hops won between 1400 and 1600 and gruit vanished. Craft brewers brought it back, and February 1 is kept as International Gruit Day. Fraoch heather ale from Scotland and Jopen Koyt from Haarlem are long-running examples.'],
+    'Sahti': ['Still brewed', 'Sahti itself', null, 'Never stopped being made on Finnish farms and holds protected traditional-specialty status in the EU. A few commercial sahtis are sold in Finland, Lammin Sahti being the best known. It does not travel: it is unboiled, barely carbonated and short-lived.'],
     'Gotlandsdricke': ['Still brewed', 'Gotlandsdricke itself; smoked farmhouse ale', null, 'Still a home-brewed beer on Gotland, where there is an annual championship. Commercial versions are rare one-offs.'],
-    'Kvass': ['Still brewed', 'Kvass itself, now mostly a bottled soft drink', null, 'Sold everywhere from Poland to Central Asia, bottled and on draught. Most commercial kvass is now a sweetened soft drink; the home-made version is closer to the original.'],
-    'Grodziskie': ['Revived', 'Piwo Grodziskie, recognised again as a style', null, 'The last brewery in Grodzisk closed in 1993. Polish homebrewers kept it alive, the style entered the judging guidelines as a historical beer, and a brewery reopened in the town in 2015.'],
+    'Kvass': ['Still brewed', 'Kvass itself, now mostly a bottled soft drink', null, 'Sold everywhere from Poland to Central Asia, bottled and on draft. Most commercial kvass is now a sweetened soft drink; the home-made version is closer to the original.'],
+    'Grodziskie': ['Revived', 'Piwo Grodziskie, recognized again as a style', null, 'The last brewery in Grodzisk closed in 1993. Polish homebrewers kept it alive, the style entered the judging guidelines as a historical beer, and a brewery reopened in the town in 2015.'],
     'Lichtenhainer': ['Revived', 'The sour wheat family: Berliner weisse and gose, plus smoke', 'Berliner weisse', 'Gone by the 1980s, now listed as a historical style and brewed occasionally by craft brewers. If you can make a kettle sour you can make this: swap some of the wheat for smoked malt.'],
     'Adambier': ['Revived', 'Old ale and other strong, aged dark ales', 'Old ale', 'Extinct in Dortmund. Hair of the Dog in Portland, Oregon has brewed Adam since 1994 in homage to it, and that beer is how most people know the name.'],
     'Kottbusser': ['Revived', 'Honey wheat ales', 'American wheat', 'Killed off when the purity law reached Prussia in 1877 because of the honey and molasses. Brewed now and then by craft breweries; an American wheat with oats and a little honey is a fair modern reading.'],
@@ -344,38 +344,38 @@
     'Berliner weisse (historic)': ['Evolved', 'Modern Berliner weisse, usually kettle-soured and clean', 'Berliner weisse', 'From hundreds of breweries down to a single industrial brand by the 1990s. The modern craft version is quick and clean; a few small Berlin breweries have gone back to mixed fermentation with brettanomyces.'],
     'Gose (historic)': ['Revived', 'Modern gose, often fruited', 'Gose', 'Died out in Leipzig in 1966, was revived in the 1980s, and has been brewed at the Bayerischer Bahnhof in Leipzig since 2000. American craft brewers then made it one of the most common sour styles anywhere.'],
     'Kentucky common': ['Revived', 'Kentucky common as a historical style; cream ale is its nearest surviving cousin', 'Kentucky common', 'Finished by Prohibition. Revived by homebrewers from brewery records and now brewed from time to time around Louisville.'],
-    'Steinbier': ['Revived', 'Amber and dark Bavarian lagers with a caramelised edge', 'Märzen / Oktoberfest', 'Pointless once metal kettles were cheap, so it lapsed, then came back as a curiosity in the 1980s. A handful of German and Austrian brewers still do it, along with craft one-offs.'],
+    'Steinbier': ['Revived', 'Amber and dark Bavarian lagers with a caramelized edge', 'Märzen / Oktoberfest', 'Pointless once metal kettles were cheap, so it lapsed, then came back as a curiosity in the 1980s. A handful of German and Austrian brewers still do it, along with craft one-offs.'],
     'Porter (18th century)': ['Evolved', 'Modern porter, and stout, which began as stout porter', 'London porter', 'Porter nearly vanished in Britain by the 1950s and was revived from the 1970s on. Today it is milder, fresher and not vatted; Fuller\'s London Porter is the usual benchmark. Every stout is a descendant.'],
     'India pale ale (19th century)': ['Evolved', 'English IPA, and the American IPA family that took the name', 'English IPA', 'Shrank into an ordinary-strength bitter in twentieth-century Britain, then was reinvented by American brewers from the 1980s with their own hops. English IPA is the closest to the Burton original; West Coast, hazy and double IPA are the grandchildren.'],
     'Bière de garde': ['Still brewed', 'Bière de garde itself', 'Bière de garde', 'Made continuously in French Flanders. Jenlain, 3 Monts and Ch\'ti are the long-standing names.'],
-    'Saison (traditional)': ['Evolved', 'Modern saison, which is stronger; grisette and table saison are closer to the original', 'Grisette', 'The farm version faded with farm labour. The style was rebuilt around Saison Dupont at about 6.5%, roughly twice the strength of what field workers drank.'],
+    'Saison (traditional)': ['Evolved', 'Modern saison, which is stronger; grisette and table saison are closer to the original', 'Grisette', 'The farm version faded with farm labor. The style was rebuilt around Saison Dupont at about 6.5%, roughly twice the strength of what field workers drank.'],
     'Lambic': ['Still brewed', 'Lambic and gueuze, unchanged', 'Lambic-style (mixed fermentation)', 'Made the same way in the same place: Cantillon, 3 Fonteinen, Boon and others. The words oude geuze and oude kriek on a label are legally protected and mean the traditional product.'],
     'Flanders red': ['Still brewed', 'Flanders red itself', 'Flanders red', 'Rodenbach still ages it in oak foeders in Roeselare, and Duchesse de Bourgogne is the other widely found example.'],
     'Sorghum beer (umqombothi)': ['Still brewed', 'Umqombothi, and commercial opaque beer', null, 'Home-brewed across southern Africa for ceremonies and sold commercially as opaque beer in cartons, still fermenting when you open it.'],
     'Tella': ['Still brewed', 'Tella itself', null, 'Still the everyday home-brewed beer of Ethiopia and Eritrea, sold from houses rather than breweries. There is no real commercial equivalent.'],
-    'Chang': ['Still brewed', 'Chang, and tongba, the millet version', null, 'Made at home across Tibet, Nepal, Bhutan and Sikkim. Tongba is served as the fermented grain itself in a wooden mug, topped up with hot water and drunk through a straw.'],
-    'Huangjiu-adjacent rice beer': ['Still brewed', 'Huangjiu; Shaoxing wine is the best-known kind', null, 'A continuous tradition of several thousand years. Sake is its Japanese cousin, made with a different mould.'],
+    'Chang': ['Still brewed', 'Chang, and tongba, the millet version', null, 'Made at home across Tibet, Nepal, Bhutan and Sikkim. Tongba is served as the fermented grain itself in a wooden mug, topped off with hot water and drunk through a straw.'],
+    'Huangjiu-adjacent rice beer': ['Still brewed', 'Huangjiu; Shaoxing wine is the best-known kind', null, 'A continuous tradition of several thousand years. Sake is its Japanese cousin, made with a different mold.'],
     'Kulmbacher eisbock': ['Still brewed', 'Eisbock', 'Kulmbacher eisbock', 'Kulmbacher still makes it, and Schneider makes a wheat version, Aventinus Eisbock.'],
     'Baltic porter': ['Still brewed', 'Baltic porter', 'Baltic porter', 'Never went away in Poland, Finland and the Baltic states, and craft brewers around the world have picked it up. Zywiec Porter is the classic Polish example.'],
     'Scotch ale / wee heavy': ['Still brewed', 'Wee heavy', 'Wee heavy', 'Traquair House Ale, brewed in a manor house near Peebles, is the reference; Belhaven also makes one. Probably more are brewed in North America than in Scotland now.'],
-    'Dampfbier': ['Revived', 'Dampfbier as a regional speciality', 'Dampfbier', 'A poor-country beer from the Bavarian Forest that faded when wheat and lager became affordable. Brewed again in and around Zwiesel.'],
+    'Dampfbier': ['Revived', 'Dampfbier as a regional specialty', 'Dampfbier', 'A poor-country beer from the Bavarian Forest that faded when wheat and lager became affordable. Brewed again in and around Zwiesel.'],
     'Roggenbier': ['Revived', 'Roggenbier', 'Roggenbier', 'Rye was barred from Bavarian brewing for centuries. The style was brought back in Bavaria in the late 1980s and is still a rarity.'],
-    'Sake-adjacent kuchikami': ['Evolved', 'Sake, brewed with koji instead', null, 'Koji mould did the job better and the practice ended well over a thousand years ago. Modern sake is its descendant.'],
+    'Sake-adjacent kuchikami': ['Evolved', 'Sake, brewed with koji instead', null, 'Koji mold did the job better and the practice ended well over a thousand years ago. Modern sake is its descendant.'],
     'Braggot': ['Revived', 'Braggot, judged today as a kind of mead', null, 'Rare for centuries, now made by craft meaderies and brewers.'],
     'Small beer': ['Evolved', 'Table beer, mild, session ales and low-alcohol beer', 'Dark mild', 'Clean water ended the need for it. The idea is back as table beer and modern low-alcohol brewing, and making one from the second runnings of a big beer is still a good brew day trick.'],
     'Stein-age farmhouse ale (maltol)': ['Still brewed', 'Norwegian farmhouse ale; kveik is now sold worldwide', 'Norwegian raw ale (maltøl)', 'Still brewed on farms in western Norway with family yeast. The yeast escaped first: kveik cultures became commercially available from the late 2010s and are now used for everything from IPA to pseudo-lager.']
   };
   D.WORLD.forEach(w => { const t = TODAY[w.name]; if (t) { w.fate = t[0]; w.modern = t[1]; w.recipe = t[2]; w.today = t[3]; } });
-  D.OFF_FLAVOURS = [
+  D.OFF_FLAVORS = [
     ['Green apple, cidery', 'Acetaldehyde', 'Beer packaged too early, or yeast pulled off the beer before cleanup', 'Leave it on the yeast another week at fermentation temperature'],
     ['Butter, butterscotch, slick', 'Diacetyl', 'Fermentation ended cold, stressed yeast, or an infection', 'Raise to 68F for two to three days before crashing (a diacetyl rest)'],
     ['Cooked corn, tomato', 'DMS', 'Pilsner malt with a lid on the boil, or slow chilling', 'Boil uncovered at least 60 minutes and chill fast'],
-    ['Band-aid, clove, smoky', 'Phenols', 'Chlorine in the water, wild yeast, or a very warm ferment', 'Campden tablet in the brewing water; sanitise better; control temperature'],
+    ['Band-aid, clove, smoky', 'Phenols', 'Chlorine in the water, wild yeast, or a very warm ferment', 'Campden tablet in the brewing water; sanitize better; control temperature'],
     ['Cardboard, sherry, stale', 'Oxidation', 'Splashing after fermentation, headspace, slow packaging', 'Closed transfers, purge with CO2, fill to the top'],
     ['Solvent, hot alcohol', 'Fusel alcohols', 'Fermented too warm, underpitched, high gravity', 'Pitch enough yeast and hold the temperature down for the first 72 hours'],
     ['Sour, vinegar', 'Acetobacter or lactic bacteria', 'Infection: scratched plastic, tubing, unclean taps', 'Replace scratched plastic and hoses; review sanitation'],
     ['Sulfur, rotten egg', 'Yeast sulfur', 'Normal during lager fermentation; can also be stressed yeast', 'Give it time and a warm rest; usually clears on its own'],
-    ['Astringent, mouth-drying', 'Tannins', 'Sparge water too hot or too alkaline, over-crushed grain, grain bag squeezed', 'Sparge below 170F, watch pH, crush without pulverising'],
+    ['Astringent, mouth-drying', 'Tannins', 'Sparge water too hot or too alkaline, over-crushed grain, grain bag squeezed', 'Sparge below 170F, watch pH, crush without pulverizing'],
     ['Metallic, blood', 'Metal ions', 'Corroded equipment, some water sources', 'Check for rust and scratched enamel; try RO water'],
     ['Vegetal, cabbage', 'Wort spoilage', 'Old hops, slow chill, wort held warm too long', 'Chill fast, pitch promptly, use fresh hops'],
     ['Soapy', 'Fatty acids', 'Beer left on the trub too long, or soap residue', 'Transfer off the yeast cake sooner; rinse everything well'],
@@ -430,12 +430,12 @@
   D.HOP_FORM_NOTES = [
     ['Pellet (T-90)', 'The standard. Whole hops milled and pressed; keeps well, easy to measure, and gives a little more bitterness than cones.', 'Use the weight in the recipe as written.', 'Counted as pellets.'],
     ['Whole leaf / cone', 'Dried cones as picked. Makes a natural filter bed, soaks up wort, and stales faster once open.', 'Same weight as pellets, or 10% more. Allow about a cup of lost wort per ounce.', 'Counted as cones: fewer oxidized alpha acids form in the kettle, so slightly fewer IBUs.'],
-    ['Cryo, LupuLN2, Lupomax (lupulin-enriched pellets)', 'The leafy matter is sieved off cold, leaving the resin and oil. About twice the alpha and oil of the same hop as T-90, with less grassy flavour and less wort lost.', 'About half the weight of T-90. Best in the whirlpool and dry hop; nothing to gain at 60 minutes.', 'Counted as pellets with half the polyphenols. Enter the alpha from the pack.'],
-    ['CO2 extract / resin (hop shot)', 'Pure hop resin in a syringe or tin, 55 to 65% alpha. Clean bittering with no plant matter, so more wort ends up in the fermenter.', 'Bittering additions only. Roughly 1 mL per 10 IBU in 5 gallons at 60 minutes; warm the syringe so it flows.', 'Enter grams as ounces (1 mL is about 1 g) and the alpha on the label. Counted with no polyphenols.'],
+    ['Cryo, LupuLN2, Lupomax (lupulin-enriched pellets)', 'The leafy matter is sieved off cold, leaving the resin and oil. About twice the alpha and oil of the same hop as T-90, with less grassy flavor and less wort lost.', 'About half the weight of T-90. Best in the whirlpool and dry hop; nothing to gain at 60 minutes.', 'Counted as pellets with half the polyphenols. Enter the alpha from the pack.'],
+    ['CO2 extract / resin (hop shot)', 'Pure hop resin in a syringe or can, 55 to 65% alpha. Clean bittering with no plant matter, so more wort ends up in the fermenter.', 'Bittering additions only. Roughly 1 mL per 10 IBU in 5 gallons at 60 minutes; warm the syringe so it flows.', 'Enter grams as ounces (1 mL is about 1 g) and the alpha on the label. Counted with no polyphenols.'],
     ['Wet / fresh hops', 'Cones straight off the bine, used within a day or two of picking. Grassy, green and seasonal.', 'Five to six times the dried weight, because they are about 80% water.', 'Enter the normal dried alpha for the variety; the app counts a fifth of it.'],
     ['Isomerized extract (iso-alpha, tetra, hexa)', 'Bitterness already isomerized, dosed by the drop into finished beer. The way to fix a beer that came out under-bittered.', 'Dose to taste in a measured glass first, then scale up to the keg.', 'Not in the recipe form: it adds IBUs directly, with no kettle model needed.'],
     ['Flowable aroma extracts (Incognito, Spectrum, Salvo and similar)', 'Liquid whirlpool and dry hop products that replace part of the pellet charge to save wort. Mostly a professional product, slowly reaching homebrew shops.', 'Replace a third to a half of the whirlpool or dry hop charge, following the maker\'s rate.', 'Not in the recipe form: aroma only, negligible bitterness.'],
-    ['Hop hash, plugs, BBC pellets', 'Hash is the resin scraped from pelletizing equipment, strong and inconsistent. Plugs are whole hops pressed into half-ounce discs. BBC pellets are gently processed T-90.', 'Hash: treat as a very high alpha pellet and use it late. Plugs: as leaf. BBC: as pellets.', 'Choose pellet or leaf as appropriate.']
+    ['Hop hash, plugs, BBC pellets', 'Hash is the resin scraped from pelletizing equipment, strong and inconsistent. Plugs are whole hops pressed into half-ounce disks. BBC pellets are gently processed T-90.', 'Hash: treat as a very high alpha pellet and use it late. Plugs: as leaf. BBC: as pellets.', 'Choose pellet or leaf as appropriate.']
   ].map(f => ({ name: f[0], what: f[1], use: f[2], app: f[3] }));
 
   // Starting waters for brewers without a report. Typical of the type, not of any one town.
@@ -475,9 +475,9 @@
 
   D.PROCESS = {
     'Brew day': ['Heat strike water to the calculated temperature, allowing for a cold tun.', 'Mash in, stir, and check the temperature in three places; record the actual number, not the target.', 'Mash 60 minutes; iodine test if you want proof of conversion.', 'Sparge below 170F. Stop collecting when the runnings fall below about 1.010 or the pH rises above 6.', 'Boil 60 to 90 minutes, uncovered, watching for boilover in the first ten minutes.', 'Hops on the schedule; note the actual times.', 'Chill fast to pitching temperature, then transfer off the trub.', 'Take and record OG, aerate, pitch, seal, set temperature control.'],
-    'Fermentation': ['Hold the first 72 hours at the low end of the strain range; that is when off-flavours form.', 'Free rise afterwards, or give a diacetyl rest for lagers and cold-fermented ales.', 'Take gravity readings, not calendar days: the same number twice, three days apart, means done.', 'Dry hop after active fermentation; warm, brief, and with as little oxygen as possible.', 'Cold crash before packaging if you want it clear.'],
-    'Packaging': ['Sanitise everything that touches beer after the boil.', 'Bottles: priming sugar dissolved in boiled water, gently mixed, two weeks at room temperature.', 'Kegs: purge with CO2, fill through a closed transfer, set the pressure from the carbonation chart.', 'Label and date everything, including gravity and any changes from the recipe.'],
-    'Cleaning': ['PBW or oxygen cleaner for soak and scrub; it removes the soil sanitiser cannot work through.', 'Star San is a no-rinse acid sanitiser; foam is fine, contact time is about 60 seconds.', 'Replace scratched plastic and old tubing; that is where infections live.', 'Never use scouring pads on plastic or stainless that touches beer.']
+    'Fermentation': ['Hold the first 72 hours at the low end of the strain range; that is when off-flavors form.', 'Free rise afterward, or give a diacetyl rest for lagers and cold-fermented ales.', 'Take gravity readings, not calendar days: the same number twice, three days apart, means done.', 'Dry hop after active fermentation; warm, brief, and with as little oxygen as possible.', 'Cold crash before packaging if you want it clear.'],
+    'Packaging': ['Sanitize everything that touches beer after the boil.', 'Bottles: priming sugar dissolved in boiled water, gently mixed, two weeks at room temperature.', 'Kegs: purge with CO2, fill through a closed transfer, set the pressure from the carbonation chart.', 'Label and date everything, including gravity and any changes from the recipe.'],
+    'Cleaning': ['PBW or oxygen cleaner for soak and scrub; it removes the soil sanitizer cannot work through.', 'Star San is a no-rinse acid sanitizer; foam is fine, contact time is about 60 seconds.', 'Replace scratched plastic and old tubing; that is where infections live.', 'Never use scouring pads on plastic or stainless that touches beer.']
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = D; else root.BrewData = D;
 })(typeof window !== 'undefined' ? window : globalThis);

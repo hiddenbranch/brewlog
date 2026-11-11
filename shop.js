@@ -7,7 +7,7 @@
   S.VENDORS = [
     { id: 'morebeer', name: 'MoreBeer', region: 'US', url: 'https://www.morebeer.com/search/', param: 'q', note: 'Wide range, free shipping over a threshold' },
     { id: 'northernbrewer', name: 'Northern Brewer', region: 'US', url: 'https://www.northernbrewer.com/search', param: 'q', note: 'Kits and ingredients' },
-    { id: 'homebrewing', name: 'Adventures in Homebrewing', region: 'US', url: 'https://www.homebrewing.org/search', param: 'q', note: 'In-house affiliate programme' },
+    { id: 'homebrewing', name: 'Adventures in Homebrewing', region: 'US', url: 'https://www.homebrewing.org/search', param: 'q', note: 'In-house affiliate program' },
     { id: 'ritebrew', name: 'Ritebrew', region: 'US', url: 'https://www.ritebrew.com/search', param: 'keyword', note: 'Bulk grain and hops' },
     { id: 'yeastmarket', name: 'Yeast Market', region: 'US', url: 'https://yeastmarket.com/search', param: 'q', note: 'Liquid yeast, cold shipped' },
     { id: 'amazon', name: 'Amazon', region: 'US', url: 'https://www.amazon.com/s', param: 'k', note: 'Equipment and sundries' },
@@ -22,10 +22,10 @@
     return S.CATALOG;
   };
   S.hasCart = id => !!(S.CATALOG && S.CATALOG.vendors[id] && Object.keys(S.CATALOG.vendors[id].items || {}).length);
-  /* Affiliate programmes hand out links in three shapes, and the app takes any of them in the vendor's box in Settings:
+  /* Affiliate programs hand out links in three shapes, and the app takes any of them in the vendor's box in Settings:
        1. a deep-link template with {url} where the destination goes (affiliate networks):  https://network.example/click?id=123&url={url}
-       2. a parameter to add to the shop's own URLs (in-house programmes):                  a_aid=abc123   or   ?ref=phil
-       3. a bare code (Amazon's tag, or the old behaviour):                                  mysite-20
+       2. a parameter to add to the shop's own URLs (in-house programs):                  a_aid=abc123   or   ?ref=phil
+       3. a bare code (Amazon's tag, or the old behavior):                                  mysite-20
      The destination is whatever the app was going to open anyway: a search, or a filled cart. */
   S.affiliate = function (url, vendorId, tags) {
     const tag = tags && tags[vendorId] ? String(tags[vendorId]).trim() : ''; if (!tag) return url;
@@ -43,7 +43,7 @@
   S.tagProblem = function (vendorId, tag) {
     const t = String(tag || '').trim(); if (!t || /\{url\}/i.test(t) || !/^https?:\/\//i.test(t)) return '';
     const v = S.vendor(vendorId); try { if (v && new URL(t).hostname.replace(/^www\./, '') === new URL(v.url).hostname.replace(/^www\./, '')) return ''; } catch (e) { return 'That does not look like a link.'; }
-    return 'This link has no {url} in it, so the app cannot send people through it to a search or a cart. In the programme\'s dashboard look for "deep link" or "custom link", and put {url} where the destination address goes.';
+    return 'This link has no {url} in it, so the app cannot send people through it to a search or a cart. In the program\'s dashboard look for "deep link" or "custom link", and put {url} where the destination address goes.';
   };
   S.searchUrl = function (vendorId, term, tags) {
     const v = S.vendor(vendorId); if (!v) return null;
@@ -76,7 +76,7 @@
     return merged;
   };
   const formTerm = t => t === 'cryo' ? ' cryo' : t === 'leaf' ? ' whole leaf' : t === 'extract' ? ' extract' : '';
-  /* What you actually put in the basket: shops sell grain by the pound, hops by the ounce and yeast by the pack.
+  /* What you actually put in the cart: shops sell grain by the pound, hops by the ounce and yeast by the pack.
      Salts are left alone; a jar lasts years. */
   S.buyQty = function (line) {
     const n = parseFloat(line.qty); if (!isFinite(n) || n <= 0) return '';
@@ -236,7 +236,7 @@
     const o = Object.assign({ milled: true, extras: [], yeastPacks: 1 }, opts || {}), lines = [], missing = [], bag = {};
     const needs = {};   // one line per ingredient and form, amounts added up
     for (const l of S.shoppingList(batch, { yeastPacks: o.yeastPacks })) { if (!l.key) { missing.push(l); continue; } const k = l.key + '|' + (l.form || ''); const n = parseFloat(l.qty) || (l.unit === 'pack' ? 1 : 0); if (!needs[k]) needs[k] = Object.assign({}, l, { need: 0 }); needs[k].need += n; }
-    for (const name of o.extras || []) { const e = S.EXTRAS.find(x => x.name === name); if (!e) continue;   // ticked brew day extras: one of each, the smallest pack
+    for (const name of o.extras || []) { const e = S.EXTRAS.find(x => x.name === name); if (!e) continue;   // checked brew day extras: one of each, the smallest pack
       needs['extra|' + name] = { key: e.use || e.name, item: e.name, group: 'Extras', unit: e.unit || 'each', need: e.need || 1, label: e.name }; }
     for (const k in needs) { const l = needs[k]; let vs = c.items[l.key] || [];
       if (l.group === 'Hops') { const same = vs.filter(v => v.form === l.form); vs = same.length ? same : vs.filter(v => v.form === 'pellet').length ? vs.filter(v => v.form === 'pellet') : vs; }

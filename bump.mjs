@@ -12,6 +12,6 @@ let app = readFileSync('app.js', 'utf8'); app = app.replace(/const APP_VERSION =
 let sw = readFileSync('sw.js', 'utf8');
 sw = sw.replace(/const VERSION = '[^']*';/, `const VERSION = '${prefix}-${v}';`);
 const scripts = [...html.matchAll(/src="([a-z]+\.js\?v=[^"]*)"/g)].map(m => './' + m[1]);
-sw = sw.replace(/const SHELL = \[[^\]]*\];/, `const SHELL = ['./', './index.html', ${scripts.map(s => `'${s}'`).join(', ')}, './manifest.webmanifest?v=${v}', './icons/icon-192.png', './icons/icon-512.png'];`);
+sw = sw.replace(/const SHELL = \[[^\]]*\];/, `const SHELL = ['./', './index.html', ${scripts.map(s => `'${s}'`).join(', ')}, './manifest.webmanifest?v=${v}', './icons/icon-192.png?v=2', './icons/icon-512.png?v=2'];`);
 writeFileSync('sw.js', sw);
 console.log(`stamped ${v}: index.html script tags, app.js APP_VERSION, sw.js VERSION and SHELL`);

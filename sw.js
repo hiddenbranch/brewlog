@@ -2,8 +2,8 @@
    index.html: network first (a reload always gets the newest page when online), cache fallback offline.
    tags.js, register.js and catalog.json: network first too, since all three change without a version bump.
    Other shell files: cache first with background refresh. Wikimedia and CDN assets: network first, cached after. */
-const VERSION = 'blog-1.9.0';
-const SHELL = ['./', './index.html', './recipes.js?v=1.9.0', './beerxml.js?v=1.9.0', './data.js?v=1.9.0', './tags.js?v=1.9.0', './register.js?v=1.9.0', './shop.js?v=1.9.0', './core.js?v=1.9.0', './recipetext.js?v=1.9.0', './app.js?v=1.9.0', './manifest.webmanifest?v=1.9.0', './icons/icon-192.png', './icons/icon-512.png'];
+const VERSION = 'blog-1.9.1';
+const SHELL = ['./', './index.html', './recipes.js?v=1.9.1', './beerxml.js?v=1.9.1', './data.js?v=1.9.1', './tags.js?v=1.9.1', './register.js?v=1.9.1', './shop.js?v=1.9.1', './core.js?v=1.9.1', './recipetext.js?v=1.9.1', './app.js?v=1.9.1', './manifest.webmanifest?v=1.9.1', './icons/icon-192.png?v=2', './icons/icon-512.png?v=2'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => Promise.all(SHELL.map(u => fetch(u, { cache: 'reload' }).then(r => { if (r.ok) return c.put(u, r); }).catch(() => {})))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('blog-') && k !== VERSION && k !== VERSION + '-lib').map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('message', e => { if (e.data === 'skipWaiting') self.skipWaiting(); });

@@ -114,12 +114,12 @@
      It builds on M. G. Malowicki's isomerization kinetics, V. Peacock's definition of the IBU and work from
      T. H. Shellhammer's lab. What it does that Tinseth cannot:
        - alpha acids stop dissolving above roughly 200 ppm, so piling in hops stops adding bitterness;
-       - isomerization follows temperature, so flameout, whirlpool and chill time are modelled rather than guessed;
+       - isomerization follows temperature, so flameout, whirlpool and chill time are modeled rather than guessed;
        - isomerized alpha acids (IAA) are separated from the auxiliary bittering compounds (oxidized alpha and
          beta acids, hop and malt polyphenols) that a lab IBU test also reads;
-       - the result is the IBU of finished beer, after the losses of the boil, fermentation and ageing.
+       - the result is the IBU of finished beer, after the losses of the boil, fermentation and aging.
      Parameter values are the published ones. Where the write-up covers one addition and a recipe has several, the
-     solubility limit is applied to what is already dissolved (see dissolve()); that generalisation is ours. */
+     solubility limit is applied to what is already dissolved (see dissolve()); that generalization is ours. */
   B.SMPH_CREDIT = 'IBU calculations optimized using the SMPH Model by J. P. Hosom, based on the research of M. G. Malowicki, T. H. Shellhammer, and V. Peacock regarding non-linear hop alpha-acid isomerization kinetics.';
   const SM = B.SMPH = {
     k1: T => 7.9e11 * Math.exp(-11858 / T),       // alpha acids -> iso-alpha acids, per minute, T in kelvin (Malowicki)
@@ -256,7 +256,7 @@
   };
   B.bitternessRatio = (ibu, og) => r2(ibu / (B.points(og)));      // BU:GU
 
-  // ---- colour: Morey ----
+  // ---- color: Morey ----
   B.srm = function (items, gallons) {
     if (!gallons) return null;
     const mcu = items.reduce((s, i) => s + (Number(i.lb) || 0) * (Number(i.lovibond) || 0), 0) / gallons;
@@ -332,7 +332,7 @@
     // White and Zainasheff's starter data ("Yeast", 2010) as the curve the usual calculators fit to it: the lighter the inoculation, the more
     // new cells each cell makes, up to about six. 100 billion in 1 L ends near 150, in 2 L near 205, in 4 L near 280.
     if (!starterL || !cellsBillion) return cellsBillion;
-    const rate = cellsBillion / starterL;                       // billion per litre, the same number as million per ml
+    const rate = cellsBillion / starterL;                       // billion per liter, the same number as million per ml
     const newPerCell = Math.max(0, Math.min(6, 12.54793776 * Math.pow(rate, -0.4594858324) - 0.9994994906));
     return Math.round(cellsBillion * (1 + newPerCell));
   };
@@ -390,7 +390,7 @@
     if (ra < 200) return 'right for brown and dark beers; pale beers need acid or dilution';
     return 'too alkaline for anything but the darkest beers: dilute or acidify';
   };
-  // 88% lactic acid to neutralise alkalinity: about 11.8 milliequivalents per mL. Approximate: add in steps, measure if you can.
+  // 88% lactic acid to neutralize alkalinity: about 11.8 milliequivalents per mL. Approximate: add in steps, measure if you can.
   B.lacticForAlkalinity = (alkToRemoveAsCaCO3, gallons) => alkToRemoveAsCaCO3 > 0 ? r1(alkToRemoveAsCaCO3 / 50 * gallons * L_PER_GAL / 11.8) : 0;
   B.SALT_TSP = { 'Gypsum (CaSO4)': 4.0, 'Calcium chloride (CaCl2)': 3.4, 'Epsom salt (MgSO4)': 4.5, 'Table salt (NaCl)': 6.0, 'Baking soda (NaHCO3)': 4.6 };   // grams per level teaspoon, roughly
   /* Work out what to add. source and target are ion profiles in ppm; gallons is all the brewing water.
@@ -542,7 +542,7 @@
 
   // ---- inventory and "what can I brew" ----
   B.INV_KINDS = ['Fermentable', 'Hop', 'Yeast', 'Other'];
-  // normalise a name for matching: lower case, no punctuation, no filler words
+  // normalize a name for matching: lower case, no punctuation, no filler words
   B.normName = function (n) {
     return String(n || '').toLowerCase()
       .replace(/\b\d+(\.\d+)?\s*%?\s*(lb|lbs|oz|kg|g|aa|alpha)\b/g, ' ')   // weights and alpha percentages
@@ -697,20 +697,20 @@
       steps.push({ id: 'strike', kind: 'action', title: 'Heat strike water', detail: [T.noSparge ? `${strikeGal} gal: all the water, no sparge (${T.qtPerLb} qt per lb)` : `${strikeGal} gal at ${eq.qtPerLb} qt per lb`, `Target ${strikeF}F (grain at ${T.grainF}F, ${eq.tunLossF}F lost to the vessel)`, salts.length ? `Salts in now: ${salts.map(s => `${s.grams} g ${String(s.salt).replace(/\s*\(.*\)/, '')}`).join(', ')}` : 'Salts and any Campden tablet go in the water now'], done: 'Water is at temperature' });
       steps.push({ id: 'mashin', kind: 'timer', minutes: mashMin, title: 'Mash in', detail: [`Stir the grain in, break every dough ball, check the bed reads ${mashF}F`, `Hold ${mashWords}, or as long as you like: an overnight mash is fine, just note it`, 'Recirculating system: pump on once the bed settles'], alarms: [{ at: Math.round(mashMin / 2), label: 'Halfway: check the mash temperature and stir if it has stratified' }, { at: mashMin, label: 'Mash complete' }], done: 'Mash finished' });
       steps.push({ id: 'mashout', kind: 'timer', minutes: 10, title: 'Mash out', detail: ['Raise to 168F and hold 10 minutes; stops conversion and thins the sugars for the sparge', 'Skip on a single-infusion no-sparge system if you prefer', 'The total mash time below is counted from when you started the mash timer; correct it if it sat longer'], alarms: [{ at: 10, label: 'Mash out done' }], done: 'At 168F for 10 minutes', optional: true });
-      if (T.noSparge) steps.push({ id: 'drain', kind: 'action', title: 'Lift and drain', detail: ['Lift the bag or the malt pipe and let it drain; squeeze the bag if you like, it does no harm', `You should have about ${preBoil} gal in the kettle`, 'Short on volume? Rinse the grain with a little hot water, or top up'], done: `Drained: ${preBoil} gal in the kettle` });
+      if (T.noSparge) steps.push({ id: 'drain', kind: 'action', title: 'Lift and drain', detail: ['Lift the bag or the malt pipe and let it drain; squeeze the bag if you like, it does no harm', `You should have about ${preBoil} gal in the kettle`, 'Short on volume? Rinse the grain with a little hot water, or top off'], done: `Drained: ${preBoil} gal in the kettle` });
       else steps.push({ id: 'sparge', kind: 'action', title: 'Sparge and collect', detail: [`Sparge with about ${spargeGal} gal at 168F`, `Collect ${preBoil} gal pre-boil`, 'Stop when runnings drop below 1.010 or the collected volume is reached'], done: `Collected ${preBoil} gal` });
       steps.push({ id: 'preboil', kind: 'input', title: 'Pre-boil gravity', detail: [boilG ? `Expected about ${boilG.toFixed(3)} at ${preBoil} gal` : 'Take a reading and note the volume', 'Cool the sample; write the temperature next to the reading'], input: 'gravity', done: 'Reading taken' });
     } else {
       steps.push({ id: 'water', kind: 'action', title: 'Heat the water', detail: [`Bring ${preBoil} gal to a boil`, 'Extract batch: add extract off the heat, stir until dissolved, then return to the boil'], done: 'Extract dissolved, back on the heat' });
     }
     const boilAlarms = boilHops.map(h => ({ at: h.at, label: h.label }));
-    if (boilMin >= 15) boilAlarms.push({ at: boilMin - 15, label: 'Whirlfloc or Irish moss, and drop the chiller in to sanitise' });
+    if (boilMin >= 15) boilAlarms.push({ at: boilMin - 15, label: 'Whirlfloc or Irish moss, and drop the chiller in to sanitize' });
     boilAlarms.push({ at: boilMin, label: 'Flameout' });
     boilAlarms.sort((a, b) => a.at - b.at);
-    steps.push({ id: 'boil', kind: 'timer', minutes: boilMin, title: `Boil ${boilMin} minutes`, detail: ['Watch the first five minutes for boilover', 'Additions fire as alarms below; tick each one as it goes in', 'Gravity short at the end? Boil on, or add sugar: both are below'], alarms: boilAlarms, done: 'Flameout', sugar: true, extraFields: ['flameout'] });
+    steps.push({ id: 'boil', kind: 'timer', minutes: boilMin, title: `Boil ${boilMin} minutes`, detail: ['Watch the first five minutes for boilover', 'Additions fire as alarms below; check each one off as it goes in', 'Gravity short at the end? Boil on, or add sugar: both are below'], alarms: boilAlarms, done: 'Flameout', sugar: true, extraFields: ['flameout'] });
     if (wp.length) steps.push({ id: 'whirlpool', kind: 'timer', minutes: T.wpMin, title: 'Whirlpool hop stand', detail: [`Cool to ${T.wpTempF}F, then add ${wp.map(h => `${h.oz} oz ${h.name}`).join(', ')}`, `Stir to a whirlpool, lid on, ${T.wpMin} minutes`], alarms: [{ at: T.wpMin, label: 'Stand complete: start chilling' }], done: 'Stand finished' });
     const pitchF = T.pitchF;
-    steps.push({ id: 'chill', kind: 'action', title: 'Chill', detail: [`Chill to ${pitchF}F, or as close as the tap water allows; in summer, note where it stopped and let the fermenter finish the job`, 'Sanitise everything from here on: fermenter, lid, airlock, hydrometer, thief'], done: 'At pitching temperature' });
+    steps.push({ id: 'chill', kind: 'action', title: 'Chill', detail: [`Chill to ${pitchF}F, or as close as the tap water allows; in summer, note where it stopped and let the fermenter finish the job`, 'Sanitize everything from here on: fermenter, lid, airlock, hydrometer, thief'], done: 'At pitching temperature' });
     steps.push({ id: 'og', kind: 'input', title: 'Transfer and original gravity', detail: [batch.og ? `Expected OG ${Number(batch.og).toFixed(3)}` : 'Take the OG reading', 'Leave the trub behind; note the volume in the fermenter', 'Aerate or oxygenate before pitching'], input: 'gravity', done: 'OG logged', sugar: true });
     steps.push({ id: 'pitch', kind: 'action', title: 'Pitch', detail: [yeastNote, B.pitchAdvice(yeast), 'Hold the first 72 hours at the low end; airlock or blow-off on; label the fermenter with the batch and date'], done: 'Pitched' });
     const plan = B.fermentPlan(yeast, n(batch.og) || 1.05), sched = B.dryHopSchedule(dryHops, plan, null);

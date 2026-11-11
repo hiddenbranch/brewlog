@@ -10,7 +10,7 @@
   const tag = (name, value) => `<${name}>${esc(value)}</${name}>`;
 
   const formOf = t => (t === 'leaf' || t === 'wet') ? 'Leaf' : 'Pellet';   // BeerXML 1.0 knows Pellet, Plug and Leaf only
-  /* batch: the app's batch object; refs: { fermentables, hops, yeast } reference tables for ppg/colour/attenuation. */
+  /* batch: the app's batch object; refs: { fermentables, hops, yeast } reference tables for ppg/color/attenuation. */
   X.exportRecipe = function (batch, refs) {
     const gal = num(batch.batchGal) || 5.5, boilGal = num(batch.boilGal) || gal * 1.25, boilMin = num(batch.boilMin) || 60;
     const eff = num(batch.efficiency) || 72;
