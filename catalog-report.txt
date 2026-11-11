@@ -1,4 +1,4 @@
-Brew Log catalog, built 2026-11-10
+Brew Log catalog, built 2026-11-11
 
 == MoreBeer (https://www.morebeer.com): 6696 products read, 174 of 206 ingredients matched
 
@@ -31,8 +31,8 @@ Brew Log catalog, built 2026-11-10
     Black patent  ->  Black (Patent) Malt - Briess Malting  [1 lb unmilled $3.59, 1 lb milled $3.69, 5 lb unmilled $15.19, 50 lb unmilled $69.99]
     Carafa Special II  ->  Carafa® Special II Malt - Weyermann® Specialty Malts  [1 lb unmilled $5.09, 1 lb milled $5.19, 5 lb unmilled $21.79, 55 lb unmilled $91.99]
     Acidulated malt  ->  Acidulated Malt - BestMalz  [1 lb unmilled $4.79, 5 lb unmilled $20.49, 1 lb milled $4.89, 5 lb milled $20.99, 55 lb unmilled $96.29]
-    Smoked / Rauch malt  ->  Smoked Malt (Beechwood) - Viking Malt  [1 lb unmilled $3.29, 1 lb milled $3.39, 5 lb unmilled $13.49]
-    Peated malt  ->  Peated Malt - Simpsons Malt  [1 lb unmilled $5.39, 1 lb milled $5.49, 55 lb unmilled $97.99]
+    Smoked / Rauch malt  ->  Smoked Malt (Beechwood) - Viking Malt  [1 lb unmilled $3.29, 1 lb milled $3.39, 5 lb unmilled $13.49, 55 lb unmilled $62.99]
+    Peated malt  ->  Peated Malt - Simpsons Malt  [1 lb unmilled $5.39, 1 lb milled $5.49, 5 lb unmilled $23.09, 55 lb unmilled $97.99]
     Rye malt  ->  Rye Malt - Viking Malt  [1 lb unmilled $3.09, 1 lb milled $3.19, 5 lb unmilled $12.59, 5 lb milled $13.09, 55 lb unmilled $56.99]
     Melanoidin malt  ->  Melanoidin Malt - Weyermann® Specialty Malts  [1 lb unmilled $4.39, 1 lb milled $4.49, 5 lb unmilled $18.49, 55 lb unmilled $76.49]
     Honey malt  ->  Honey Malt - Gabrinus Malting®  [1 lb unmilled $3.89, 1 lb milled $3.99, 5 lb unmilled $16.59, 55 lb unmilled $67.99]
@@ -58,7 +58,7 @@ Brew Log catalog, built 2026-11-10
     Dark LME  ->  Dark Malt Extract | Porter & Stout LME | Liquid Malt Extract  [3 lb $12.49, 4 lb $15.99, 5 lb $19.49, 6 lb $22.49, 7 lb $25.99, 8 lb $29.49, 9 lb $32.99]
     Wheat LME  ->  Bavarian Wheat Malt Extract | LME | Liquid Malt Extract  [3 lb $12.49, 4 lb $15.99, 5 lb $19.49, 6 lb $22.49, 7 lb $25.99, 8 lb $29.49, 9 lb $32.99]
     Munich LME  ->  Munich Malt Extract | LME | Liquid Malt Extract  [3 lb $12.49, 4 lb $15.99, 5 lb $19.49, 6 lb $22.49, 7 lb $25.99, 8 lb $29.49, 9 lb $32.99]
-    Cascade  ->  Cascade | Cryo Hops® | Cascade | Pellet Hops | Cascade | Whole Cone Hops  [1 oz cryo $3.99, 16 oz cryo $28.99, 80 oz cryo $120.99, 176 oz cryo $245.99, 8 oz $8.99, 16 oz $14.99, 80 oz $64.99, 2 oz leaf $3.49, 16 oz leaf $16.99]
+    Cascade  ->  Cascade | Cryo Hops® | Cascade | Pellet Hops | Cascade | Whole Cone Hops  [1 oz cryo $3.99, 16 oz cryo $28.99, 80 oz cryo $120.99, 176 oz cryo $245.99, 0.5 oz $1.49, 8 oz $8.99, 16 oz $14.99, 80 oz $64.99, 2 oz leaf $3.49, 16 oz leaf $16.99]
     Centennial  ->  Centennial | Pellet Hops | Centennial | Cryo Hops®  [1 oz $1.49, 2 oz $2.49, 8 oz $7.99, 16 oz $12.99, 80 oz $55.49, 1 oz cryo $4.49, 16 oz cryo $30.99, 80 oz cryo $129.99, 176 oz cryo $271.99]
     Chinook  ->  Chinook | Pellet Hops | Chinook | Cryo Hops®  [1 oz $1.99, 2 oz $2.99, 8 oz $7.99, 16 oz $14.99, 80 oz $58.99, 176 oz $119.99, 1 oz cryo $3.99, 16 oz cryo $31.49, 80 oz cryo $122.39, 176 oz cryo $259.99]
     Columbus / CTZ  ->  Columbus / CTZ | Cryo Hops® | Columbus | CTZ | Pellet Hops  [16 oz cryo $26.99, 80 oz cryo $109.71, 2 oz $2.99, 8 oz $7.99, 16 oz $11.99, 80 oz $49.99, 176 oz $89.99]
@@ -75,7 +75,7 @@ Brew Log catalog, built 2026-11-10
     Willamette  ->  Willamette | Pellet Hops  [1 oz $1.99, 8 oz $9.49, 16 oz $15.49, 80 oz $65.99]
     Fuggle  ->  British Fuggle | Pellet Hops  [1 oz $2.54, 2 oz $4.24, 8 oz $14.02, 16 oz $22.94, 80 oz $116.99, 176 oz $223.49]
     East Kent Golding  ->  British Kent Goldings | Pellet Hops  [1 oz $2.12, 2 oz $3.39, 8 oz $11.04, 16 oz $17.84, 80 oz $89.99]
-    Northern Brewer  ->  German Northern Brewer | Pellet Hops  [2 oz $2.54, 8 oz $7.64, 16 oz $11.89, 80 oz $57.99]
+    Northern Brewer  ->  German Northern Brewer | Pellet Hops  [1 oz $1.69, 2 oz $2.54, 8 oz $7.64, 16 oz $11.89, 80 oz $57.99]
     Magnum  ->  Magnum | Pellet Hops  [1 oz $1.69, 2 oz $2.54, 8 oz $7.64, 16 oz $11.89, 80 oz $57.99, 176 oz $104.99]
     Warrior  ->  Warrior® Brand YCR 5 | Pellet Hops  [1 oz $2.49, 16 oz $15.99, 80 oz $66.99]
     Nugget  ->  Nugget | Pellet Hops  [1 oz $1.99, 8 oz $7.99, 16 oz $17.99, 80 oz $73.99, 176 oz $121.49, 176 oz $151.99]
@@ -142,7 +142,7 @@ Brew Log catalog, built 2026-11-10
     Mangrove Jack M44 US West Coast  ->  Mangrove Jack's M44 US West Coast Yeast | 10g  [1 pack $7.99]
     Wyeast 1084 Irish Ale / WLP004  ->  Wyeast | 1084 Irish Ale | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
     Wyeast 1728 Scottish Ale / WLP028  ->  Wyeast | 1728 Scottish Ale | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
-    WLP013 London Ale / Wyeast 1028  ->  Wyeast | 1028 London Ale | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
+    WLP013 London Ale / Wyeast 1028  ->  White Labs Yeast | WLP013 London Ale | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
     WLP036 Düsseldorf Alt  ->  White Labs Yeast | WLP036 Dusseldorf Alt Ale | Beer Yeast | PurePitch® Next Generation | Industry Leading Viability | 150 Billion Cells  [1 pack $14.99]
     Wyeast 3944 Belgian Witbier / WLP400  ->  Wyeast | 3944 Belgian Witbier | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
     Wyeast 3522 Belgian Ardennes  ->  Wyeast | 3522 Belgian Ardennes | Beer Yeast | Activator Smack-Pack System™ | 100 Billion Cells  [1 pack $14.79]
